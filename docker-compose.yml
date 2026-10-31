@@ -3,18 +3,51 @@ services:
     image: postgres:16
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME:-scamshield}
+      POSTGRES_USER: ${DB_USER:-scamshield_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-scamshield_password}
     ports:
       - "${DB_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-scamshield_user} -d ${DB_NAME:-scamshield}"]
       interval: 5s
       timeout: 5s
       retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.prod
+      DEBUG: "False"
+      DJANGO_SECRET_KEY: fake-not-a-secret-key-at-least-fifty-characters-long-for-docker-proof
+      JWT_SIGNING_KEY: fake-jwt-signing-key-thirty-two-chars!
+      HMAC_IP_SALT: fake-hmac-ip-salt-thirty-two-chars-!
+      INDICATOR_HMAC_KEY: fake-indicator-hmac-key-32-chars-!
+      ALLOWED_HOSTS: localhost,127.0.0.1,backend
+      PUBLIC_BASE_URL: http://localhost:8000
+      TRUSTED_PROXY_HOPS: "1"
+      DB_NAME: ${DB_NAME:-scamshield}
+      DB_USER: ${DB_USER:-scamshield_user}
+      DB_PASSWORD: ${DB_PASSWORD:-scamshield_password}
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_SSLMODE: disable
+      AWS_DEFAULT_REGION: ap-southeast-1
+      AWS_REGION: ap-southeast-1
+      AWS_ACCESS_KEY_ID: testing
+      AWS_SECRET_ACCESS_KEY: testing
+      AWS_EC2_METADATA_DISABLED: "true"
+      METRICS_ENABLED: "False"
 
 volumes:
   postgres_data:

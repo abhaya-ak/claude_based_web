@@ -246,6 +246,22 @@ class TestPiiScrubberFilter:
         assert record.sensitive_data[key] == "[REDACTED]"
         assert record.sensitive_data["safe_field"] == "public_val"
 
+    def test_scrubber_removes_raw_request_object(self, rf: RequestFactory):
+        scrubber = PiiScrubberFilter()
+        request = rf.get("/api/v1/test/?sensitive_param=leak123")
+        record = logging.LogRecord(
+            name="django.request",
+            level=logging.WARNING,
+            pathname="handler.py",
+            lineno=10,
+            msg="Not Found",
+            args=(),
+            exc_info=None,
+        )
+        record.request = request
+        scrubber.filter(record)
+        assert not hasattr(record, "request")
+
 
 class TestAccessLogMiddleware:
     """Verify single-line access log contains required fields without query strings or headers."""

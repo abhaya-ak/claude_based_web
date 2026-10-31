@@ -277,7 +277,7 @@ Settings split: `base` (shared) → `dev` / `prod` / `test`. Config comes only f
 - Run as **non-root** user; `PYTHONDONTWRITEBYTECODE=1`, `PYTHONUNBUFFERED=1`.
 - `collectstatic` at build time; no `.env`, `.git`, tests, or secrets in the image (`.dockerignore`).
 - `HEALTHCHECK` hits `/api/v1/health/`.
-- Entry: `gunicorn config.wsgi --workers 3 --threads 4 --worker-class gthread --timeout 60 --graceful-timeout 30 --max-requests 1000 --max-requests-jitter 100 --access-logfile - --error-logfile -`.
+- Entry: `gunicorn config.wsgi --workers 3 --threads 4 --worker-class gthread --timeout 60 --graceful-timeout 30 --max-requests 1000 --max-requests-jitter 100 --error-logfile -`.
 - `entrypoint.sh` **never runs migrations** (parallel instances would race).
 - Image tag = git SHA; `latest` is never deployed.
 

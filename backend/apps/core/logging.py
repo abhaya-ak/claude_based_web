@@ -54,6 +54,10 @@ class PiiScrubberFilter(logging.Filter):
     """Filter that inspects and sanitizes forbidden PII keys in log records."""
 
     def filter(self, record: logging.LogRecord) -> bool:
+        # Strip raw request objects so they are never serialized with query strings or headers
+        if hasattr(record, "request"):
+            delattr(record, "request")
+
         # Scrub attributes on record
         for key, value in list(record.__dict__.items()):
             if key in ("name", "msg", "args", "levelname", "levelno", "pathname", "filename", "module", "exc_info", "exc_text", "stack_info", "lineno", "funcName", "created", "msecs", "relativeCreated", "thread", "threadName", "processName", "process"):
