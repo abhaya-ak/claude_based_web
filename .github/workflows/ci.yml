@@ -1,0 +1,105 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - 'phase-*'
+  pull_request:
+    branches:
+      - main
+      - 'phase-*'
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: scamshield
+          POSTGRES_USER: scamshield_user
+          POSTGRES_PASSWORD: scamshield_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+          cache-dependency-path: 'backend/requirements/*.txt'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libmagic1
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements/dev.txt
+
+      - name: Ruff lint check
+        run: |
+          cd backend
+          ruff check .
+
+      - name: Check migrations drift
+        run: |
+          cd backend
+          python manage.py makemigrations --check --dry-run
+        env:
+          DATABASE_URL: postgresql://scamshield_user:scamshield_password@localhost:5432/scamshield
+          DJANGO_SECRET_KEY: fake-not-a-secret-ci-migrations-check-key-must-be-50-chars-min
+
+      - name: Run test suite
+        run: |
+          cd backend
+          pytest -q
+        env:
+          DATABASE_URL: postgresql://scamshield_user:scamshield_password@localhost:5432/scamshield
+          DJANGO_SECRET_KEY: fake-not-a-secret-ci-pytest-suite-key-must-be-50-chars-min
+
+      - name: Production deploy check
+        run: |
+          cd backend
+          python manage.py check --deploy --fail-level WARNING
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings.prod
+          DJANGO_SECRET_KEY: fake-not-a-secret-ci-deploy-check-key-must-be-at-least-50-chars-long
+          JWT_SIGNING_KEY: fake-not-a-secret-jwt-signing-key-32-chars-minimum
+          HMAC_IP_SALT: fake-not-a-secret-hmac-ip-salt-32-chars-minimum
+          INDICATOR_HMAC_KEY: fake-not-a-secret-indicator-hmac-32-chars-min
+          ALLOWED_HOSTS: api.scamshield.gov.sg,localhost
+          PUBLIC_BASE_URL: https://scamshield.gov.sg
+          TRUSTED_PROXY_HOPS: "1"
+          DB_NAME: scamshield
+          DB_USER: scamshield_user
+          DB_PASSWORD: scamshield_password
+          DB_HOST: localhost
+          DB_PORT: "5432"
+          DB_SSLMODE: disable
+
+      - name: OpenAPI schema drift check
+        run: |
+          cd backend
+          python manage.py spectacular --file openapi.yaml --validate
+          git diff --exit-code openapi.yaml
+        env:
+          DATABASE_URL: postgresql://scamshield_user:scamshield_password@localhost:5432/scamshield
+          DJANGO_SECRET_KEY: fake-not-a-secret-ci-spectacular-key-must-be-50-chars-min
+
+      - name: Dependency security audit
+        run: |
+          pip-audit -r backend/requirements/dev.txt

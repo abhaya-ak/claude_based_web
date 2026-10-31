@@ -9,14 +9,14 @@ Phase 2 — Project scaffold and foundations
 | 0 Governance | all | done | 34a26cf | Task 0 done; repo setup, rules, contracts frozen |
 | 1A DB design review | all | done | 34a26cf | Design frozen, contracts merged |
 | 1B Models + migrations | all | done, merge pending | | 19 app tables, 168 tests, ERD + schema inventory gate complete |
-| 2 Scaffold | S4 | in progress | | Phase 2 foundations |
+| 2 Scaffold | S4 | done, merge pending | | Phase 2 foundations |
 | ├─ 2.1 Settings & test safety | S4 | done | | Settings split (base/dev/test/prod), root URLs, JSON handlers, .env.example, AWS test safety fixture (35 new tests) |
 | ├─ 2.2 Error envelope & logging | S4 | done | | Error envelope, pagination, request ID ContextVar/middleware, PII scrubber, access log (35 new tests) |
 | ├─ 2.3 Health & client IP | S4 | done | | HealthCheckMiddleware (first), liveness/readiness endpoints, client IP & HMAC hashing (12 new tests) |
 | ├─ 2.4 AWS, metrics & audit | S4 | done | | AWS client factory (timeouts/caching), metrics emitter, audit log_event with lazy ops model import (26 new tests) |
 | ├─ 2.5 OpenAPI schema | S4 | done | | drf-spectacular, committed backend/openapi.yaml, drift check, docs UI disabled in prod (4 new tests) |
 | ├─ 2.6 Containerization | S4 | done | | Multi-stage Dockerfile (python:3.13-slim, non-root, libmagic1), gunicorn entrypoint no access log, health & non-root proof |
-| └─ 2.7 CI & closing gate | S4 | todo | | GitHub Actions CI, pre-commit, deployment checks, Phase 2 gate |
+| └─ 2.7 CI & closing gate | S4 | done | | GitHub Actions CI, pre-commit, deployment checks, Phase 2 gate |
 | 3 Auth/RBAC | S4 | todo | | |
 | M0 Walking skeleton deployed to AWS | S4 | todo | | |
 | 4 Reports | S1 | todo | | |
