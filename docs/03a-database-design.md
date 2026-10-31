@@ -552,7 +552,7 @@ Event types: `REPORT_SUBMITTED`, `RATE_LIMIT_BLOCK`, `LOGIN_FAILURE`, `LOGIN_SUC
 | scamreport | `idx_report_queue (risk_score DESC NULLS LAST, created_at) WHERE status='PENDING'` | Analyst queue |
 | scamreport | `idx_report_status_created (status, created_at DESC)` | Filters/lists |
 | scamreport | `idx_report_created (created_at)` | Time-series analytics |
-| scamreport | `idx_report_platform_cat_created (platform, category, created_at)` | Volume by platform/category |
+| scamreport | `idx_report_plat_cat_created (platform, category, created_at)` | Volume by platform/category |
 | scamreport | `idx_report_geo_created (country_code, admin_area, created_at)` | Losses by region |
 | scamreport | `idx_report_reporter (reporter_id, created_at DESC) WHERE reporter_id IS NOT NULL` | "My reports" |
 | scamreport | `idx_report_scan_pending (scan_dispatched_at) WHERE scan_status='PENDING'` | Re-dispatch job |

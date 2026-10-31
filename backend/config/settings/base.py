@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "apps.core.apps.CoreConfig",
     "apps.accounts.apps.AccountsConfig",
+    "apps.reports.apps.ReportsConfig",
 ]
 
 AUTH_USER_MODEL = "accounts.User"

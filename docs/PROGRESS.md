@@ -34,6 +34,7 @@ Phase 1B — Models + migrations
 - **D7 (Email uniqueness & lowercasing):** `email` has `unique=True` on the model field AND a functional `UniqueConstraint` on `Lower("email")` (named `uq_user_email_lower`); `UserManager` lowercases email on create. Django requires `USERNAME_FIELD` to be unique.
 - **D8 (Python 3.13 everywhere):** Standardized on Python 3.13 across developer environments, Docker base images (`python:3.13-slim`), and runtime configurations.
 - **D9 (Deferred verified_indicator FK):** ReportIndicator.verified_indicator is NOT created in the reports app yet; a later reports migration adds it after the intel app exists.
+- **D10 (Index name truncation):** Truncated `idx_report_platform_cat_created` (31 chars) to `idx_report_plat_cat_created` (27 chars) to satisfy Django's 30-character index name limit.
 
 ## Open questions for the owner
 - (none yet)
