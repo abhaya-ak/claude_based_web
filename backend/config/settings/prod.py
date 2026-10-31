@@ -92,6 +92,9 @@ CSRF_COOKIE_SECURE = True
 X_FRAME_OPTIONS = "DENY"
 SECURE_REFERRER_POLICY = "same-origin"
 
+# API documentation UI disabled in production per Decision D37
+ENABLE_API_DOCS = False
+
 # Silenced system checks per Rule R-D5 / Decision D36:
 # HTTPS and HSTS terminate at CloudFront / ALB.
 SILENCED_SYSTEM_CHECKS = [

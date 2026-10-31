@@ -1,5 +1,11 @@
-from django.http import JsonResponse
+from django.conf import settings
+from django.http import Http404, JsonResponse
 from django.urls import path
+from drf_spectacular.views import (
+    SpectacularAPIView,
+    SpectacularRedocView,
+    SpectacularSwaggerView,
+)
 
 from apps.core.views import health_liveness, health_readiness
 
@@ -71,6 +77,27 @@ def server_error_handler(request):
     )
 
 
+class ProtectedSpectacularAPIView(SpectacularAPIView):
+    def dispatch(self, request, *args, **kwargs):
+        if not getattr(settings, "ENABLE_API_DOCS", True):
+            raise Http404("API documentation is disabled.")
+        return super().dispatch(request, *args, **kwargs)
+
+
+class ProtectedSpectacularSwaggerView(SpectacularSwaggerView):
+    def dispatch(self, request, *args, **kwargs):
+        if not getattr(settings, "ENABLE_API_DOCS", True):
+            raise Http404("API documentation is disabled.")
+        return super().dispatch(request, *args, **kwargs)
+
+
+class ProtectedSpectacularRedocView(SpectacularRedocView):
+    def dispatch(self, request, *args, **kwargs):
+        if not getattr(settings, "ENABLE_API_DOCS", True):
+            raise Http404("API documentation is disabled.")
+        return super().dispatch(request, *args, **kwargs)
+
+
 handler400 = "config.urls.bad_request_handler"
 handler403 = "config.urls.permission_denied_handler"
 handler404 = "config.urls.not_found_handler"
@@ -79,4 +106,7 @@ handler500 = "config.urls.server_error_handler"
 urlpatterns = [
     path("api/v1/health/", health_liveness, name="health-liveness"),
     path("api/v1/health/ready/", health_readiness, name="health-readiness"),
+    path("api/v1/schema/", ProtectedSpectacularAPIView.as_view(), name="schema"),
+    path("api/v1/docs/", ProtectedSpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
+    path("api/v1/redoc/", ProtectedSpectacularRedocView.as_view(url_name="schema"), name="redoc"),
 ]

@@ -1,0 +1,85 @@
+openapi: 3.0.3
+info:
+  title: ScamShield API
+  version: 1.0.0
+  description: Scam reporting, lookup, and literacy platform REST API.
+paths:
+  /api/v1/health/:
+    get:
+      operationId: health_retrieve
+      description: Returns 200 OK if the service is running.
+      summary: Health check liveness
+      tags:
+      - health
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LivenessResponse'
+          description: ''
+  /api/v1/health/ready/:
+    get:
+      operationId: health_ready_retrieve
+      description: Returns 200 OK if the database is reachable and responsive.
+      summary: Health check readiness
+      tags:
+      - health
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessResponse'
+          description: ''
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnavailableResponse'
+          description: ''
+components:
+  schemas:
+    LivenessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+      - status
+    ReadinessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        database:
+          type: string
+      required:
+      - database
+      - status
+    UnavailableResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        database:
+          type: string
+      required:
+      - database
+      - status
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
