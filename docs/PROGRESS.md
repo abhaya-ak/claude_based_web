@@ -8,7 +8,7 @@ Phase 1B — Models + migrations
 |---|---|---|---|---|
 | 0 Governance | all | done | 34a26cf | Task 0 done; repo setup, rules, contracts frozen |
 | 1A DB design review | all | done | 34a26cf | Design frozen, contracts merged |
-| 1B Models + migrations | all | in progress | | Task 1 (accounts.User) done |
+| 1B Models + migrations | all | in progress | | Tasks 1 (accounts), 2 (reports), 3 (intel) done |
 | 2 Scaffold | S4 | todo | | |
 | 3 Auth/RBAC | S4 | todo | | |
 | M0 Walking skeleton deployed to AWS | S4 | todo | | |

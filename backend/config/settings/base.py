@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     "apps.core.apps.CoreConfig",
     "apps.accounts.apps.AccountsConfig",
     "apps.reports.apps.ReportsConfig",
+    "apps.intel.apps.IntelConfig",
 ]
 
 AUTH_USER_MODEL = "accounts.User"

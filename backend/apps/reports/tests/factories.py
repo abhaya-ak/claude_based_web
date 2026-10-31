@@ -49,6 +49,7 @@ class ReportIndicatorFactory(factory.django.DjangoModelFactory):
     raw_value = "+60123456789"
     normalized_value = factory.Sequence(lambda n: f"+6012345678{n}")
     display_value = "+60•••••789"
+    verified_indicator = None
 
 
 class ReportEvidenceFactory(factory.django.DjangoModelFactory):

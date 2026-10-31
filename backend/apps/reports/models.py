@@ -192,6 +192,14 @@ class ReportIndicator(models.Model):
     raw_value = models.CharField(max_length=512)
     normalized_value = models.CharField(max_length=512)
     display_value = models.CharField(max_length=128)
+    verified_indicator = models.ForeignKey(
+        "intel.VerifiedIndicator",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="linked_report_indicators",
+        db_index=False,
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -210,6 +218,10 @@ class ReportIndicator(models.Model):
             models.Index(
                 fields=["type", "normalized_value"],
                 name="idx_ri_type_value",
+            ),
+            models.Index(
+                fields=["verified_indicator"],
+                name="idx_ri_verified",
             ),
         ]
 

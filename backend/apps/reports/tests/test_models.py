@@ -453,6 +453,17 @@ class TestRelationshipsAndPrivacy:
         assert not ReportIndicator.objects.filter(id=indicator_id).exists()
         assert not ReportEvidence.objects.filter(id=evidence_id).exists()
 
+    def test_verified_indicator_set_null_on_delete(self):
+        from apps.intel.tests.factories import VerifiedIndicatorFactory
+
+        vi = VerifiedIndicatorFactory()
+        indicator = ReportIndicatorFactory(verified_indicator=vi)
+        assert indicator.verified_indicator == vi
+
+        vi.delete()
+        indicator.refresh_from_db()
+        assert indicator.verified_indicator is None
+
     def test_str_never_exposes_pii(self):
         report = ScamReportFactory(
             reference_code="SCM-2026-SEC00001",
