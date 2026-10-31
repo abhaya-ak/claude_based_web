@@ -1,7 +1,7 @@
 # PROGRESS (the agent reads this at session start and updates it at the end of every task)
 
 ## Current phase
-Phase 1B — Models + migrations (done, merge pending)
+Phase 2 — Project scaffold and foundations
 
 ## Status
 | Phase | Owner | Status | Commit/PR | Notes |
@@ -9,7 +9,14 @@ Phase 1B — Models + migrations (done, merge pending)
 | 0 Governance | all | done | 34a26cf | Task 0 done; repo setup, rules, contracts frozen |
 | 1A DB design review | all | done | 34a26cf | Design frozen, contracts merged |
 | 1B Models + migrations | all | done, merge pending | | 19 app tables, 168 tests, ERD + schema inventory gate complete |
-| 2 Scaffold | S4 | todo | | |
+| 2 Scaffold | S4 | in progress | | Phase 2 foundations |
+| ├─ 2.1 Settings & test safety | S4 | done | | Settings split (base/dev/test/prod), root URLs, JSON handlers, .env.example, AWS test safety fixture (35 new tests) |
+| ├─ 2.2 Error envelope & logging | S4 | todo | | Error envelope, pagination, request ID, logging scrubber, access log |
+| ├─ 2.3 Health & client IP | S4 | todo | | HealthCheckMiddleware, liveness/readiness views, client IP utils |
+| ├─ 2.4 AWS, metrics & audit | S4 | todo | | Boto3 client factory, metrics emitter, audit log_event writer |
+| ├─ 2.5 OpenAPI schema | S4 | todo | | drf-spectacular config, committed openapi.yaml, drift check |
+| ├─ 2.6 Containerization | S4 | todo | | Dockerfile multi-stage, docker-compose backend, healthcheck proof |
+| └─ 2.7 CI & closing gate | S4 | todo | | GitHub Actions CI, pre-commit, deployment checks, Phase 2 gate |
 | 3 Auth/RBAC | S4 | todo | | |
 | M0 Walking skeleton deployed to AWS | S4 | todo | | |
 | 4 Reports | S1 | todo | | |
@@ -51,6 +58,22 @@ Phase 1B — Models + migrations (done, merge pending)
 | **D21** | `docs/erd.md` generated from live Django models via `backend/tools/generate_erd.py` | `backend/tools/generate_erd.py`, `docs/erd.md` | Implemented |
 | **D22** | Fixed-length `char(n)` columns in 03a implemented as `varchar(n)` because Django has no fixed-length type. Affected: `currency(3)`, `country_code(2)`, `sha256(64)`, `endpoint_hash(64)`, `unsubscribe_token_hash(64)`, `actor_ip_hash(64)`, `language(2)`. Exact lengths enforced by services/validators | `apps/reports/models.py`, `apps/alerts/models.py`, `apps/ops/models.py`, `apps/literacy/models.py` | Implemented |
 | **D23** | `public_note` (`intel_verifiedindicator`) and `alt_text` (`literacy_guideasset`) are `NOT NULL` with empty-string default; DB has no column defaults because Django applies defaults in Python | `apps/intel/models.py:public_note`, `apps/literacy/models.py:alt_text`, migrations `intel/0001_initial.py`, `literacy/0001_initial.py` | Implemented |
+| **D24** | Daily work stays in venv (PowerShell). Docker runs DB; backend container proves production image boots and passes healthcheck. Both paths documented in PROGRESS | Phase 2 planning | Approved |
+| **D25** | Scope guard: Phase 2 creates NO models and NO migrations. Schema inventory test stays green (25 tables). `makemigrations --check` stays clean. Contrib apps stay pinned | Phase 2 planning | Approved |
+| **D26** | Error envelope for non-2xx: `{"error":{"code","message","details","request_id"}}`. Handlers for 400, 401, 403, 404, 405, 409, 429 (Retry-After), 500 (no stack trace leak). Root URL handlers for non-DRF errors | Phase 2 planning, `docs/02-project-architecture.md` §4 | Approved |
+| **D27** | Request ID: incoming `X-Request-ID` validated against `^[A-Za-z0-9._-]{8,64}$`, else generate uuid4 hex. Returned as `X-Request-ID`. ContextVar for logs, errors, audit | Phase 2 planning | Approved |
+| **D28** | JSON logging to stdout via `python-json-logger`. PII scrubber filter masks 16 forbidden keys anywhere in log record. Single-line access log (NO query string, bodies, or headers) | Phase 2 planning, `docs/02-project-architecture.md` §15 | Approved |
+| **D29** | Health endpoints: `/api/v1/health/` liveness (`{"status":"ok"}`); `/api/v1/health/ready/` readiness (`SELECT 1`, 2s timeout; 200 or 503). `HealthCheckMiddleware` is FIRST in MIDDLEWARE, answers before host validation (R-D4) | Phase 2 planning, `docs/02-project-architecture.md` R-D4 | Approved |
+| **D30** | Client IP: `TRUSTED_PROXY_HOPS` setting (dev/test 0, prod required). Client IP = `XFF[-(N+1)]` with `REMOTE_ADDR` fallback; validated via `ipaddress`. `core.ip.client_ip_hash(request)` is 64 hex chars | Phase 2 planning, `docs/02-project-architecture.md` R-C7 | Approved |
+| **D31** | AWS client factory: `core.aws.client(service)` with connect_timeout=2s, read_timeout=5s, max_attempts=2, region from `AWS_REGION`, optional `AWS_ENDPOINT_URL`, thread-safe cache, `reset_clients()`. Test autouse fixture blocks real AWS | Phase 2 planning, `docs/contracts.md` §3.4 | Approved |
+| **D32** | Metrics: `core.metrics.emit` never raises. Allowed metric names (7) and dimensions (Environment, Platform). `METRICS_ENABLED` switches CloudWatch PutMetricData in `ScamShield/Operations` | Phase 2 planning, `docs/contracts.md` §3.2 | Approved |
+| **D33** | Audit writer: `core.audit.log_event` implemented in Phase 2. Validates event_type and severity against ops enums; raises ValueError on scrubbed keys; fills request_id; writes in caller's transaction | Phase 2 planning, `docs/contracts.md` §3.1 | Approved |
+| **D34** | Pagination: `StandardPagination`, limit/offset, default 20, max 100, response `{count, next, previous, results}` | Phase 2 planning, `docs/02-project-architecture.md` §4 | Approved |
+| **D35** | Settings split `base/dev/test/prod`. Prod fails fast on missing/invalid secrets, hosts, hops, or DEBUG=True. DB: `CONN_MAX_AGE=60`, `statement_timeout=10000`, `sslmode=require`. JSON-only renderer. Admin uninstalled | Phase 2 planning, `docs/02-project-architecture.md` §12, R-A1 | Approved |
+| **D36** | Deploy checks: silence ONLY `security.W004` and `security.W008` in `SILENCED_SYSTEM_CHECKS` citing R-D5 (CloudFront handles HTTPS/HSTS). All other checks pass with `--fail-level WARNING` | Phase 2 planning, `docs/02-project-architecture.md` R-D5 | Approved |
+| **D37** | Gunicorn: no access log (avoids logging query strings); error log to stdout; flags per 02 §13. Docs 02 §13 updated. API docs/schema UI disabled in prod | Phase 2 planning, `docs/02-project-architecture.md` §13 | Approved |
+| **D38** | `APPEND_SLASH=False`; every route ends with a slash | Phase 2 planning | Approved |
+| **D39** | Hash-pinned lock files deferred to Phase 13 (Linux build). Dependencies unchanged in Phase 2 | Phase 2 planning | Approved |
 
 ## Standing rules for model tasks
 - Index names max 30 characters; check every name.
@@ -67,6 +90,7 @@ Phase 1B — Models + migrations (done, merge pending)
 - **Default heuristic rules command (Phase 5):** Management command `seed_default_rules` requiring an existing admin user to author the initial ruleset (cannot run in data migration without an admin user).
 - **Frontend build plan:** Blocked until the frontend requirements and UI design specification document is drafted.
 - **GitHub remote repository setup:** Configure git remote origin when the remote repository is created by the owner.
+- **Hash-pinned lock files (D39, Phase 13):** Exact sha256 hash pinning of dependency lock files deferred to Linux container build phase.
 
 ## Open questions for the owner
 - (none yet)

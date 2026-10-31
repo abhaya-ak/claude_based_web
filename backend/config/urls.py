@@ -1,0 +1,76 @@
+from django.http import JsonResponse
+
+
+def _extract_request_id(request) -> str:
+    if not request:
+        return ""
+    return (
+        getattr(request, "correlation_id", None)
+        or getattr(request, "id", None)
+        or request.headers.get("x-request-id")
+        or request.META.get("HTTP_X_REQUEST_ID", "")
+    )
+
+
+def bad_request_handler(request, exception=None):
+    return JsonResponse(
+        {
+            "error": {
+                "code": "BAD_REQUEST",
+                "message": "Bad request.",
+                "details": None,
+                "request_id": _extract_request_id(request),
+            }
+        },
+        status=400,
+    )
+
+
+def permission_denied_handler(request, exception=None):
+    return JsonResponse(
+        {
+            "error": {
+                "code": "PERMISSION_DENIED",
+                "message": "Permission denied.",
+                "details": None,
+                "request_id": _extract_request_id(request),
+            }
+        },
+        status=403,
+    )
+
+
+def not_found_handler(request, exception=None):
+    return JsonResponse(
+        {
+            "error": {
+                "code": "NOT_FOUND",
+                "message": "Not found.",
+                "details": None,
+                "request_id": _extract_request_id(request),
+            }
+        },
+        status=404,
+    )
+
+
+def server_error_handler(request):
+    return JsonResponse(
+        {
+            "error": {
+                "code": "INTERNAL_SERVER_ERROR",
+                "message": "An internal server error occurred.",
+                "details": None,
+                "request_id": _extract_request_id(request),
+            }
+        },
+        status=500,
+    )
+
+
+handler400 = "config.urls.bad_request_handler"
+handler403 = "config.urls.permission_denied_handler"
+handler404 = "config.urls.not_found_handler"
+handler500 = "config.urls.server_error_handler"
+
+urlpatterns = []
