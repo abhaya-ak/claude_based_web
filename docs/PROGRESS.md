@@ -13,7 +13,7 @@ Phase 2 — Project scaffold and foundations
 | ├─ 2.1 Settings & test safety | S4 | done | | Settings split (base/dev/test/prod), root URLs, JSON handlers, .env.example, AWS test safety fixture (35 new tests) |
 | ├─ 2.2 Error envelope & logging | S4 | done | | Error envelope, pagination, request ID ContextVar/middleware, PII scrubber, access log (35 new tests) |
 | ├─ 2.3 Health & client IP | S4 | done | | HealthCheckMiddleware (first), liveness/readiness endpoints, client IP & HMAC hashing (12 new tests) |
-| ├─ 2.4 AWS, metrics & audit | S4 | todo | | Boto3 client factory, metrics emitter, audit log_event writer |
+| ├─ 2.4 AWS, metrics & audit | S4 | done | | AWS client factory (timeouts/caching), metrics emitter, audit log_event with lazy ops model import (26 new tests) |
 | ├─ 2.5 OpenAPI schema | S4 | todo | | drf-spectacular config, committed openapi.yaml, drift check |
 | ├─ 2.6 Containerization | S4 | todo | | Dockerfile multi-stage, docker-compose backend, healthcheck proof |
 | └─ 2.7 CI & closing gate | S4 | todo | | GitHub Actions CI, pre-commit, deployment checks, Phase 2 gate |
