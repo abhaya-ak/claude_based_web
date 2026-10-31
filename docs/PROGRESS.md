@@ -1,0 +1,48 @@
+# PROGRESS (the agent reads this at session start and updates it at the end of every task)
+
+## Current phase
+Phase 0 — not started
+
+## Status
+| Phase | Owner | Status | Commit/PR | Notes |
+|---|---|---|---|---|
+| 0 Governance | all | todo | | |
+| 1A DB design review | all | todo | | |
+| 1B Models + migrations | all | in progress | | Task 1 (accounts.User) complete |
+| 2 Scaffold | S4 | todo | | |
+| 3 Auth/RBAC | S4 | todo | | |
+| M0 Walking skeleton deployed to AWS | S4 | todo | | |
+| 4 Reports | S1 | todo | | |
+| 5 Scanner | S4 | todo | | |
+| 6 Triage | S2 | todo | | |
+| 7 Lookup + alerts | S1 | todo | | |
+| 8 Analytics + broadcast | S2 | todo | | |
+| 9 Literacy CMS | S3 | todo | | |
+| 10 Simulator | S3 | todo | | |
+| 11 Ops/telemetry | S4 | todo | | |
+| 12 Hardening | all | todo | | |
+| 13 Containerise + deploy | S4 | todo | | |
+| F Frontend phases | all | blocked until frontend doc exists | | |
+
+## Decisions made (do not revisit without owner approval)
+- **D1 (Indicators limit):** The "max 5 indicators" limit applies strictly to user-submitted indicators. Auto-derived `DOMAIN` rows do not count (max 10 total indicator rows per report). Enforced in the service/serializer, not in the database.
+- **D2 (Indicator HMAC key & PII separation):** Dedicated secret `INDICATOR_HMAC_KEY` used only to hash `BANK_ACCOUNT` values (not rotated casually). `HMAC_IP_SALT` is used exclusively for IP hashes and may rotate per policy. `raw_value` is retained to permit future re-hash migrations.
+- **D3 (Scanner point defaults):** In FR-4.1.3 (docs/01), scanner point values and thresholds are defaults editable by admin via rule weights and scanner config (`SCANNER_CONFIG`); the heuristic scoring formula structure is fixed.
+- **D4 (Unified AudienceGroup enum):** Replaced separate `TargetGroup` and `Audience` enums with a single shared `AudienceGroup` enum (`GENERAL`, `ELDERLY`, `TEENAGER`, `NON_TECH`) across alerts, advisories, and educational guides. Advisories additionally permit `ALL`. UI display label for `ELDERLY`: "Seniors & family".
+- **D5 (Bank account normalisation):** Bank account normalization removes spaces, dashes, and dots; keeps digits only, preserving leading zeros; applies no bank-specific format rules (documented known limitation).
+- **D6 (Upload path & SMS flag):** Evidence upload remains server-side for now; the Phase 12 load test will evaluate server load and decide whether to switch to pre-signed direct S3 uploads. SMS alerting remains behind a feature flag, OFF by default.
+- **D7 (Email uniqueness & lowercasing):** `email` has `unique=True` on the model field AND a functional `UniqueConstraint` on `Lower("email")` (named `uq_user_email_lower`); `UserManager` lowercases email on create. Django requires `USERNAME_FIELD` to be unique.
+
+## Open questions for the owner
+- (none yet)
+
+## Known issues
+- (none yet)
+
+## Commands that work right now
+- `docker compose up -d db` (starts PostgreSQL 16 container)
+- `docker compose ps` (checks database container health)
+- `pytest backend/apps/accounts/tests/test_models.py` (runs accounts model and constraint tests)
+- `python backend/manage.py makemigrations --check --dry-run` (verifies migration state)
+- `python backend/manage.py sqlmigrate accounts 0001` (displays PostgreSQL DDL)
+- `ruff check backend` (lints codebase)
