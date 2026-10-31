@@ -100,6 +100,26 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "COMPONENT_SPLIT_REQUEST": True,
+    "APPEND_COMPONENTS": {
+        "schemas": {
+            "ErrorResponse": {
+                "type": "object",
+                "properties": {
+                    "error": {
+                        "type": "object",
+                        "properties": {
+                            "code": {"type": "string"},
+                            "message": {"type": "string"},
+                            "details": {"nullable": True},
+                            "request_id": {"type": "string"},
+                        },
+                        "required": ["code", "message", "details", "request_id"],
+                    }
+                },
+                "required": ["error"],
+            }
+        }
+    },
 }
 
 LOGGING = {

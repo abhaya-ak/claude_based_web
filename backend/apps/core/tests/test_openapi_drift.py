@@ -5,22 +5,23 @@ from django.conf import settings
 from django.test import Client, override_settings
 from drf_spectacular.generators import SchemaGenerator
 
-OPENAPI_PATH = Path(settings.BASE_DIR).parent / "docs" / "openapi.yaml"
+OPENAPI_PATH = Path(settings.BASE_DIR) / "openapi.yaml"
 
 
 class TestOpenApiSchemaAndDrift:
     """Verify OpenAPI schema generation, repo committed file drift, and docs UI toggle (D37)."""
 
     def test_openapi_file_exists_and_is_valid_yaml(self):
-        assert OPENAPI_PATH.exists(), f"docs/openapi.yaml not found at {OPENAPI_PATH}"
+        assert OPENAPI_PATH.exists(), f"backend/openapi.yaml not found at {OPENAPI_PATH}"
         content = OPENAPI_PATH.read_text(encoding="utf-8")
-        assert "\r\n" not in content, "docs/openapi.yaml must use LF (\\n) line endings, not CRLF"
+        assert "\r\n" not in content, "backend/openapi.yaml must use LF (\\n) line endings, not CRLF"
         data = yaml.safe_load(content)
         assert isinstance(data, dict)
         assert data.get("openapi", "").startswith("3.")
         assert data.get("info", {}).get("title") == "ScamShield API"
 
     def test_schema_generator_matches_committed_yaml(self):
+        assert OPENAPI_PATH.exists(), f"backend/openapi.yaml not found at {OPENAPI_PATH}"
         generator = SchemaGenerator()
         live_schema = generator.get_schema(request=None, public=True)
         assert live_schema is not None
@@ -33,8 +34,8 @@ class TestOpenApiSchemaAndDrift:
         parsed_live_schema = yaml.safe_load(live_yaml_str)
 
         assert parsed_live_schema == committed_schema, (
-            "Committed docs/openapi.yaml has drifted from live DRF Spectacular schema! "
-            "Re-generate docs/openapi.yaml using python manage.py spectacular."
+            "Committed backend/openapi.yaml has drifted from live DRF Spectacular schema! "
+            "Re-generate backend/openapi.yaml using python manage.py spectacular --file openapi.yaml --validate."
         )
 
     @override_settings(ENABLE_API_DOCS=False)

@@ -14,7 +14,7 @@ Phase 2 — Project scaffold and foundations
 | ├─ 2.2 Error envelope & logging | S4 | done | | Error envelope, pagination, request ID ContextVar/middleware, PII scrubber, access log (35 new tests) |
 | ├─ 2.3 Health & client IP | S4 | done | | HealthCheckMiddleware (first), liveness/readiness endpoints, client IP & HMAC hashing (12 new tests) |
 | ├─ 2.4 AWS, metrics & audit | S4 | done | | AWS client factory (timeouts/caching), metrics emitter, audit log_event with lazy ops model import (26 new tests) |
-| ├─ 2.5 OpenAPI schema | S4 | done | | drf-spectacular, committed docs/openapi.yaml, drift check, docs UI disabled in prod (4 new tests) |
+| ├─ 2.5 OpenAPI schema | S4 | done | | drf-spectacular, committed backend/openapi.yaml, drift check, docs UI disabled in prod (4 new tests) |
 | ├─ 2.6 Containerization | S4 | todo | | Dockerfile multi-stage, docker-compose backend, healthcheck proof |
 | └─ 2.7 CI & closing gate | S4 | todo | | GitHub Actions CI, pre-commit, deployment checks, Phase 2 gate |
 | 3 Auth/RBAC | S4 | todo | | |
@@ -74,6 +74,7 @@ Phase 2 — Project scaffold and foundations
 | **D37** | Gunicorn: no access log (avoids logging query strings); error log to stdout; flags per 02 §13. Docs 02 §13 updated. API docs/schema UI disabled in prod | Phase 2 planning, `docs/02-project-architecture.md` §13 | Approved |
 | **D38** | `APPEND_SLASH=False`; every route ends with a slash | Phase 2 planning | Approved |
 | **D39** | Hash-pinned lock files deferred to Phase 13 (Linux build). Dependencies unchanged in Phase 2 | Phase 2 planning | Approved |
+| **D40** | Phase 2 adjustments (tasks 2.2-2.5): `openapi.yaml` located at `backend/openapi.yaml` (regenerated via `manage.py spectacular --file openapi.yaml --validate`); `ProtectedSpectacular*View` classes for dynamic runtime `ENABLE_API_DOCS` toggle; `ErrorResponse` schema component via `SPECTACULAR_SETTINGS["APPEND_COMPONENTS"]`; typed `@extend_schema` on health views | Phase 2 task 2.5b | Implemented |
 
 ## Standing rules for model tasks
 - Index names max 30 characters; check every name.
@@ -103,5 +104,6 @@ Phase 2 — Project scaffold and foundations
 - Migrate: `cd backend; python manage.py migrate`
 - Run tests: `cd backend; pytest -q`
 - Run lint: `cd backend; ruff check .`
+- Regenerate OpenAPI: `cd backend; python manage.py spectacular --file openapi.yaml --validate`
 - Dump schema: `cd backend; python tools/dump_schema.py`
 - Generate ERD: `cd backend; python tools/generate_erd.py`
