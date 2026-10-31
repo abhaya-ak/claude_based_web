@@ -1,3 +1,6 @@
+import uuid
+from decimal import Decimal
+
 import pytest
 from django.db import IntegrityError, transaction
 from django.db.models import ProtectedError
@@ -7,14 +10,30 @@ from apps.accounts.tests.factories import UserFactory
 from apps.core.enums import AudienceGroup
 from apps.literacy.models import (
     AssetType,
+    AttemptAnswer,
+    AttemptStatus,
     ContentStatus,
     EducationalGuide,
     GuideAsset,
     Language,
     ReadabilityMode,
+    RedFlagCode,
+    ScenarioChannel,
+    ScenarioRedFlag,
+    ScenarioStatus,
+    ScenarioTactic,
+    SimulatorAttempt,
+    SimulatorScenario,
     Tactic,
 )
-from apps.literacy.tests.factories import EducationalGuideFactory, GuideAssetFactory
+from apps.literacy.tests.factories import (
+    AttemptAnswerFactory,
+    EducationalGuideFactory,
+    GuideAssetFactory,
+    ScenarioRedFlagFactory,
+    SimulatorAttemptFactory,
+    SimulatorScenarioFactory,
+)
 
 
 @pytest.mark.django_db
@@ -378,3 +397,514 @@ class TestLiteracyBoundariesAndRelationships:
         assert str(asset.guide_id) in str_rep
         assert secret_alt not in str_rep
         assert secret_transcript not in str_rep
+
+
+@pytest.mark.django_db
+class TestSimulatorEnums:
+    def test_scenario_tactic_matches_tactic_plus_none(self):
+        """Amendment C: ScenarioTactic.values must equal Tactic.values plus NONE."""
+        expected = [*Tactic.values, "NONE"]
+        assert ScenarioTactic.values == expected
+
+
+@pytest.mark.django_db
+class TestSimulatorScenarioConstraints:
+    def test_invalid_channel_fails(self):
+        """Failing-insert test for ck_scenario_channel."""
+        with pytest.raises(IntegrityError) as excinfo:
+            with transaction.atomic():
+                SimulatorScenarioFactory(channel="BROADCAST")
+        assert "ck_scenario_channel" in str(excinfo.value)
+
+        # Positive control: valid channel succeeds
+        valid = SimulatorScenarioFactory(channel=ScenarioChannel.SMS)
+        assert valid.channel == ScenarioChannel.SMS
+
+    def test_invalid_tactic_fails(self):
+        """Failing-insert test for ck_scenario_tactic."""
+        with pytest.raises(IntegrityError) as excinfo:
+            with transaction.atomic():
+                SimulatorScenarioFactory(tactic="GREED_PUMP")
+        assert "ck_scenario_tactic" in str(excinfo.value)
+
+        # Positive control: valid tactic succeeds
+        valid = SimulatorScenarioFactory(tactic=ScenarioTactic.URGENCY)
+        assert valid.tactic == ScenarioTactic.URGENCY
+
+    def test_invalid_status_fails(self):
+        """Amendment A: Failing-insert test for ck_scenario_status with status='REVIEW'."""
+        with pytest.raises(IntegrityError) as excinfo:
+            with transaction.atomic():
+                SimulatorScenarioFactory(status="REVIEW")
+        assert "ck_scenario_status" in str(excinfo.value)
+
+        # Positive control: valid status succeeds
+        valid = SimulatorScenarioFactory(status=ScenarioStatus.PUBLISHED)
+        assert valid.status == ScenarioStatus.PUBLISHED
+
+    def test_difficulty_boundaries(self):
+        """Failing and passing tests for ck_scenario_difficulty (1..3)."""
+        # Failing case 1: 0
+        with pytest.raises(IntegrityError) as excinfo:
+            with transaction.atomic():
+                SimulatorScenarioFactory(difficulty=0)
+        assert "ck_scenario_difficulty" in str(excinfo.value)
+
+        # Failing case 2: 4
+        with pytest.raises(IntegrityError) as excinfo:
+            with transaction.atomic():
+                SimulatorScenarioFactory(difficulty=4)
+        assert "ck_scenario_difficulty" in str(excinfo.value)
+
+        # Positive controls: 1, 2, 3 succeed
+        d1 = SimulatorScenarioFactory(difficulty=1)
+        d2 = SimulatorScenarioFactory(difficulty=2)
+        d3 = SimulatorScenarioFactory(difficulty=3)
+        assert d1.difficulty == 1
+        assert d2.difficulty == 2
+        assert d3.difficulty == 3
+
+    def test_legit_scenario_tactic_rules(self):
+        """Failing and passing tests for ck_scenario_legit_tactic_none."""
+        # Failing case: is_scam=False with tactic != NONE
+        with pytest.raises(IntegrityError) as excinfo:
+            with transaction.atomic():
+                SimulatorScenarioFactory(is_scam=False, tactic=ScenarioTactic.URGENCY)
+        assert "ck_scenario_legit_tactic_none" in str(excinfo.value)
+
+        # Positive control: is_scam=False with tactic=NONE succeeds
+        legit = SimulatorScenarioFactory(is_scam=False, tactic=ScenarioTactic.NONE)
+        assert legit.is_scam is False
+        assert legit.tactic == ScenarioTactic.NONE
+
+    def test_scam_scenario_has_tactic_rules(self):
+        """D16: Failing and passing tests for ck_scenario_scam_has_tactic."""
+        # Failing case: is_scam=True with tactic=NONE
+        with pytest.raises(IntegrityError) as excinfo:
+            with transaction.atomic():
+                SimulatorScenarioFactory(is_scam=True, tactic=ScenarioTactic.NONE)
+        assert "ck_scenario_scam_has_tactic" in str(excinfo.value)
+
+        # Positive control: is_scam=True with tactic != NONE succeeds
+        scam = SimulatorScenarioFactory(is_scam=True, tactic=ScenarioTactic.FEAR)
+        assert scam.is_scam is True
+        assert scam.tactic == ScenarioTactic.FEAR
+
+
+@pytest.mark.django_db
+class TestScenarioRedFlagConstraints:
+    def test_invalid_flag_code_fails(self):
+        """Failing-insert test for ck_flag_code."""
+        with pytest.raises(IntegrityError) as excinfo:
+            with transaction.atomic():
+                ScenarioRedFlagFactory(flag_code="SUSPICIOUS")
+        assert "ck_flag_code" in str(excinfo.value)
+
+        # Positive control: valid flag_code succeeds
+        valid = ScenarioRedFlagFactory(flag_code=RedFlagCode.MISMATCHED_DOMAIN)
+        assert valid.flag_code == RedFlagCode.MISMATCHED_DOMAIN
+
+    def test_coordinate_ranges(self):
+        """Failing and passing tests for x_pct, y_pct, w_pct, h_pct ranges."""
+        # x_pct: -0.01 and 100.01 fail
+        with pytest.raises(IntegrityError) as excinfo:
+            with transaction.atomic():
+                ScenarioRedFlagFactory(x_pct=Decimal("-0.01"), w_pct=Decimal("10.00"))
+        assert "ck_flag_x_pct_range" in str(excinfo.value)
+
+        with pytest.raises(IntegrityError) as excinfo:
+            with transaction.atomic():
+                ScenarioRedFlagFactory(x_pct=Decimal("100.01"), w_pct=Decimal("0.00"))
+        assert ("ck_flag_x_pct_range" in str(excinfo.value) or "ck_flag_w_pct_range" in str(excinfo.value))
+
+        # y_pct: -0.01 fails
+        with pytest.raises(IntegrityError) as excinfo:
+            with transaction.atomic():
+                ScenarioRedFlagFactory(y_pct=Decimal("-0.01"))
+        assert "ck_flag_y_pct_range" in str(excinfo.value)
+
+        # w_pct: 0.00 and -1.00 fail (D16)
+        with pytest.raises(IntegrityError) as excinfo:
+            with transaction.atomic():
+                ScenarioRedFlagFactory(w_pct=Decimal("0.00"))
+        assert "ck_flag_w_pct_range" in str(excinfo.value)
+
+        with pytest.raises(IntegrityError) as excinfo:
+            with transaction.atomic():
+                ScenarioRedFlagFactory(w_pct=Decimal("-1.00"))
+        assert "ck_flag_w_pct_range" in str(excinfo.value)
+
+        # h_pct: 0.00 and -1.00 fail (D16)
+        with pytest.raises(IntegrityError) as excinfo:
+            with transaction.atomic():
+                ScenarioRedFlagFactory(h_pct=Decimal("0.00"))
+        assert "ck_flag_h_pct_range" in str(excinfo.value)
+
+        with pytest.raises(IntegrityError) as excinfo:
+            with transaction.atomic():
+                ScenarioRedFlagFactory(h_pct=Decimal("-1.00"))
+        assert "ck_flag_h_pct_range" in str(excinfo.value)
+
+        # Positive controls: boundary values 0.00/100.00 for origin, 0.01/100.00 for size
+        valid_origin = ScenarioRedFlagFactory(
+            x_pct=Decimal("0.00"),
+            y_pct=Decimal("0.00"),
+            w_pct=Decimal("100.00"),
+            h_pct=Decimal("100.00"),
+        )
+        assert valid_origin.x_pct == Decimal("0.00")
+        assert valid_origin.w_pct == Decimal("100.00")
+
+    def test_bounding_box_within_bounds(self):
+        """Failing and passing tests for x+w <= 100 and y+h <= 100."""
+        # x + w = 60.00 + 40.01 = 100.01 fails
+        with pytest.raises(IntegrityError) as excinfo:
+            with transaction.atomic():
+                ScenarioRedFlagFactory(x_pct=Decimal("60.00"), w_pct=Decimal("40.01"))
+        assert "ck_flag_x_plus_w_bound" in str(excinfo.value)
+
+        # x + w = 60.00 + 40.00 = 100.00 passes
+        valid_x = ScenarioRedFlagFactory(x_pct=Decimal("60.00"), w_pct=Decimal("40.00"))
+        assert valid_x.x_pct + valid_x.w_pct == Decimal("100.00")
+
+        # y + h = 70.00 + 30.01 = 100.01 fails
+        with pytest.raises(IntegrityError) as excinfo:
+            with transaction.atomic():
+                ScenarioRedFlagFactory(y_pct=Decimal("70.00"), h_pct=Decimal("30.01"))
+        assert "ck_flag_y_plus_h_bound" in str(excinfo.value)
+
+        # y + h = 70.00 + 30.00 = 100.00 passes
+        valid_y = ScenarioRedFlagFactory(y_pct=Decimal("70.00"), h_pct=Decimal("30.00"))
+        assert valid_y.y_pct + valid_y.h_pct == Decimal("100.00")
+
+
+@pytest.mark.django_db
+class TestSimulatorAttemptConstraints:
+    def test_invalid_attempt_status_fails(self):
+        """Failing-insert test for ck_attempt_status."""
+        with pytest.raises(IntegrityError) as excinfo:
+            with transaction.atomic():
+                SimulatorAttemptFactory(status="ABANDONED")
+        assert "ck_attempt_status" in str(excinfo.value)
+
+        # Positive control: valid status succeeds
+        valid = SimulatorAttemptFactory(status=AttemptStatus.IN_PROGRESS)
+        assert valid.status == AttemptStatus.IN_PROGRESS
+
+    def test_user_or_session_key_required(self):
+        """Failing and passing tests for ck_attempt_user_or_session."""
+        # Failing case: user=None and session_key=None
+        with pytest.raises(IntegrityError) as excinfo:
+            with transaction.atomic():
+                SimulatorAttemptFactory(user=None, session_key=None)
+        assert "ck_attempt_user_or_session" in str(excinfo.value)
+
+        # Positive control 1: user provided
+        valid_user = SimulatorAttemptFactory(user=UserFactory(), session_key=None)
+        assert valid_user.user is not None
+
+        # Positive control 2: session_key provided
+        valid_session = SimulatorAttemptFactory(user=None, session_key=uuid.uuid4())
+        assert valid_session.session_key is not None
+
+    def test_score_pct_boundaries(self):
+        """Failing and passing tests for ck_attempt_score_pct_range (0..100 or null)."""
+        # Failing case 1: -1
+        with pytest.raises(IntegrityError) as excinfo:
+            with transaction.atomic():
+                SimulatorAttemptFactory(score_pct=-1)
+        assert "ck_attempt_score_pct_range" in str(excinfo.value)
+
+        # Failing case 2: 101
+        with pytest.raises(IntegrityError) as excinfo:
+            with transaction.atomic():
+                SimulatorAttemptFactory(score_pct=101)
+        assert "ck_attempt_score_pct_range" in str(excinfo.value)
+
+        # Positive controls: None, 0, 100 succeed
+        s_none = SimulatorAttemptFactory(score_pct=None)
+        s_0 = SimulatorAttemptFactory(score_pct=0)
+        s_100 = SimulatorAttemptFactory(score_pct=100)
+        assert s_none.score_pct is None
+        assert s_0.score_pct == 0
+        assert s_100.score_pct == 100
+
+    def test_completed_attempt_requirements(self):
+        """D16: COMPLETED status requires completed_at and score_pct."""
+        now = timezone.now()
+
+        # Failing case 1: COMPLETED without completed_at
+        with pytest.raises(IntegrityError) as excinfo:
+            with transaction.atomic():
+                SimulatorAttemptFactory(
+                    status=AttemptStatus.COMPLETED,
+                    completed_at=None,
+                    score_pct=80,
+                )
+        assert "ck_attempt_completed_fields" in str(excinfo.value)
+
+        # Failing case 2: COMPLETED without score_pct
+        with pytest.raises(IntegrityError) as excinfo:
+            with transaction.atomic():
+                SimulatorAttemptFactory(
+                    status=AttemptStatus.COMPLETED,
+                    completed_at=now,
+                    score_pct=None,
+                )
+        assert "ck_attempt_completed_fields" in str(excinfo.value)
+
+        # Positive control 1: COMPLETED with both succeeds
+        valid_completed = SimulatorAttemptFactory(
+            status=AttemptStatus.COMPLETED,
+            completed_at=now,
+            score_pct=80,
+        )
+        assert valid_completed.status == AttemptStatus.COMPLETED
+        assert valid_completed.completed_at is not None
+        assert valid_completed.score_pct == 80
+
+        # Positive control 2: IN_PROGRESS without either succeeds
+        valid_in_prog = SimulatorAttemptFactory(
+            status=AttemptStatus.IN_PROGRESS,
+            completed_at=None,
+            score_pct=None,
+        )
+        assert valid_in_prog.status == AttemptStatus.IN_PROGRESS
+
+    def test_scenario_count_constraint(self):
+        """D17 & Amendment B1: CARDINALITY(scenario_ids) = 5."""
+        # Failing case 1: empty array []
+        with pytest.raises(IntegrityError) as excinfo:
+            with transaction.atomic():
+                SimulatorAttemptFactory(scenario_ids=[])
+        assert "ck_attempt_scenario_count" in str(excinfo.value)
+
+        # Failing case 2: 4 ids
+        with pytest.raises(IntegrityError) as excinfo:
+            with transaction.atomic():
+                SimulatorAttemptFactory(scenario_ids=[uuid.uuid4() for _ in range(4)])
+        assert "ck_attempt_scenario_count" in str(excinfo.value)
+
+        # Failing case 3: 6 ids
+        with pytest.raises(IntegrityError) as excinfo:
+            with transaction.atomic():
+                SimulatorAttemptFactory(scenario_ids=[uuid.uuid4() for _ in range(6)])
+        assert "ck_attempt_scenario_count" in str(excinfo.value)
+
+        # Positive control: exactly 5 ids succeeds
+        valid_5 = SimulatorAttemptFactory(scenario_ids=[uuid.uuid4() for _ in range(5)])
+        assert len(valid_5.scenario_ids) == 5
+
+
+@pytest.mark.django_db
+class TestAttemptAnswerConstraints:
+    def test_duplicate_attempt_scenario_fails(self):
+        """Failing-insert test for uq_answer_attempt_scenario."""
+        attempt = SimulatorAttemptFactory()
+        scenario = SimulatorScenarioFactory()
+
+        AttemptAnswerFactory(attempt=attempt, scenario=scenario)
+
+        with pytest.raises(IntegrityError) as excinfo:
+            with transaction.atomic():
+                AttemptAnswerFactory(attempt=attempt, scenario=scenario)
+        assert "uq_answer_attempt_scenario" in str(excinfo.value)
+
+        # Positive control: answering a different scenario in same attempt succeeds
+        scenario2 = SimulatorScenarioFactory()
+        valid2 = AttemptAnswerFactory(attempt=attempt, scenario=scenario2)
+        assert valid2.scenario_id == scenario2.id
+
+    def test_selected_flag_code_validation(self):
+        """D16: selected_flag_code is NULL or valid RedFlagCode."""
+        # Failing case: invalid flag code
+        with pytest.raises(IntegrityError) as excinfo:
+            with transaction.atomic():
+                AttemptAnswerFactory(
+                    answered_is_scam=True,
+                    selected_flag_code="INVALID_CODE",
+                )
+        assert "ck_answer_selected_flag_code" in str(excinfo.value)
+
+        # Positive control 1: None succeeds
+        valid_none = AttemptAnswerFactory(
+            answered_is_scam=True,
+            selected_flag_code=None,
+        )
+        assert valid_none.selected_flag_code is None
+
+        # Positive control 2: valid RedFlagCode succeeds
+        valid_code = AttemptAnswerFactory(
+            answered_is_scam=True,
+            selected_flag_code=RedFlagCode.MISMATCHED_DOMAIN,
+        )
+        assert valid_code.selected_flag_code == RedFlagCode.MISMATCHED_DOMAIN
+
+    def test_answer_flag_only_if_scam(self):
+        """D17 & Amendment B2: answered_is_scam = TRUE OR selected_flag_code IS NULL."""
+        # Failing case: answered_is_scam=False with a flag code
+        with pytest.raises(IntegrityError) as excinfo:
+            with transaction.atomic():
+                AttemptAnswerFactory(
+                    answered_is_scam=False,
+                    selected_flag_code=RedFlagCode.POOR_GRAMMAR,
+                )
+        assert "ck_answer_flag_only_if_scam" in str(excinfo.value)
+
+        # Positive control 1: (False, None) passes
+        p1 = AttemptAnswerFactory(answered_is_scam=False, selected_flag_code=None)
+        assert p1.answered_is_scam is False
+        assert p1.selected_flag_code is None
+
+        # Positive control 2: (True, None) passes
+        p2 = AttemptAnswerFactory(answered_is_scam=True, selected_flag_code=None)
+        assert p2.answered_is_scam is True
+        assert p2.selected_flag_code is None
+
+        # Positive control 3: (True, "POOR_GRAMMAR") passes
+        p3 = AttemptAnswerFactory(
+            answered_is_scam=True,
+            selected_flag_code=RedFlagCode.POOR_GRAMMAR,
+        )
+        assert p3.answered_is_scam is True
+        assert p3.selected_flag_code == RedFlagCode.POOR_GRAMMAR
+
+
+@pytest.mark.django_db
+class TestSimulatorBoundariesAndRelationships:
+    def test_scenario_and_flag_boundaries(self):
+        """Boundary-pass tests for scenario and red flag string lengths."""
+        scenario = SimulatorScenarioFactory(
+            title="s" * 150,
+            image_s3_key="scenarios/" + ("k" * 280) + ".png",
+            image_alt="a" * 300,
+        )
+        assert len(scenario.title) == 150
+        assert len(scenario.image_s3_key) <= 300
+        assert len(scenario.image_alt) == 300
+
+        flag = ScenarioRedFlagFactory(
+            scenario=scenario,
+            explanation="e" * 300,
+        )
+        assert len(flag.explanation) == 300
+
+    def test_scenario_author_protect(self):
+        """on_delete PROTECT on scenario author raises ProtectedError."""
+        author = UserFactory(role="EDUCATOR")
+        scenario = SimulatorScenarioFactory(author=author)
+        assert scenario.author_id == author.id
+
+        with pytest.raises(ProtectedError):
+            author.delete()
+
+    def test_scenario_delete_cascades_red_flags(self):
+        """on_delete CASCADE from scenario to red flags deletes red flags."""
+        scenario = SimulatorScenarioFactory()
+        flag1 = ScenarioRedFlagFactory(scenario=scenario)
+        flag2 = ScenarioRedFlagFactory(scenario=scenario)
+
+        scenario_id = scenario.id
+        flag1_id = flag1.id
+        flag2_id = flag2.id
+
+        assert ScenarioRedFlag.objects.filter(scenario_id=scenario_id).count() == 2
+
+        scenario.delete()
+
+        assert not SimulatorScenario.objects.filter(id=scenario_id).exists()
+        assert not ScenarioRedFlag.objects.filter(id=flag1_id).exists()
+        assert not ScenarioRedFlag.objects.filter(id=flag2_id).exists()
+
+    def test_scenario_referenced_by_answer_protect(self):
+        """on_delete PROTECT on AttemptAnswer.scenario raises ProtectedError."""
+        scenario = SimulatorScenarioFactory()
+        AttemptAnswerFactory(scenario=scenario)
+
+        with pytest.raises(ProtectedError):
+            scenario.delete()
+
+    def test_attempt_delete_cascades_answers(self):
+        """on_delete CASCADE from attempt to answers deletes answers."""
+        attempt = SimulatorAttemptFactory()
+        ans1 = AttemptAnswerFactory(attempt=attempt)
+        ans2 = AttemptAnswerFactory(attempt=attempt)
+
+        attempt_id = attempt.id
+        ans1_id = ans1.id
+        ans2_id = ans2.id
+
+        assert AttemptAnswer.objects.filter(attempt_id=attempt_id).count() == 2
+
+        attempt.delete()
+
+        assert not SimulatorAttempt.objects.filter(id=attempt_id).exists()
+        assert not AttemptAnswer.objects.filter(id=ans1_id).exists()
+        assert not AttemptAnswer.objects.filter(id=ans2_id).exists()
+
+    def test_attempt_user_delete_set_null(self):
+        """on_delete SET_NULL on SimulatorAttempt.user nulls user_id."""
+        user = UserFactory(role="CITIZEN")
+        # Provide session_key so attempt maintains ck_attempt_user_or_session integrity
+        session_token = uuid.uuid4()
+        attempt = SimulatorAttemptFactory(user=user, session_key=session_token)
+        attempt_id = attempt.id
+
+        user.delete()
+
+        attempt.refresh_from_db()
+        assert attempt.user_id is None
+        assert attempt.session_key == session_token
+        assert SimulatorAttempt.objects.filter(id=attempt_id).exists()
+
+    def test_privacy_scenario_str(self):
+        """SimulatorScenario.__str__ must not leak explanation or image_alt."""
+        secret_exp = "INTERNAL_EXPLANATION_DETAILS"
+        secret_alt = "CONFIDENTIAL_ALT_TEXT_DETAILS"
+        scenario = SimulatorScenarioFactory(
+            title="Fake Tax Refund SMS",
+            explanation=secret_exp,
+            image_alt=secret_alt,
+        )
+        str_rep = str(scenario)
+        assert "Fake Tax Refund SMS" in str_rep
+        assert str(scenario.id) in str_rep
+        assert secret_exp not in str_rep
+        assert secret_alt not in str_rep
+
+    def test_privacy_red_flag_str(self):
+        """ScenarioRedFlag.__str__ must not leak explanation."""
+        secret_exp = "INTERNAL_FLAG_EXPLANATION_TEXT"
+        flag = ScenarioRedFlagFactory(
+            explanation=secret_exp,
+        )
+        str_rep = str(flag)
+        assert str(flag.flag_code) in str_rep
+        assert str(flag.scenario_id) in str_rep
+        assert secret_exp not in str_rep
+
+    def test_privacy_attempt_str(self):
+        """SimulatorAttempt.__str__ must not leak profile or session_key."""
+        secret_session = uuid.uuid4()
+        attempt = SimulatorAttemptFactory(
+            session_key=secret_session,
+            profile={"SECRET": {"correct": 1, "total": 2}},
+        )
+        str_rep = str(attempt)
+        assert str(attempt.id) in str_rep
+        assert "IN_PROGRESS" in str_rep
+        assert str(secret_session) not in str_rep
+        assert "SECRET" not in str_rep
+
+    def test_privacy_answer_str(self):
+        """AttemptAnswer.__str__ must not leak selected_flag_code or is_correct."""
+        answer = AttemptAnswerFactory(
+            selected_flag_code=RedFlagCode.MISMATCHED_DOMAIN,
+            is_correct=True,
+        )
+        str_rep = str(answer)
+        assert str(answer.id) in str_rep
+        assert str(answer.attempt_id) in str_rep
+        assert "MISMATCHED_DOMAIN" not in str_rep
+        assert "True" not in str_rep
+

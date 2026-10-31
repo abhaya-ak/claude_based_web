@@ -473,6 +473,12 @@ CHECK `asset_type != 'IMAGE' OR LENGTH(TRIM(alt_text)) >= 1` (`ck_asset_image_al
 | status | varchar(10) | default `DRAFT` |
 | author_id | uuid | FK PROTECT |
 | created_at / updated_at | timestamptz | |
+CHECK `channel IN ('SMS', 'EMAIL', 'WHATSAPP', 'WEBSITE', 'SOCIAL')` (`ck_scenario_channel`).
+CHECK `tactic IN ('URGENCY', 'AUTHORITY', 'FEAR', 'GREED', 'NONE')` (`ck_scenario_tactic`).
+CHECK `status IN ('DRAFT', 'PUBLISHED', 'ARCHIVED')` (`ck_scenario_status`).
+CHECK `difficulty >= 1 AND difficulty <= 3` (`ck_scenario_difficulty`).
+CHECK `is_scam OR tactic = 'NONE'` (`ck_scenario_legit_tactic_none`).
+CHECK `NOT is_scam OR tactic <> 'NONE'` (`ck_scenario_scam_has_tactic`).
 
 ### 4.13 `literacy_scenarioredflag` (S3)
 | Column | Type | Notes |
@@ -482,6 +488,13 @@ CHECK `asset_type != 'IMAGE' OR LENGTH(TRIM(alt_text)) >= 1` (`ck_asset_image_al
 | flag_code | varchar(30) | CHECK RedFlagCode |
 | x_pct, y_pct, w_pct, h_pct | numeric(5,2) | percentages of image size; CHECK 0..100 and `x+w ≤ 100`, `y+h ≤ 100` |
 | explanation | varchar(300) | |
+CHECK `flag_code IN ('MISMATCHED_DOMAIN', 'ARTIFICIAL_URGENCY', 'AUTHORITY_IMPERSONATION', 'THREAT_OF_LOSS', 'TOO_GOOD_TO_BE_TRUE', 'REQUEST_FOR_SENSITIVE_DATA', 'SUSPICIOUS_LINK', 'POOR_GRAMMAR', 'OTHER')` (`ck_flag_code`).
+CHECK `x_pct >= 0 AND x_pct <= 100` (`ck_flag_x_pct_range`).
+CHECK `y_pct >= 0 AND y_pct <= 100` (`ck_flag_y_pct_range`).
+CHECK `w_pct > 0 AND w_pct <= 100` (`ck_flag_w_pct_range`).
+CHECK `h_pct > 0 AND h_pct <= 100` (`ck_flag_h_pct_range`).
+CHECK `x_pct + w_pct <= 100` (`ck_flag_x_plus_w_bound`).
+CHECK `y_pct + h_pct <= 100` (`ck_flag_y_plus_h_bound`).
 
 ### 4.14 `literacy_simulatorattempt` (S3)
 | Column | Type | Notes |
@@ -493,8 +506,12 @@ CHECK `asset_type != 'IMAGE' OR LENGTH(TRIM(alt_text)) >= 1` (`ck_asset_image_al
 | scenario_ids | uuid[] | the 5 chosen scenarios (server-side random) |
 | score_pct | smallint | null; CHECK 0..100 |
 | profile | jsonb | null; `{"URGENCY":{"correct":1,"total":2},…}` |
-| started_at / completed_at | timestamptz | |
-CHECK `user_id IS NOT NULL OR session_key IS NOT NULL`.
+| started_at / completed_at | timestamptz | started_at default timezone.now (Django-side, no DB default) |
+CHECK `user_id IS NOT NULL OR session_key IS NOT NULL` (`ck_attempt_user_or_session`).
+CHECK `status IN ('IN_PROGRESS', 'COMPLETED')` (`ck_attempt_status`).
+CHECK `score_pct IS NULL OR (score_pct >= 0 AND score_pct <= 100)` (`ck_attempt_score_pct_range`).
+CHECK `status <> 'COMPLETED' OR (completed_at IS NOT NULL AND score_pct IS NOT NULL)` (`ck_attempt_completed_fields`).
+CHECK `CARDINALITY(scenario_ids) = 5` (`ck_attempt_scenario_count`).
 
 ### 4.15 `literacy_attemptanswer` (S3)
 | Column | Type | Notes |
@@ -506,7 +523,9 @@ CHECK `user_id IS NOT NULL OR session_key IS NOT NULL`.
 | selected_flag_code | varchar(30) | null |
 | is_correct | boolean | computed server-side only |
 | created_at | timestamptz | |
-UNIQUE `(attempt_id, scenario_id)`.
+UNIQUE `(attempt_id, scenario_id)` (`uq_answer_attempt_scenario`).
+CHECK `selected_flag_code IS NULL OR selected_flag_code IN ('MISMATCHED_DOMAIN', 'ARTIFICIAL_URGENCY', 'AUTHORITY_IMPERSONATION', 'THREAT_OF_LOSS', 'TOO_GOOD_TO_BE_TRUE', 'REQUEST_FOR_SENSITIVE_DATA', 'SUSPICIOUS_LINK', 'POOR_GRAMMAR', 'OTHER')` (`ck_answer_selected_flag_code`).
+CHECK `answered_is_scam = TRUE OR selected_flag_code IS NULL` (`ck_answer_flag_only_if_scam`).
 
 ### 4.16 `scanner_heuristicrule` (S4)
 | Column | Type | Notes |
