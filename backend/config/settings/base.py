@@ -42,6 +42,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "apps.core.middleware.HealthCheckMiddleware",
     "apps.core.middleware.CorrelationIdMiddleware",
     "apps.core.middleware.AccessLogMiddleware",
     "django.middleware.security.SecurityMiddleware",

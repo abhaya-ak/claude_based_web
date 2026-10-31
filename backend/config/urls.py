@@ -1,4 +1,7 @@
 from django.http import JsonResponse
+from django.urls import path
+
+from apps.core.views import health_liveness, health_readiness
 
 
 def _extract_request_id(request) -> str:
@@ -73,4 +76,7 @@ handler403 = "config.urls.permission_denied_handler"
 handler404 = "config.urls.not_found_handler"
 handler500 = "config.urls.server_error_handler"
 
-urlpatterns = []
+urlpatterns = [
+    path("api/v1/health/", health_liveness, name="health-liveness"),
+    path("api/v1/health/ready/", health_readiness, name="health-readiness"),
+]

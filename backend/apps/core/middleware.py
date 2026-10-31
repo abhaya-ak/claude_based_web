@@ -3,10 +3,35 @@ import re
 import time
 import uuid
 
+from django.db import connection
+from django.http import JsonResponse
+
 from apps.core.logging import get_correlation_id, set_correlation_id
 
 REQUEST_ID_REGEX = re.compile(r"^[A-Za-z0-9._-]{8,64}$")
 access_logger = logging.getLogger("apps.core.access")
+
+
+class HealthCheckMiddleware:
+    """Answers /api/v1/health/ and /api/v1/health/ready/ directly before host validation (R-D4 / D29)."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        path = request.path_info
+        if path in ("/api/v1/health/", "/health/"):
+            return JsonResponse({"status": "ok"}, status=200)
+        if path in ("/api/v1/health/ready/", "/health/ready/"):
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT 1")
+                    cursor.fetchone()
+                return JsonResponse({"status": "ready", "database": "ok"}, status=200)
+            except Exception:
+                return JsonResponse({"status": "unavailable", "database": "error"}, status=503)
+
+        return self.get_response(request)
 
 
 class CorrelationIdMiddleware:
