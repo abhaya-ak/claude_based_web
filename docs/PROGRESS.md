@@ -1,14 +1,14 @@
 # PROGRESS (the agent reads this at session start and updates it at the end of every task)
 
 ## Current phase
-Phase 0 — not started
+Phase 1B — Models + migrations
 
 ## Status
 | Phase | Owner | Status | Commit/PR | Notes |
 |---|---|---|---|---|
-| 0 Governance | all | todo | | |
-| 1A DB design review | all | todo | | |
-| 1B Models + migrations | all | in progress | | Task 1 (accounts.User) complete |
+| 0 Governance | all | done | 34a26cf | Task 0 done; repo setup, rules, contracts frozen |
+| 1A DB design review | all | done | 34a26cf | Design frozen, contracts merged |
+| 1B Models + migrations | all | in progress | | Task 1 (accounts.User) done |
 | 2 Scaffold | S4 | todo | | |
 | 3 Auth/RBAC | S4 | todo | | |
 | M0 Walking skeleton deployed to AWS | S4 | todo | | |
@@ -32,6 +32,8 @@ Phase 0 — not started
 - **D5 (Bank account normalisation):** Bank account normalization removes spaces, dashes, and dots; keeps digits only, preserving leading zeros; applies no bank-specific format rules (documented known limitation).
 - **D6 (Upload path & SMS flag):** Evidence upload remains server-side for now; the Phase 12 load test will evaluate server load and decide whether to switch to pre-signed direct S3 uploads. SMS alerting remains behind a feature flag, OFF by default.
 - **D7 (Email uniqueness & lowercasing):** `email` has `unique=True` on the model field AND a functional `UniqueConstraint` on `Lower("email")` (named `uq_user_email_lower`); `UserManager` lowercases email on create. Django requires `USERNAME_FIELD` to be unique.
+- **D8 (Python 3.13 everywhere):** Standardized on Python 3.13 across developer environments, Docker base images (`python:3.13-slim`), and runtime configurations.
+- **D9 (Deferred verified_indicator FK):** ReportIndicator.verified_indicator is NOT created in the reports app yet; a later reports migration adds it after the intel app exists.
 
 ## Open questions for the owner
 - (none yet)
@@ -40,9 +42,7 @@ Phase 0 — not started
 - (none yet)
 
 ## Commands that work right now
-- `docker compose up -d db` (starts PostgreSQL 16 container)
-- `docker compose ps` (checks database container health)
-- `pytest backend/apps/accounts/tests/test_models.py` (runs accounts model and constraint tests)
-- `python backend/manage.py makemigrations --check --dry-run` (verifies migration state)
-- `python backend/manage.py sqlmigrate accounts 0001` (displays PostgreSQL DDL)
-- `ruff check backend` (lints codebase)
+- Start DB: `docker compose up -d db`
+- Migrate: `cd backend; python manage.py migrate`
+- Run tests: `cd backend; pytest -q`
+- Run lint: `cd backend; ruff check .`

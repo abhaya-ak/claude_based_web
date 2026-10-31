@@ -179,7 +179,7 @@ sequenceDiagram
 
 ## 11. Software requirements
 
-**Developer machine:** Git, Docker Desktop (Compose v2), Python 3.12, Node.js 20/22 LTS, AWS CLI v2, VS Code or equivalent, Postman/Bruno, k6 or Locust (load test).
+**Developer machine:** Git, Docker Desktop (Compose v2), Python 3.13, Node.js 20/22 LTS, AWS CLI v2, VS Code or equivalent, Postman/Bruno, k6 or Locust (load test).
 **Backend:** Django 5.2 LTS, Django REST Framework, SimpleJWT (+ token blacklist), psycopg 3, django-storages/boto3, drf-spectacular, django-filter, gunicorn, phonenumbers, tldextract, argon2-cffi, python-magic (or Pillow for images), pytest-django, moto, factory_boy.
 **Frontend:** React 18/19 + Vite + TypeScript, React Router, TanStack Query, Axios, Chart.js (react-chartjs-2), Tailwind CSS.
 **AWS:** VPC, EC2 + Auto Scaling, ALB, RDS PostgreSQL 16 (Multi-AZ), S3, CloudFront, SNS, Lambda, CloudWatch (Metrics, Logs, Alarms, Dashboards), IAM, SSM Parameter Store, ECR, (optional) ACM/Route 53, AWS Budgets.
