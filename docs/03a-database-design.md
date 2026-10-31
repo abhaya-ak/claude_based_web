@@ -431,6 +431,13 @@ CHECK `categories <@ ARRAY['PHISHING', 'FAKE_JOB', 'ECOMMERCE_FRAUD', 'IMPERSONA
 | author_id | uuid | FK → user, PROTECT |
 | published_at | timestamptz | null |
 | created_at / updated_at | timestamptz | |
+CHECK `language IN ('en', 'ne', 'ms')`.
+CHECK `readability_mode IN ('STANDARD', 'LARGE_HIGH_CONTRAST')`.
+CHECK `status IN ('DRAFT', 'PUBLISHED', 'ARCHIVED')`.
+CHECK `audience_groups <@ ARRAY['GENERAL', 'ELDERLY', 'TEENAGER', 'NON_TECH']::varchar(15)[]`.
+CHECK `tactics <@ ARRAY['URGENCY', 'AUTHORITY', 'FEAR', 'GREED']::varchar(10)[]`.
+CHECK `status != 'PUBLISHED' OR CARDINALITY(audience_groups) >= 1` (`ck_guide_published_audience`).
+CHECK `status != 'PUBLISHED' OR published_at IS NOT NULL` (`ck_guide_published_timestamp`).
 
 ### 4.11 `literacy_guideasset` (S3)
 | Column | Type | Notes |
@@ -446,6 +453,10 @@ CHECK `categories <@ ARRAY['PHISHING', 'FAKE_JOB', 'ECOMMERCE_FRAUD', 'IMPERSONA
 | transcript | text | null; recommended for `AUDIO` (accessibility) |
 | sort_order | smallint | default 0 |
 | created_at | timestamptz | |
+CHECK `asset_type IN ('PDF', 'AUDIO', 'IMAGE')`.
+CHECK `size_bytes > 0` (`ck_asset_size_bytes_positive`).
+CHECK `duration_seconds IS NULL OR duration_seconds > 0` (`ck_asset_duration_positive`).
+CHECK `asset_type != 'IMAGE' OR LENGTH(TRIM(alt_text)) >= 1` (`ck_asset_image_alt_text`).
 
 ### 4.12 `literacy_simulatorscenario` (S3)
 | Column | Type | Notes |
@@ -563,7 +574,7 @@ Event types: `REPORT_SUBMITTED`, `RATE_LIMIT_BLOCK`, `LOGIN_FAILURE`, `LOGIN_SUC
 | verifiedindicator | `idx_vi_status_level (status, threat_level)`, `idx_vi_last_seen (last_seen_at DESC)` | Analyst lists |
 | alertsubscription | `idx_sub_status_audience (status, audience)` | Fan-out checks |
 | advisory | `idx_adv_status_published (status, published_at DESC)` | Public advisories page |
-| guide | `idx_guide_list (status, language, published_at DESC)`; GIN on `audience_groups`; GIN on `tactics` | Hub filters, remedial lookups |
+| guide | `idx_guide_list (status, language, published_at DESC)`; `idx_guide_audience_gin` (GIN on `audience_groups`); `idx_guide_tactics_gin` (GIN on `tactics`) | Hub filters, remedial lookups |
 | scenario | `idx_scn_status (status)` | Random selection |
 | attempt | `idx_attempt_user (user_id, started_at DESC)` | History |
 | auditlog | `idx_audit_rate (event_type, actor_ip_hash, occurred_at DESC)`; `idx_audit_time (occurred_at)`; `idx_audit_actor (actor_id, occurred_at DESC)` | Rate limiting, viewer, retention purge |

@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     "apps.intel.apps.IntelConfig",
     "apps.alerts.apps.AlertsConfig",
     "apps.broadcasts.apps.BroadcastsConfig",
+    "apps.literacy.apps.LiteracyConfig",
 ]
 
 AUTH_USER_MODEL = "accounts.User"

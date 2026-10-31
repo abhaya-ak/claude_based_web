@@ -38,6 +38,8 @@ Phase 1B — Models + migrations
 - **D11 (Shared AudienceGroup enum & ScamCategory import):** The shared enum `AudienceGroup` (`GENERAL`, `ELDERLY`, `TEENAGER`, `NON_TECH`) lives in `apps/core/enums.py`. `alerts`, `broadcasts`, and `literacy` import it. `ScamCategory` is imported from `apps.reports.models`.
 - **D12 (ThreatAdvisory.published_by FK on_delete):** `ThreatAdvisory.published_by` is a nullable FK with `on_delete=models.PROTECT`, like the other staff FKs (03a section 1).
 - **D13 (Categories array containment constraint):** Added check constraint `ck_sub_categories_elements` on `AlertSubscription` enforcing `categories <@ ARRAY[... valid ScamCategory values ...]` (where empty array `[]` represents all categories).
+- **D14 (Array element CHECKs & Guide enum validations):** Array elements for `audience_groups` must be contained by `AudienceGroup.values` from `apps.core.enums`; `tactics` must be contained by `[URGENCY, AUTHORITY, FEAR, GREED]`. Explicit CHECK constraints enforce valid choices for `language` (`en`, `ne`, `ms`), `readability_mode` (`STANDARD`, `LARGE_HIGH_CONTRAST`), `status` (`DRAFT`, `PUBLISHED`, `ARCHIVED`), and `asset_type` (`PDF`, `AUDIO`, `IMAGE`). `GuideAsset` of type `IMAGE` requires non-empty trimmed `alt_text` (`Length(Trim(alt_text)) >= 1`).
+- **D15 (EducationalGuide & GuideAsset business rules):** Added three explicit constraints: (1) `ck_guide_published_audience`: if `status = 'PUBLISHED'` then `CARDINALITY(audience_groups) >= 1`; (2) `ck_guide_published_timestamp`: if `status = 'PUBLISHED'` then `published_at IS NOT NULL`; (3) `ck_asset_duration_positive`: `duration_seconds IS NULL OR duration_seconds > 0`.
 
 ## Standing rules for model tasks
 - Index names max 30 characters; check every name.
