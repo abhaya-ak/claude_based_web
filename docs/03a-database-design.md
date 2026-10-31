@@ -396,6 +396,7 @@ UNIQUE `(type, normalized_value)`.
 | unsubscribe_token_hash | char(64) | token emailed/linked; stored hashed |
 | created_at / confirmed_at / unsubscribed_at | timestamptz | |
 UNIQUE `(channel, endpoint_hash, audience)`.
+CHECK `categories <@ ARRAY['PHISHING', 'FAKE_JOB', 'ECOMMERCE_FRAUD', 'IMPERSONATION', 'OTHER']::varchar(20)[]` (empty = all).
 
 ### 4.9 `broadcasts_threatadvisory` (S2)
 | Column | Type | Notes |

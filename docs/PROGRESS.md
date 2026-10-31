@@ -35,6 +35,18 @@ Phase 1B — Models + migrations
 - **D8 (Python 3.13 everywhere):** Standardized on Python 3.13 across developer environments, Docker base images (`python:3.13-slim`), and runtime configurations.
 - **D9 (Deferred verified_indicator FK):** ReportIndicator.verified_indicator is NOT created in the reports app yet; a later reports migration adds it after the intel app exists.
 - **D10 (Index name truncation):** Truncated `idx_report_platform_cat_created` (31 chars) to `idx_report_plat_cat_created` (27 chars) to satisfy Django's 30-character index name limit.
+- **D11 (Shared AudienceGroup enum & ScamCategory import):** The shared enum `AudienceGroup` (`GENERAL`, `ELDERLY`, `TEENAGER`, `NON_TECH`) lives in `apps/core/enums.py`. `alerts`, `broadcasts`, and `literacy` import it. `ScamCategory` is imported from `apps.reports.models`.
+- **D12 (ThreatAdvisory.published_by FK on_delete):** `ThreatAdvisory.published_by` is a nullable FK with `on_delete=models.PROTECT`, like the other staff FKs (03a section 1).
+- **D13 (Categories array containment constraint):** Added check constraint `ck_sub_categories_elements` on `AlertSubscription` enforcing `categories <@ ARRAY[... valid ScamCategory values ...]` (where empty array `[]` represents all categories).
+
+## Standing rules for model tasks
+- Index names max 30 characters; check every name.
+- Explicit constraint names; CheckConstraint uses condition=.
+- Do not add defaults, nullability, or constraints that 03a does not state. Propose extras in the plan; do not implement them without approval.
+- Failing-insert tests: inside transaction.atomic(), inside pytest.raises(IntegrityError), assert the constraint or column name appears in the error, with a positive control. Add boundary-pass tests for every limit. Add on_delete tests (PROTECT raises ProtectedError, SET_NULL nulls the column).
+- When an explicit index covers a FK column, set db_index=False on the FK (no duplicate indexes). Check this in sqlmigrate.
+- Cross-app FKs use string references and a clean migration order; show the dependencies blocks.
+- Proof list: ruff, plain pytest -q, makemigrations --check --dry-run, showmigrations, FULL sqlmigrate for each new migration, git status --short. Never commit without my OK.
 
 ## Open questions for the owner
 - (none yet)
