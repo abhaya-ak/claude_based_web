@@ -42,6 +42,8 @@ Phase 1B — Models + migrations
 - **D15 (EducationalGuide & GuideAsset business rules):** Added three explicit constraints: (1) `ck_guide_published_audience`: if `status = 'PUBLISHED'` then `CARDINALITY(audience_groups) >= 1`; (2) `ck_guide_published_timestamp`: if `status = 'PUBLISHED'` then `published_at IS NOT NULL`; (3) `ck_asset_duration_positive`: `duration_seconds IS NULL OR duration_seconds > 0`.
 - **D16 (Simulator models business rules and constraints):** Added explicit constraints across simulator tables: (1) `ck_scenario_scam_has_tactic`: a scam scenario must have `tactic <> 'NONE'`; (2) `ScenarioRedFlag`: `w_pct > 0` and `h_pct > 0` (`ck_flag_w_pct_range`, `ck_flag_h_pct_range`); (3) `SimulatorAttempt`: status `COMPLETED` requires `completed_at NOT NULL` and `score_pct NOT NULL` (`ck_attempt_completed_fields`); (4) Enum CHECKs for channel, tactic (`URGENCY`, `AUTHORITY`, `FEAR`, `GREED`, `NONE`), scenario status, flag_code (9 codes), and attempt status; (5) `AttemptAnswer.selected_flag_code` is NULL or a valid `RedFlagCode`.
 - **D17 (Simulator scenario count and answer scam flag constraints):** (1) `ck_attempt_scenario_count`: `CARDINALITY(scenario_ids) = 5` enforced in the database using `Func("scenario_ids", function="CARDINALITY")`; (2) `ck_answer_flag_only_if_scam`: `answered_is_scam = TRUE OR selected_flag_code IS NULL` on `AttemptAnswer`; (3) `SimulatorAttempt.started_at` uses `default=timezone.now` in Django (no DB default).
+- **D18 (Scanner and Ops models integrity rules and constraints):** Added explicit constraints: (1) `ck_rule_pattern_lowercase`: `pattern = LOWER(pattern)`; (2) `ck_rule_pattern_not_blank`: `LENGTH(TRIM(pattern)) >= 1`; (3) `ScannerConfig`: all four point/threshold fields between 0 and 100 (`threshold` between 1 and 100), `ruleset_version >= 1`. `ScannerConfig.id` keeps singleton CHECK `id = 1`; (4) `ScanResult.breakdown` must be a JSON array (`jsonb_typeof = 'array'`); (5) `SystemAuditLog.metadata` must be a JSON object (`jsonb_typeof = 'object'`), default=dict; (6) `SystemAuditLog`: `target_type` and `target_id` are both NULL or both set (`ck_audit_target_pair`); (7) CHECKs for `rule_type`, `event_type` (15 values), `severity`.
+- **D19 (ScannerConfig singleton data migration & unseeded rules):** The `ScannerConfig` row (`id=1`, `ruleset_version=1`, all defaults) is created by an idempotent data migration (`scanner 0002_seed_scanner_config`). Default heuristic rules are NOT seeded at migration time (since `HeuristicRule.created_by` is a required PROTECT FK and no admin user exists during migration); they will be seeded by a management command in Phase 5.
 
 ## Standing rules for model tasks
 - Index names max 30 characters; check every name.
@@ -50,7 +52,11 @@ Phase 1B — Models + migrations
 - Failing-insert tests: inside transaction.atomic(), inside pytest.raises(IntegrityError), assert the constraint or column name appears in the error, with a positive control. Add boundary-pass tests for every limit. Add on_delete tests (PROTECT raises ProtectedError, SET_NULL nulls the column).
 - When an explicit index covers a FK column, set db_index=False on the FK (no duplicate indexes). Check this in sqlmigrate.
 - Cross-app FKs use string references and a clean migration order; show the dependencies blocks.
+- Any test using transaction=True must also use serialized_rollback=True so migration-seeded rows survive.
 - Proof list: ruff, plain pytest -q, makemigrations --check --dry-run, showmigrations, FULL sqlmigrate for each new migration, git status --short. Never commit without my OK.
+
+## Deferred
+- Audit log append-only trigger (Phase 11). It must allow an UPDATE that only sets actor_id to NULL (Django SET_NULL on user delete), allow DELETE only in the retention purge, and ideally use a separate DB role.
 
 ## Open questions for the owner
 - (none yet)

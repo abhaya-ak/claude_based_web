@@ -31,6 +31,8 @@ INSTALLED_APPS = [
     "apps.alerts.apps.AlertsConfig",
     "apps.broadcasts.apps.BroadcastsConfig",
     "apps.literacy.apps.LiteracyConfig",
+    "apps.scanner.apps.ScannerAppConfig",
+    "apps.ops.apps.OpsConfig",
 ]
 
 AUTH_USER_MODEL = "accounts.User"

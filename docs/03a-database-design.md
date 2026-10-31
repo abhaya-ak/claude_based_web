@@ -537,7 +537,11 @@ CHECK `answered_is_scam = TRUE OR selected_flag_code IS NULL` (`ck_answer_flag_o
 | is_active | boolean | default true |
 | created_by_id | uuid | FK PROTECT |
 | created_at / updated_at | timestamptz | |
-UNIQUE `(rule_type, pattern)`.
+UNIQUE `(rule_type, pattern)` (`uq_rule_type_pattern`).
+CHECK `rule_type IN ('KEYWORD', 'TLD', 'SHORTENER')` (`ck_rule_type`).
+CHECK `weight >= 1 AND weight <= 50` (`ck_rule_weight_range`).
+CHECK `pattern = LOWER(pattern)` (`ck_rule_pattern_lowercase`).
+CHECK `LENGTH(TRIM(pattern)) >= 1` (`ck_rule_pattern_not_blank`).
 
 ### 4.17 `scanner_scannerconfig` (S4, singleton)
 | Column | Type | Notes |
@@ -549,6 +553,12 @@ UNIQUE `(rule_type, pattern)`.
 | high_priority_threshold | smallint | default 75 |
 | ruleset_version | integer | incremented in the same transaction as any rule/config change |
 | updated_by_id / updated_at | uuid / timestamptz | |
+CHECK `id = 1` (`ck_config_singleton`).
+CHECK `ruleset_version >= 1` (`ck_config_ruleset_version`).
+CHECK `keyword_cap_points >= 0 AND keyword_cap_points <= 100` (`ck_config_keyword_cap_points`).
+CHECK `ip_url_points >= 0 AND ip_url_points <= 100` (`ck_config_ip_url_points`).
+CHECK `prior_pending_points >= 0 AND prior_pending_points <= 100` (`ck_config_prior_pending_points`).
+CHECK `high_priority_threshold >= 1 AND high_priority_threshold <= 100` (`ck_config_high_priority_threshold`).
 
 ### 4.18 `scanner_scanresult` (S4)
 | Column | Type | Notes |
@@ -560,13 +570,15 @@ UNIQUE `(rule_type, pattern)`.
 | breakdown | jsonb | `[{"rule":"urgent","type":"KEYWORD","points":15}, …]` |
 | is_high_priority | boolean | |
 | lambda_request_id | varchar(64) | null; debugging |
-| scanned_at | timestamptz | |
+| scanned_at | timestamptz | default timezone.now (Django-side default) |
+CHECK `risk_score >= 0 AND risk_score <= 100` (`ck_scan_risk_score_range`).
+CHECK `jsonb_typeof(breakdown) = 'array'` (`ck_scan_breakdown_is_array`).
 
 ### 4.19 `ops_systemauditlog` (S4)
 | Column | Type | Notes |
 |---|---|---|
 | id | bigint | PK identity |
-| occurred_at | timestamptz | default now |
+| occurred_at | timestamptz | default now (Django-side default, no DB default) |
 | actor_id | uuid | FK null SET_NULL |
 | actor_ip_hash | char(64) | null; salted HMAC of client IP |
 | event_type | varchar(40) | see list below |
@@ -575,6 +587,10 @@ UNIQUE `(rule_type, pattern)`.
 | metadata | jsonb | small, **no PII** |
 | request_id | varchar(64) | null |
 Event types: `REPORT_SUBMITTED`, `RATE_LIMIT_BLOCK`, `LOGIN_FAILURE`, `LOGIN_SUCCESS`, `STAFF_REGISTERED`, `ROLE_APPROVED`, `ROLE_REJECTED`, `EVIDENCE_URL_ISSUED`, `INDICATOR_VERIFIED`, `REPORT_REJECTED`, `INDICATOR_REVOKED`, `ADVISORY_PUBLISHED`, `RULE_CHANGED`, `CONFIG_CHANGED`, `SCAN_FAILED`.
+CHECK `event_type IN ('REPORT_SUBMITTED', 'RATE_LIMIT_BLOCK', 'LOGIN_FAILURE', 'LOGIN_SUCCESS', 'STAFF_REGISTERED', 'ROLE_APPROVED', 'ROLE_REJECTED', 'EVIDENCE_URL_ISSUED', 'INDICATOR_VERIFIED', 'REPORT_REJECTED', 'INDICATOR_REVOKED', 'ADVISORY_PUBLISHED', 'RULE_CHANGED', 'CONFIG_CHANGED', 'SCAN_FAILED')` (`ck_audit_event_type`).
+CHECK `severity IN ('INFO', 'WARN', 'ALERT')` (`ck_audit_severity`).
+CHECK `jsonb_typeof(metadata) = 'object'` (`ck_audit_metadata_is_object`).
+CHECK `(target_type IS NULL AND target_id IS NULL) OR (target_type IS NOT NULL AND target_id IS NOT NULL)` (`ck_audit_target_pair`).
 
 ## 5. Indexes and constraints (beyond PK/UNIQUE above)
 
@@ -684,7 +700,7 @@ flowchart LR
 |---|---|
 | Admin account | `manage.py create_admin` (password from env/SSM), never via API |
 | `scanner_scannerconfig` row (`id=1`, ruleset_version 1) | Data migration |
-| Default rules | Keywords: `urgent`, `verify immediately`, `otp`, `guaranteed daily return`, `act now`, `account suspended`; TLDs: `.xyz`, `.top`, `.click`; shorteners: `bit.ly`, `tinyurl.com` (admin can edit) |
+| Default rules | Phase 5 management command (not a migration; requires admin user) |
 | Recovery playbooks | Fixture per category × payment method × country (MY, NP, default). Hotline numbers must be verified from official sources |
 | Admin-area allow-list | Fixture (Malaysian states, Nepal provinces, other) |
 | Demo data | `manage.py seed_demo` for screenshots/load tests only (never in prod) |
