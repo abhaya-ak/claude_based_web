@@ -26,6 +26,13 @@ INSTALLED_APPS = [
     "rest_framework",
     "apps.core.apps.CoreConfig",
     "apps.accounts.apps.AccountsConfig",
+    "apps.reports.apps.ReportsConfig",
+    "apps.intel.apps.IntelConfig",
+    "apps.alerts.apps.AlertsConfig",
+    "apps.broadcasts.apps.BroadcastsConfig",
+    "apps.literacy.apps.LiteracyConfig",
+    "apps.scanner.apps.ScannerAppConfig",
+    "apps.ops.apps.OpsConfig",
 ]
 
 AUTH_USER_MODEL = "accounts.User"

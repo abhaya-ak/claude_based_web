@@ -273,7 +273,7 @@ Settings split: `base` (shared) → `dev` / `prod` / `test`. Config comes only f
 ## 13. Containerization
 
 **Dockerfile rules**
-- Multi-stage build; base `python:3.12-slim`; pin versions; install from hashed/pinned requirements.
+- Multi-stage build; base `python:3.13-slim`; pin versions; install from hashed/pinned requirements.
 - Run as **non-root** user; `PYTHONDONTWRITEBYTECODE=1`, `PYTHONUNBUFFERED=1`.
 - `collectstatic` at build time; no `.env`, `.git`, tests, or secrets in the image (`.dockerignore`).
 - `HEALTHCHECK` hits `/api/v1/health/`.
