@@ -53,214 +53,8 @@ Related: `01-project-overview.md` · `02-project-architecture.md` · `03-backend
 
 ## 3. Entity-relationship diagram
 
-```mermaid
-erDiagram
-    USER |o--o{ USER : approves
-    USER |o--o{ SCAM_REPORT : files
-    USER |o--o{ SCAM_REPORT : reviews
-    SCAM_REPORT ||--|{ REPORT_INDICATOR : has
-    SCAM_REPORT ||--o{ REPORT_EVIDENCE : has
-    SCAM_REPORT ||--o| SCAN_RESULT : scanned_as
-    SCAM_REPORT ||--o{ TRIAGE_DECISION : decided_by
-    USER ||--o{ TRIAGE_DECISION : makes
-    VERIFIED_INDICATOR |o--o{ REPORT_INDICATOR : promoted_from
-    VERIFIED_INDICATOR |o--o{ TRIAGE_DECISION : result_of
-    USER ||--o{ VERIFIED_INDICATOR : verifies
-    VERIFIED_INDICATOR |o--o{ THREAT_ADVISORY : mentioned_in
-    USER ||--o{ THREAT_ADVISORY : authors
-    USER |o--o{ ALERT_SUBSCRIPTION : owns
-    USER ||--o{ EDUCATIONAL_GUIDE : authors
-    EDUCATIONAL_GUIDE ||--o{ GUIDE_ASSET : has
-    USER ||--o{ SIMULATOR_SCENARIO : authors
-    SIMULATOR_SCENARIO ||--o{ SCENARIO_RED_FLAG : has
-    USER |o--o{ SIMULATOR_ATTEMPT : plays
-    SIMULATOR_ATTEMPT ||--|{ ATTEMPT_ANSWER : contains
-    SIMULATOR_SCENARIO ||--o{ ATTEMPT_ANSWER : answered_in
-    USER ||--o{ HEURISTIC_RULE : manages
-    USER |o--o| SCANNER_CONFIG : updates
-    USER |o--o{ SYSTEM_AUDIT_LOG : acts_in
-
-    USER {
-        uuid id PK
-        string email UK
-        string role
-        string approval_status
-        string organization
-        uuid approved_by FK
-        boolean is_active
-    }
-    SCAM_REPORT {
-        uuid id PK
-        string reference_code UK
-        uuid client_submission_id UK
-        uuid reporter_id FK
-        boolean is_anonymous
-        string category
-        string platform
-        text message_text
-        decimal financial_loss
-        string currency
-        string payment_method
-        string country_code
-        string status
-        int risk_score
-        boolean is_high_priority
-        string scan_status
-        timestamptz created_at
-    }
-    REPORT_INDICATOR {
-        bigint id PK
-        uuid report_id FK
-        string type
-        string raw_value
-        string normalized_value
-        uuid verified_indicator_id FK
-    }
-    REPORT_EVIDENCE {
-        uuid id PK
-        uuid report_id FK
-        string s3_key UK
-        string content_type
-        int size_bytes
-        string sha256
-    }
-    SCAN_RESULT {
-        bigint id PK
-        uuid report_id FK
-        int ruleset_version
-        int risk_score
-        jsonb breakdown
-        boolean is_high_priority
-    }
-    TRIAGE_DECISION {
-        bigint id PK
-        uuid report_id FK
-        uuid analyst_id FK
-        string action
-        uuid indicator_id FK
-        string reason
-    }
-    VERIFIED_INDICATOR {
-        uuid id PK
-        string type
-        string normalized_value
-        string threat_level
-        int total_report_count
-        timestamptz first_seen_at
-        timestamptz last_seen_at
-        string status
-        string public_note
-        uuid verified_by FK
-    }
-    RECOVERY_PLAYBOOK {
-        bigint id PK
-        string category
-        string payment_method
-        string country_code
-        jsonb steps
-        jsonb hotlines
-    }
-    ALERT_SUBSCRIPTION {
-        uuid id PK
-        uuid user_id FK
-        string channel
-        string endpoint_hash
-        string audience
-        string_array categories
-        string status
-        string sns_subscription_arn
-    }
-    THREAT_ADVISORY {
-        uuid id PK
-        string title
-        text body
-        string severity
-        string target_audience
-        string status
-        string sns_message_id
-        uuid created_by FK
-        uuid related_indicator FK
-    }
-    EDUCATIONAL_GUIDE {
-        uuid id PK
-        string slug UK
-        string title
-        string_array audience_groups
-        string_array tactics
-        string language
-        string readability_mode
-        string status
-        uuid author_id FK
-    }
-    GUIDE_ASSET {
-        uuid id PK
-        uuid guide_id FK
-        string asset_type
-        string s3_key UK
-        string alt_text
-    }
-    SIMULATOR_SCENARIO {
-        uuid id PK
-        string channel
-        boolean is_scam
-        string tactic
-        string image_s3_key
-        string status
-        uuid author_id FK
-    }
-    SCENARIO_RED_FLAG {
-        bigint id PK
-        uuid scenario_id FK
-        string flag_code
-        decimal x_pct
-        decimal y_pct
-        decimal w_pct
-        decimal h_pct
-    }
-    SIMULATOR_ATTEMPT {
-        uuid id PK
-        uuid user_id FK
-        uuid session_key
-        string status
-        int score_pct
-        jsonb profile
-    }
-    ATTEMPT_ANSWER {
-        bigint id PK
-        uuid attempt_id FK
-        uuid scenario_id FK
-        boolean answered_is_scam
-        string selected_flag_code
-        boolean is_correct
-    }
-    HEURISTIC_RULE {
-        bigint id PK
-        string rule_type
-        string pattern
-        int weight
-        boolean is_active
-        uuid created_by FK
-    }
-    SCANNER_CONFIG {
-        int id PK
-        int keyword_cap_points
-        int ip_url_points
-        int prior_pending_points
-        int high_priority_threshold
-        int ruleset_version
-    }
-    SYSTEM_AUDIT_LOG {
-        bigint id PK
-        timestamptz occurred_at
-        uuid actor_id FK
-        string actor_ip_hash
-        string event_type
-        string severity
-        jsonb metadata
-    }
-```
-
-Standalone/infra tables: `RECOVERY_PLAYBOOK` (reference data), SimpleJWT `token_blacklist_*` tables, Django `django_migrations`/`auth` tables.
+The entity-relationship diagram is generated directly from the live Django models via `backend/tools/generate_erd.py`.
+See the full visual diagram and complete table definitions in [docs/erd.md](erd.md).
 
 ## 4. Table specifications
 
@@ -719,3 +513,26 @@ flowchart LR
 ## 12. About Prisma
 
 Prisma is a Node.js tool. Django cannot use it, and running Prisma migrations against a Django-managed database would corrupt migration state. The "schema file" equivalent here is: Django models + migrations (executable truth) and this document with the ERD (human truth). If a visual editor is wanted, paste the Mermaid ERD into any Mermaid renderer or convert it to DBML for dbdiagram.io — as documentation only.
+
+## 13. Accepted deviations from this document
+
+The following deviations from the original draft were proposed during implementation and explicitly approved by the project owner:
+
+| Decision | Area | Deviation & Rationale | Evidence |
+|---|---|---|---|
+| **D4** | Enums | Unified `AudienceGroup` enum (`GENERAL`, `ELDERLY`, `TEENAGER`, `NON_TECH`) across alerts, advisories, and guides; advisories additionally permit `ALL`. Display label for `ELDERLY`: "Seniors & family". | `apps/core/enums.py:AudienceGroup`, `apps/alerts/models.py:ck_sub_audience` |
+| **D7** | Auth | User `email` has `unique=True` on model field and functional unique index `uq_user_email_lower` on `Lower('email')`; `UserManager` lowercases email; User model extends `AbstractBaseUser` only (no `PermissionsMixin`). | `apps/accounts/models.py:uq_user_email_lower`, migration `accounts/0001_initial.py` |
+| **D10** | Indexes | Truncated `idx_report_platform_cat_created` (31 chars) to `idx_report_plat_cat_created` (27 chars) to satisfy Django's 30-character index name limit. | `apps/reports/models.py:idx_report_plat_cat_created`, migration `reports/0001_initial.py` |
+| **D12** | Broadcasts | `ThreatAdvisory.published_by` FK uses `on_delete=models.PROTECT`, matching staff FK conventions in Section 1. | `apps/broadcasts/models.py:published_by`, migration `broadcasts/0001_initial.py` |
+| **D13** | Alerts | Added CheckConstraint `ck_sub_categories_elements` using PostgreSQL array containment `<@` for `AlertSubscription.categories`. | `apps/alerts/models.py:ck_sub_categories_elements`, migration `alerts/0001_initial.py` |
+| **D14** | Guides | Added PostgreSQL array containment `<@` checks for `audience_groups` and `tactics`. Explicit CHECK constraints for `language`, `readability_mode`, `status`, `asset_type`. `GuideAsset` of type `IMAGE` requires non-empty trimmed `alt_text`. | `apps/literacy/models.py:ck_guide_audience_groups`, `ck_guide_tactics`, `ck_asset_image_alt_text` |
+| **D15** | Guides | Added `ck_guide_published_audience` (CARDINALITY >= 1 when status=PUBLISHED), `ck_guide_published_timestamp` (published_at NOT NULL when status=PUBLISHED), and `ck_asset_duration_positive` (duration_seconds NULL or > 0). | `apps/literacy/models.py:ck_guide_published_audience`, `ck_guide_published_timestamp`, `ck_asset_duration_positive` |
+| **D16** | Simulator | Added `ck_scenario_scam_has_tactic` (scam scenario tactic <> 'NONE'); `ScenarioRedFlag` `w_pct > 0` and `h_pct > 0`; `SimulatorAttempt` COMPLETED requires completed_at and score_pct NOT NULL; enum CHECKs for channel, tactic, status, flag_code. | `apps/literacy/models.py:ck_scenario_scam_has_tactic`, `ck_flag_w_pct_range`, `ck_flag_h_pct_range`, `ck_attempt_completed_fields` |
+| **D17** | Simulator | Added `ck_attempt_scenario_count` (CARDINALITY(scenario_ids) = 5); `ck_answer_flag_only_if_scam` (answered_is_scam = TRUE OR selected_flag_code IS NULL); `ScenarioTactic` = `Tactic.values` + "NONE"; `started_at` has Django-side default `timezone.now`. | `apps/literacy/models.py:ck_attempt_scenario_count`, `ck_answer_flag_only_if_scam` |
+| **D18** | Scanner & Ops | Added `ck_rule_pattern_lowercase` (pattern = LOWER(pattern)); `ck_rule_pattern_not_blank`; `ScannerConfig` boundary constraints (points 0..100, threshold 1..100, ruleset_version >= 1, id=1); `ScanResult.breakdown` jsonb_typeof = 'array'; `SystemAuditLog.metadata` jsonb_typeof = 'object', default=dict; `target_type` and `target_id` co-presence constraint; enum checks for rule_type, audit event_type, severity. | `apps/scanner/models.py:ck_rule_pattern_lowercase`, `ck_config_singleton`, `ck_scan_breakdown_is_array`, `apps/ops/models.py:ck_audit_metadata_is_object`, `ck_audit_target_pair` |
+| **D19** | Scanner | `ScannerConfig` singleton (`id=1`, `ruleset_version=1`) seeded via data migration `scanner 0002_seed_scanner_config`. Default rules deferred to Phase 5 management command. | migration `scanner/0002_seed_scanner_config.py` |
+| **D20** | Safety-net | Permanent schema inventory test `backend/apps/core/tests/test_schema_inventory.py` asserting exact 25 public tables, no duplicate index column sets, and exact named constraints and indexes. | `apps/core/tests/test_schema_inventory.py` |
+| **D21** | ERD | `docs/erd.md` generated from Django models via `backend/tools/generate_erd.py`. | `backend/tools/generate_erd.py`, `docs/erd.md` |
+| **D22** | Types | Fixed-length `char(n)` columns in 03a are implemented as `varchar(n)` because Django has no fixed-length type. Affected: `currency(3)`, `country_code(2)` on scamreport and recoveryplaybook, `sha256(64)`, `endpoint_hash(64)`, `unsubscribe_token_hash(64)`, `actor_ip_hash(64)`, `language(2)`. Exact lengths enforced by services and validators (Phases 4 and 7); `language` already has an enum CHECK. | `apps/reports/models.py`, `apps/alerts/models.py`, `apps/ops/models.py`, `apps/literacy/models.py` |
+| **D23** | Defaults | `public_note` (`intel_verifiedindicator`) and `alt_text` (`literacy_guideasset`) are `NOT NULL` with empty-string default; the database has no column defaults, because Django applies defaults in Python. | `apps/intel/models.py:public_note`, `apps/literacy/models.py:alt_text`, migrations `intel/0001_initial.py`, `literacy/0001_initial.py` |
+
