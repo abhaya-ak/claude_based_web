@@ -23,3 +23,6 @@ MAX_IMAGE_PIXELS = 10_000_000  # 10 MP decompression bomb cap per D72
 
 # URL limits per D56
 MAX_URL_LENGTH = 2048
+
+# Crockford Base32 alphabet (excludes I, L, O, U) per D61
+CROCKFORD_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"

@@ -23,6 +23,7 @@ class AuditEventType(models.TextChoices):
     RULE_CHANGED = "RULE_CHANGED", "Rule Changed"
     CONFIG_CHANGED = "CONFIG_CHANGED", "Config Changed"
     SCAN_FAILED = "SCAN_FAILED", "Scan Failed"
+    REPORT_TRACK_FAILED = "REPORT_TRACK_FAILED", "Report Track Failed"
 
 
 class AuditSeverity(models.TextChoices):

@@ -48,6 +48,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "apps.core.middleware.HealthCheckMiddleware",
     "apps.core.middleware.CorrelationIdMiddleware",
+    "apps.core.middleware.RequestSizeLimitMiddleware",
     "apps.core.middleware.AccessLogMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
