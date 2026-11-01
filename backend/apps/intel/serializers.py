@@ -104,3 +104,34 @@ class ReportDetailSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
         read_only_fields = fields
+
+
+class EvidencePresignedResponseSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    mime_type = serializers.CharField()
+    content_type = serializers.CharField()
+    size_bytes = serializers.IntegerField()
+    download_url = serializers.CharField()
+    expires_in = serializers.IntegerField(default=900)
+
+
+class RejectReportRequestSerializer(serializers.Serializer):
+    reason = serializers.CharField(
+        required=True,
+        allow_blank=False,
+        trim_whitespace=True,
+        min_length=1,
+        max_length=500,
+    )
+
+    def validate_reason(self, value):
+        val = value.strip()
+        if not val:
+            raise serializers.ValidationError("Reason cannot be blank.")
+        return val
+
+
+class RejectReportResponseSerializer(serializers.Serializer):
+    id = serializers.UUIDField()
+    status = serializers.CharField()
+    reference_code = serializers.CharField()

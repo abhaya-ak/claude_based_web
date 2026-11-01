@@ -150,7 +150,9 @@ def custom_exception_handler(exc, context):
             detail = response.data.get("detail", f"Request was throttled. Expected available in {int(wait)} seconds.")
             message = str(detail)
         elif isinstance(exc, ConflictError) or status_code == status.HTTP_409_CONFLICT:
-            code = DualCode("conflict", "CONFLICT")
+            detail_obj = getattr(exc, "detail", None)
+            exc_code = getattr(detail_obj, "code", None) or getattr(exc, "code", None) or getattr(exc, "default_code", None) or "conflict"
+            code = DualCode(str(exc_code), "conflict", "CONFLICT")
             detail = response.data.get("detail", "A conflict occurred.")
             message = str(detail)
         elif isinstance(exc, PayloadTooLarge) or status_code == status.HTTP_413_REQUEST_ENTITY_TOO_LARGE:

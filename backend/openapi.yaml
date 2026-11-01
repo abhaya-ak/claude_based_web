@@ -671,6 +671,68 @@ paths:
               schema:
                 $ref: '#/components/schemas/ReportDetail'
           description: ''
+  /api/v1/triage/reports/{id}/evidence/:
+    get:
+      operationId: triage_reports_evidence_list
+      description: Returns temporary S3 pre-signed get_object URLs (ExpiresIn=900,
+        attachment) for clean evidence files.
+      summary: Get evidence presigned URLs
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - triage
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EvidencePresignedResponse'
+          description: ''
+  /api/v1/triage/reports/{id}/reject/:
+    post:
+      operationId: triage_reports_reject_create
+      description: Rejects a pending report with a mandatory non-blank reason (max
+        500 chars).
+      summary: Reject report
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - triage
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RejectReportRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RejectReportRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RejectReportRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RejectReportResponse'
+          description: ''
 components:
   schemas:
     AdminUser:
@@ -857,6 +919,28 @@ components:
       - created_at
       - id
       - sha256
+      - size_bytes
+    EvidencePresignedResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        mime_type:
+          type: string
+        content_type:
+          type: string
+        size_bytes:
+          type: integer
+        download_url:
+          type: string
+        expires_in:
+          type: integer
+          default: 900
+      required:
+      - content_type
+      - download_url
+      - id
+      - mime_type
       - size_bytes
     HeuristicRule:
       type: object
@@ -1250,6 +1334,29 @@ components:
           type: string
       required:
       - database
+      - status
+    RejectReportRequestRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 500
+      required:
+      - reason
+    RejectReportResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+        reference_code:
+          type: string
+      required:
+      - id
+      - reference_code
       - status
     RejectUserRequest:
       type: object

@@ -42,7 +42,7 @@ Phase 6 — Triage workbench, F2.1 (planning)
 | └─ 5.6 Route walk, queries & closing gate | S4 | done | | Route-walk, OpenAPI, num_queries tests, CI check --deploy |
 | 6 Triage | S2 | todo | | Phase 6 Triage Workbench (F2.1) |
 | ├─ 6.1 Teardown cleanup, Queue & Detail APIs | S2 | done | | Queue filtering, cluster_size annotation, report detail view, pytest connection cleanup (14 tests) |
-| ├─ 6.2 Evidence vault & Report rejection | S2 | todo | | Presigned S3 URLs (900s, attachment, analyst only), reject endpoint, audit & metrics |
+| ├─ 6.2 Evidence vault & Report rejection | S2 | done | | Presigned S3 URLs (900s, attachment, analyst only), reject endpoint, audit & metrics (10 tests) |
 | ├─ 6.3 Multi-report cluster verification | S2 | todo | | verify_indicator, monotonic locking, threat levels, TO BE PROVEN #12 concurrency |
 | ├─ 6.4 Indicators API & Contract §3.6 | S2 | todo | | Indicators list/detail, public_note patch, revoke, find_active_indicators, count_pending_by_indicator |
 | └─ 6.5 Route walk, queries & closing gate | S2 | todo | | Route-walk, RBAC matrix, query counts, OpenAPI regeneration, CI deploy check |

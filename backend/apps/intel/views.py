@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics, serializers
 from rest_framework.permissions import IsAuthenticated
@@ -6,10 +7,19 @@ from rest_framework.views import APIView
 
 from apps.accounts.models import Role
 from apps.accounts.permissions import HasRole
+from apps.core.ip import client_ip_hash
 from apps.core.pagination import StandardPagination
 from apps.intel.selectors.triage_selectors import get_report_detail, get_triage_queue_queryset
-from apps.intel.serializers import QueueReportSerializer, ReportDetailSerializer
-from apps.reports.models import Platform, ScamCategory
+from apps.intel.serializers import (
+    EvidencePresignedResponseSerializer,
+    QueueReportSerializer,
+    RejectReportRequestSerializer,
+    RejectReportResponseSerializer,
+    ReportDetailSerializer,
+)
+from apps.intel.services.evidence_service import issue_evidence_presigned_urls
+from apps.intel.services.triage_service import reject_report
+from apps.reports.models import Platform, ScamCategory, ScamReport
 
 
 class TriageQueueView(generics.ListAPIView):
@@ -99,3 +109,55 @@ class TriageReportDetailView(APIView):
         report = get_report_detail(id)
         serializer = ReportDetailSerializer(report)
         return Response(serializer.data)
+
+
+class TriageEvidenceView(APIView):
+    """
+    GET /api/v1/triage/reports/{id}/evidence/
+    Returns temporary S3 pre-signed download URLs for clean evidence files.
+    Strictly restricted to approved analysts.
+    """
+
+    permission_classes = [IsAuthenticated, HasRole(Role.ANALYST)]
+
+    @extend_schema(
+        summary="Get evidence presigned URLs",
+        description="Returns temporary S3 pre-signed get_object URLs (ExpiresIn=900, attachment) for clean evidence files.",
+        responses={200: EvidencePresignedResponseSerializer(many=True)},
+    )
+    def get(self, request, id, *args, **kwargs):
+        report = get_object_or_404(ScamReport, id=id)
+        ip_hash = client_ip_hash(request)
+        urls = issue_evidence_presigned_urls(report=report, actor=request.user, ip_hash=ip_hash)
+        return Response(urls, status=200)
+
+
+class TriageRejectReportView(APIView):
+    """
+    POST /api/v1/triage/reports/{id}/reject/
+    Rejects a pending report with a mandatory reason.
+    Strictly restricted to approved analysts.
+    """
+
+    permission_classes = [IsAuthenticated, HasRole(Role.ANALYST)]
+
+    @extend_schema(
+        summary="Reject report",
+        description="Rejects a pending report with a mandatory non-blank reason (max 500 chars).",
+        request=RejectReportRequestSerializer,
+        responses={200: RejectReportResponseSerializer},
+    )
+    def post(self, request, id, *args, **kwargs):
+        serializer = RejectReportRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        reason = serializer.validated_data["reason"]
+        ip_hash = client_ip_hash(request)
+        report = reject_report(report_id=id, analyst=request.user, reason=reason, ip_hash=ip_hash)
+        return Response(
+            {
+                "id": str(report.id),
+                "status": report.status,
+                "reference_code": report.reference_code,
+            },
+            status=200,
+        )

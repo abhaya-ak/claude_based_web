@@ -17,6 +17,9 @@ ALLOWED_METRIC_NAMES = {
     "ScansCompleted",
     "ScansHighPriority",
     "ScansFailed",
+    "IndicatorsVerified",
+    "ReportsRejected",
+    "IndicatorsRevoked",
 }
 
 ALLOWED_DIMENSION_NAMES = {
