@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.http import Http404, JsonResponse
-from django.urls import path
+from django.urls import include, path
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularRedocView,
@@ -16,7 +16,7 @@ def _extract_request_id(request) -> str:
     return (
         getattr(request, "correlation_id", None)
         or getattr(request, "id", None)
-        or request.headers.get("x-request-id")
+        or (request.headers.get("x-request-id") if hasattr(request, "headers") else None)
         or request.META.get("HTTP_X_REQUEST_ID", "")
     )
 
@@ -109,4 +109,6 @@ urlpatterns = [
     path("api/v1/schema/", ProtectedSpectacularAPIView.as_view(), name="schema"),
     path("api/v1/docs/", ProtectedSpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
     path("api/v1/redoc/", ProtectedSpectacularRedocView.as_view(url_name="schema"), name="redoc"),
+    path("api/v1/auth/", include("apps.accounts.urls")),
+    path("api/v1/admin-portal/users/", include("apps.accounts.urls_admin")),
 ]

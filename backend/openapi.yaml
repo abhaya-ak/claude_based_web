@@ -4,6 +4,236 @@ info:
   version: 1.0.0
   description: Scam reporting, lookup, and literacy platform REST API.
 paths:
+  /api/v1/admin-portal/users/:
+    get:
+      operationId: admin_portal_users_list
+      summary: Admin list users with optional status filter
+      tags:
+      - admin-portal
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AdminUser'
+          description: ''
+  /api/v1/admin-portal/users/{id}/approve/:
+    post:
+      operationId: admin_portal_users_approve_create
+      summary: Admin approve pending staff user
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - admin-portal
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUser'
+          description: ''
+  /api/v1/admin-portal/users/{id}/change-role/:
+    post:
+      operationId: admin_portal_users_change_role_create
+      summary: Admin change approved staff user role
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - admin-portal
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeRoleRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ChangeRoleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ChangeRoleRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUser'
+          description: ''
+  /api/v1/admin-portal/users/{id}/reject/:
+    post:
+      operationId: admin_portal_users_reject_create
+      summary: Admin reject pending staff user
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - admin-portal
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RejectUserRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RejectUserRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RejectUserRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUser'
+          description: ''
+  /api/v1/auth/login/:
+    post:
+      operationId: auth_login_create
+      summary: User login
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
+      responses:
+        '200':
+          description: Access token returned and refresh cookie set
+  /api/v1/auth/logout/:
+    post:
+      operationId: auth_logout_create
+      summary: User logout
+      tags:
+      - auth
+      responses:
+        '204':
+          description: No response body
+  /api/v1/auth/me/:
+    get:
+      operationId: auth_me_retrieve
+      summary: Get current user profile
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+  /api/v1/auth/password/change/:
+    post:
+      operationId: auth_password_change_create
+      summary: Change user password and revoke sessions
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordChangeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordChangeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordChangeRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/auth/refresh/:
+    post:
+      operationId: auth_refresh_create
+      summary: Refresh access token
+      tags:
+      - auth
+      responses:
+        '200':
+          description: New access token returned and rotated cookie set
+  /api/v1/auth/register/:
+    post:
+      operationId: auth_register_create
+      summary: Citizen registration
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CitizenRegisterRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CitizenRegisterRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CitizenRegisterRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSummary'
+          description: ''
+  /api/v1/auth/register/staff/:
+    post:
+      operationId: auth_register_staff_create
+      summary: Staff registration (pending approval)
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StaffRegisterRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StaffRegisterRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StaffRegisterRequest'
+        required: true
+      responses:
+        '201':
+          description: Staff registration submitted
   /api/v1/health/:
     get:
       operationId: health_retrieve
@@ -12,8 +242,7 @@ paths:
       tags:
       - health
       security:
-      - cookieAuth: []
-      - basicAuth: []
+      - jwtAuth: []
       - {}
       responses:
         '200':
@@ -30,8 +259,7 @@ paths:
       tags:
       - health
       security:
-      - cookieAuth: []
-      - basicAuth: []
+      - jwtAuth: []
       - {}
       responses:
         '200':
@@ -48,6 +276,110 @@ paths:
           description: ''
 components:
   schemas:
+    AdminUser:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        full_name:
+          type: string
+          readOnly: true
+        role:
+          allOf:
+          - $ref: '#/components/schemas/UserRoleEnum'
+          readOnly: true
+        approval_status:
+          allOf:
+          - $ref: '#/components/schemas/ApprovalStatusEnum'
+          readOnly: true
+        organization:
+          type: string
+          readOnly: true
+          nullable: true
+        credential_note:
+          type: string
+          readOnly: true
+          nullable: true
+        rejection_reason:
+          type: string
+          readOnly: true
+          nullable: true
+        approved_by:
+          type: string
+          format: uuid
+          nullable: true
+          readOnly: true
+        approved_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        is_active:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - approval_status
+      - approved_at
+      - approved_by
+      - created_at
+      - credential_note
+      - email
+      - full_name
+      - id
+      - is_active
+      - organization
+      - rejection_reason
+      - role
+    ApprovalStatusEnum:
+      enum:
+      - APPROVED
+      - PENDING
+      - REJECTED
+      type: string
+      description: |-
+        * `APPROVED` - Approved
+        * `PENDING` - Pending
+        * `REJECTED` - Rejected
+    ChangeRoleRequest:
+      type: object
+      properties:
+        role:
+          $ref: '#/components/schemas/UserRoleEnum'
+      required:
+      - role
+    CitizenRegisterRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+        full_name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        role:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - email
+      - full_name
+      - password
     ErrorResponse:
       type: object
       properties:
@@ -76,6 +408,34 @@ components:
           type: string
       required:
       - status
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - email
+      - password
+    PasswordChangeRequest:
+      type: object
+      properties:
+        current_password:
+          type: string
+          writeOnly: true
+          minLength: 1
+        new_password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - current_password
+      - new_password
     ReadinessResponse:
       type: object
       properties:
@@ -86,6 +446,55 @@ components:
       required:
       - database
       - status
+    RejectUserRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 300
+      required:
+      - reason
+    StaffRegisterRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+        full_name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        role:
+          $ref: '#/components/schemas/StaffRegisterRoleEnum'
+        organization:
+          type: string
+          minLength: 1
+          maxLength: 200
+        credential_note:
+          type: string
+          minLength: 1
+          maxLength: 1000
+      required:
+      - credential_note
+      - email
+      - full_name
+      - organization
+      - password
+      - role
+    StaffRegisterRoleEnum:
+      enum:
+      - ANALYST
+      - EDUCATOR
+      type: string
+      description: |-
+        * `ANALYST` - ANALYST
+        * `EDUCATOR` - EDUCATOR
     UnavailableResponse:
       type: object
       properties:
@@ -96,11 +505,86 @@ components:
       required:
       - database
       - status
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        full_name:
+          type: string
+          readOnly: true
+        role:
+          allOf:
+          - $ref: '#/components/schemas/UserRoleEnum'
+          readOnly: true
+        approval_status:
+          allOf:
+          - $ref: '#/components/schemas/ApprovalStatusEnum'
+          readOnly: true
+        organization:
+          type: string
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - approval_status
+      - created_at
+      - email
+      - full_name
+      - id
+      - organization
+      - role
+    UserRoleEnum:
+      enum:
+      - CITIZEN
+      - ANALYST
+      - EDUCATOR
+      - ADMIN
+      type: string
+      description: |-
+        * `CITIZEN` - Citizen
+        * `ANALYST` - Analyst
+        * `EDUCATOR` - Educator
+        * `ADMIN` - Admin
+    UserSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        full_name:
+          type: string
+          readOnly: true
+        role:
+          allOf:
+          - $ref: '#/components/schemas/UserRoleEnum'
+          readOnly: true
+        approval_status:
+          allOf:
+          - $ref: '#/components/schemas/ApprovalStatusEnum'
+          readOnly: true
+      required:
+      - approval_status
+      - email
+      - full_name
+      - id
+      - role
   securitySchemes:
-    basicAuth:
+    jwtAuth:
       type: http
-      scheme: basic
-    cookieAuth:
-      type: apiKey
-      in: cookie
-      name: sessionid
+      scheme: bearer
+      bearerFormat: JWT

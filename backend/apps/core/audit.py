@@ -1,6 +1,10 @@
+import logging
 from typing import Any
 
 from apps.core.logging import FORBIDDEN_PII_KEYS, get_correlation_id
+from apps.ops.models import AuditEventType, AuditSeverity, SystemAuditLog
+
+logger = logging.getLogger(__name__)
 
 
 def _check_for_pii(metadata: dict | None) -> None:
@@ -22,15 +26,18 @@ def log_event(
     metadata: dict | None = None,
     severity: str = "INFO",
     request_id: str | None = None,
-):
+) -> SystemAuditLog | None:
     """Records security and operational actions to ops_systemauditlog.
 
-    Lazy imports ops models inside the function to avoid circular imports.
     Validates event_type and severity against ops model enums.
-    Refuses any forbidden PII keys in metadata.
+    Refuses any forbidden PII keys in metadata (raises ValueError).
+    Populates correlation request_id if not explicitly provided.
     """
-    # Lazy import per user instruction
-    from apps.ops.models import AuditEventType, AuditSeverity, SystemAuditLog
+    # Normalize string/enum values
+    if hasattr(event_type, "value"):
+        event_type = event_type.value
+    if hasattr(severity, "value"):
+        severity = severity.value
 
     # Validate event_type
     if event_type not in AuditEventType.values:
@@ -44,18 +51,18 @@ def log_event(
     _check_for_pii(metadata)
 
     # Correlation / Request ID
-    final_request_id = request_id or get_correlation_id()
+    final_request_id = request_id or get_correlation_id() or None
 
-    # Target handling
+    # Target handling: satisfies DB constraint ((target_type IS NULL AND target_id IS NULL) OR (target_type IS NOT NULL AND target_id IS NOT NULL))
     target_type = ""
     target_id = ""
     if target is not None:
         if hasattr(target, "_meta"):
             target_type = target._meta.model_name
             target_id = str(target.pk)
-        elif isinstance(target, tuple) and len(target) == 2:
+        elif isinstance(target, (tuple, list)) and len(target) == 2:
             target_type = str(target[0])
-            target_id = str(target[1])
+            target_id = str(target[1]) if target[1] is not None else ""
 
     actor_user = actor if (actor and hasattr(actor, "pk")) else None
 

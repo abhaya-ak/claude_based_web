@@ -3,7 +3,7 @@ Schema Inventory Safety-Net Test (Decision D20).
 
 This test suite inspects the live PostgreSQL database catalog
 (information_schema.tables, pg_constraint, pg_indexes, pg_index) to guarantee:
-1. Exact set of 25 public tables (19 app tables + 6 Django internal tables).
+1. Exact set of 27 public tables (19 app tables + 6 Django internal tables).
 2. No duplicate index column lists on any table (catches redundant FK indexes).
 3. Exact set of named constraints (ck_*, uq_*) and indexes (idx_*, uq_*) per app table.
 
@@ -55,6 +55,8 @@ EXPECTED_DJANGO_TABLES = {
     "auth_group",
     "auth_group_permissions",
     "auth_permission",
+    "token_blacklist_outstandingtoken",
+    "token_blacklist_blacklistedtoken",
 }
 
 EXPECTED_PUBLIC_TABLES = EXPECTED_APP_TABLES | EXPECTED_DJANGO_TABLES
@@ -308,7 +310,7 @@ def test_public_tables_exact_set():
     # Explicit ban check: PermissionsMixin tables must NOT exist
     assert "accounts_user_groups" not in actual_tables
     assert "accounts_user_user_permissions" not in actual_tables
-    assert len(actual_tables) == 25
+    assert len(actual_tables) == 27  # D41: 19 app + 8 Django/third-party
 
 
 @pytest.mark.django_db

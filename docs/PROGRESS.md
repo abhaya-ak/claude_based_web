@@ -1,7 +1,7 @@
 # PROGRESS (the agent reads this at session start and updates it at the end of every task)
 
 ## Current phase
-Phase 2 — Project scaffold and foundations
+Phase 3 — Accounts, authentication, RBAC (done, merge pending)
 
 ## Status
 | Phase | Owner | Status | Commit/PR | Notes |
@@ -9,7 +9,7 @@ Phase 2 — Project scaffold and foundations
 | 0 Governance | all | done | 34a26cf | Task 0 done; repo setup, rules, contracts frozen |
 | 1A DB design review | all | done | 34a26cf | Design frozen, contracts merged |
 | 1B Models + migrations | all | done, merge pending | | 19 app tables, 168 tests, ERD + schema inventory gate complete |
-| 2 Scaffold | S4 | done, merge pending | | Phase 2 foundations |
+| 2 Scaffold | S4 | done | | Phase 2 foundations |
 | ├─ 2.1 Settings & test safety | S4 | done | | Settings split (base/dev/test/prod), root URLs, JSON handlers, .env.example, AWS test safety fixture (35 new tests) |
 | ├─ 2.2 Error envelope & logging | S4 | done | | Error envelope, pagination, request ID ContextVar/middleware, PII scrubber, access log (35 new tests) |
 | ├─ 2.3 Health & client IP | S4 | done | | HealthCheckMiddleware (first), liveness/readiness endpoints, client IP & HMAC hashing (12 new tests) |
@@ -17,7 +17,13 @@ Phase 2 — Project scaffold and foundations
 | ├─ 2.5 OpenAPI schema | S4 | done | | drf-spectacular, committed backend/openapi.yaml, drift check, docs UI disabled in prod (4 new tests) |
 | ├─ 2.6 Containerization | S4 | done | | Multi-stage Dockerfile (python:3.13-slim, non-root, libmagic1), gunicorn entrypoint no access log, health & non-root proof |
 | └─ 2.7 CI & closing gate | S4 | done | | GitHub Actions CI, pre-commit, deployment checks, Phase 2 gate |
-| 3 Auth/RBAC | S4 | todo | | |
+| 3 Auth/RBAC | S4 | done, merge pending | | Phase 3 complete (Tasks 3.1 - 3.6), all 221 tests green |
+| ├─ 3.1 Foundation | S4 | done | e6f44e5 | Token blacklist, ops 0002 (18 audit types), JWT/cookie, permissions, throttles |
+| ├─ 3.2 Public auth | S4 | done | a486c82 | register, register/staff, login, refresh, logout |
+| ├─ 3.3 Authenticated | S4 | done | 5803925 | me, password/change, token blacklist |
+| ├─ 3.4 Admin portal | S4 | done | acf9869 | list, approve, reject, change-role |
+| ├─ 3.5 Commands & jobs | S4 | done | cb362fa | create_admin, run_jobs (advisory lock) |
+| └─ 3.6 Closing | S4 | done | 6b40cfa | Route-walk, RBAC matrix, OpenAPI, docs, gate |
 | M0 Walking skeleton deployed to AWS | S4 | todo | | |
 | 4 Reports | S1 | todo | | |
 | 5 Scanner | S4 | todo | | |
@@ -75,6 +81,25 @@ Phase 2 — Project scaffold and foundations
 | **D38** | `APPEND_SLASH=False`; every route ends with a slash | Phase 2 planning | Approved |
 | **D39** | Hash-pinned lock files deferred to Phase 13 (Linux build). Dependencies unchanged in Phase 2 | Phase 2 planning | Approved |
 | **D40** | Phase 2 adjustments (tasks 2.2-2.5): `openapi.yaml` located at `backend/openapi.yaml` (regenerated via `manage.py spectacular --file openapi.yaml --validate`); `ProtectedSpectacular*View` classes for dynamic runtime `ENABLE_API_DOCS` toggle; `ErrorResponse` schema component via `SPECTACULAR_SETTINGS["APPEND_COMPONENTS"]`; typed `@extend_schema` on health views | Phase 2 task 2.5b | Implemented |
+| **D41** | Lift Phase 2 scope guard for `rest_framework_simplejwt.token_blacklist`; add 2 tables (`token_blacklist_outstandingtoken`, `token_blacklist_blacklistedtoken`) to schema inventory (27 tables total); preserve duplicate-index check; record in 03a §13 | Phase 3 plan, `docs/PROGRESS.md` | Approved |
+| **D42** | Migration `ops 0002` adds 3 audit event types (`USER_REGISTERED`, `ROLE_CHANGED`, `PASSWORD_CHANGED`); `ck_audit_event_type` updated to 18 allowed values; update `AuditEventType` enum, 03a §2 and §4.19; verify via sqlmigrate | Phase 3 plan, `docs/PROGRESS.md` | Approved |
+| **D43** | Refresh cookie: name `refresh`, HttpOnly, SameSite=Lax, Path=/api/v1/auth/, Max-Age 7 days; `REFRESH_COOKIE_SECURE` setting (dev False, prod True fail-fast); access token returned only in JSON body | `docs/02-project-architecture.md` §5.1, Phase 3 plan | Approved |
+| **D44** | `/auth/refresh/` and `/auth/logout/` read refresh token from cookie only (never body) and require `X-Requested-With: scamshield-web` header (missing → 403 `permission_denied`) | Phase 3 plan, `docs/PROGRESS.md` | Approved |
+| **D45** | Login: lower-cased email lookup; identical 401 `authentication_failed` message for unknown email, wrong password, inactive user; dummy password check on unknown email to resist timing attacks; unapproved staff returns 403 `account_not_approved` with no tokens; success returns `{access, user}` and sets cookie; audit `LOGIN_SUCCESS` and `LOGIN_FAILURE` (ip hash + target `("USER", user_id)` when user exists, never email) | `docs/03-backend-build-plan.md` Phase 3, Phase 3 plan | Approved |
+| **D46** | Registration: `POST /auth/register/` creates `CITIZEN` only (ignores payload `role`), returns 201 with user and no tokens; `POST /auth/register/staff/` accepts role in `{ANALYST, EDUCATOR}` only, requires `organization` and `credential_note` (max 1000 chars), sets `approval_status=PENDING`, returns 201 with message and no tokens; duplicate email returns 409 `conflict`; audit `USER_REGISTERED` / `STAFF_REGISTERED` | `docs/03-backend-build-plan.md` Phase 3, Phase 3 plan | Approved |
+| **D47** | Throttling from audit table: login failures max 10/ip_hash/15m and max 10/target account/15m; registrations max 10/ip_hash/1h; exceeding limit returns 429 `throttled` with `Retry-After` header and writes `RATE_LIMIT_BLOCK` audit row | `docs/02-project-architecture.md` §16 R-C6, Phase 3 plan | Approved |
+| **D48** | Passwords: min length 10 + Django common-password, numeric, and user-attribute validators; `POST /auth/password/change/` requires current password, blacklists all outstanding refresh tokens for that user, clears cookie, returns 204, audits `PASSWORD_CHANGED` | `docs/02-project-architecture.md` §5.2, Phase 3 plan | Approved |
+| **D49** | No custom claims in JWT; authorization reads role/approval from DB user; `SIMPLE_JWT` with `JWT_SIGNING_KEY`, HS256, access 15m, refresh 7d, rotation + blacklist enabled; UUID user id in tokens verified (PROVEN in 3.1/3.2) | `docs/03-backend-build-plan.md` Phase 3, Phase 3 plan | Approved |
+| **D50** | Admin rules: only `PENDING` staff can be approved or rejected (409 conflict otherwise); reject requires reason; approve sets `approved_by` and `approved_at`; admin cannot change own role; last active `ADMIN` cannot be demoted or deactivated; role change allowed in `{CITIZEN, ANALYST, EDUCATOR, ADMIN}`; audited via `ROLE_APPROVED`, `ROLE_REJECTED`, `ROLE_CHANGED` | `docs/03-backend-build-plan.md` Phase 3, Phase 3 plan | Approved |
+| **D51** | Idempotent `create_admin` command (password from `ADMIN_PASSWORD` env or interactive prompt, role `ADMIN`, `APPROVED`); `run_jobs` command with job registry, each job acquiring Postgres advisory lock (`pg_try_advisory_lock`) to skip concurrent runs; initial job: flush expired JWT tokens | `docs/02-project-architecture.md` §14, `docs/03-backend-build-plan.md` Phase 3 | Approved |
+| **D52** | Phase 3 API inventory: auth (`register`, `register/staff`, `login`, `refresh`, `logout`, `me`, `password/change`); admin (`GET /admin-portal/users/?status=`, `POST /admin-portal/users/{id}/approve/`, `/reject/`, `/change-role/`); add change-role to `docs/02-project-architecture.md` §6; explicit permission classes (`AllowAny` on public endpoints); explicit serializer field lists with no password hash exposed | `docs/02-project-architecture.md` §6, Phase 3 plan | Approved |
+| **D53** | Phase 3 was first built on a branch without Phase 2 and integrated by merge | Integration task, `docs/PROGRESS.md` | Implemented |
+
+## Phase 3 Verification (Proven Items)
+- **TO BE PROVEN #1 (UUID user ID in JWT):** PROVEN. SimpleJWT encodes and decodes UUID user IDs without string-cast issues across access/refresh tokens.
+- **TO BE PROVEN #2 (Third-party table duplicate-index check):** PROVEN. Schema inventory asserts exactly 27 public tables with 0 duplicate indexes across both project and SimpleJWT tables.
+- **TO BE PROVEN #3 (Multi-session token revocation):** PROVEN. OutstandingToken iteration on password change blacklists all active refresh tokens for the user.
+- **TO BE PROVEN #4 (Postgres advisory lock concurrency):** PROVEN. `run_jobs` acquires `pg_try_advisory_lock`; concurrent worker holding lock causes `run_jobs` to skip cleanly with no race conditions.
 
 ## Standing rules for model tasks
 - Index names max 30 characters; check every name.

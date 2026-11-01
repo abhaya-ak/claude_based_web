@@ -9,6 +9,11 @@ if env.bool("DEBUG", default=False) or os.environ.get("DEBUG", "").lower() in ("
     raise ImproperlyConfigured("DEBUG must be False in production.")
 DEBUG = False
 
+# Enforce secure cookie in production (D43)
+REFRESH_COOKIE_SECURE = env.bool("REFRESH_COOKIE_SECURE", default=True)  # noqa: F405
+if not REFRESH_COOKIE_SECURE:
+    raise ImproperlyConfigured("REFRESH_COOKIE_SECURE must be True in production.")
+
 # Validate DJANGO_SECRET_KEY
 secret_key = os.environ.get("DJANGO_SECRET_KEY")
 if not secret_key:

@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 from pathlib import Path
 
 import environ
@@ -30,7 +31,9 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    "rest_framework_simplejwt.token_blacklist",
     "drf_spectacular",
+    "drf_spectacular_sidecar",
     "apps.core.apps.CoreConfig",
     "apps.accounts.apps.AccountsConfig",
     "apps.reports.apps.ReportsConfig",
@@ -53,6 +56,21 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+]
+
+TEMPLATES = [
+    {
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
+            ],
+        },
+    },
 ]
 
 AUTH_USER_MODEL = "accounts.User"
@@ -82,6 +100,9 @@ REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework.renderers.JSONRenderer",
     ],
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "apps.accounts.authentication.ScamShieldJWTAuthentication",
+    ),
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
     ],
@@ -100,6 +121,13 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "COMPONENT_SPLIT_REQUEST": True,
+    "ENUM_NAME_OVERRIDES": {
+        "StaffRegisterRoleEnum": [
+            ("ANALYST", "Analyst"),
+            ("EDUCATOR", "Educator"),
+        ],
+        "UserRoleEnum": "apps.accounts.models.Role",
+    },
     "APPEND_COMPONENTS": {
         "schemas": {
             "ErrorResponse": {
@@ -165,6 +193,51 @@ PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.Argon2PasswordHasher",
     "django.contrib.auth.hashers.PBKDF2PasswordHasher",
 ]
+
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "OPTIONS": {
+            "min_length": 10,
+        },
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+    },
+]
+
+# Security keys & IP hashing (D2, D49)
+JWT_SIGNING_KEY = env("JWT_SIGNING_KEY", default="dev-jwt-signing-key-scamshield-auth")
+HMAC_IP_SALT = env("HMAC_IP_SALT", default="dev-hmac-ip-salt-scamshield")
+TRUSTED_PROXY_HOPS = env.int("TRUSTED_PROXY_HOPS", default=1)
+
+# SimpleJWT configuration (D49)
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "UPDATE_LAST_LOGIN": False,
+    "ALGORITHM": "HS256",
+    "SIGNING_KEY": JWT_SIGNING_KEY,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "USER_ID_FIELD": "id",
+    "USER_ID_CLAIM": "user_id",
+}
+
+# Refresh cookie configuration (D43)
+REFRESH_COOKIE_NAME = "refresh"
+REFRESH_COOKIE_PATH = "/api/v1/auth/"
+REFRESH_COOKIE_SAMESITE = "Lax"
+REFRESH_COOKIE_HTTPONLY = True
+REFRESH_COOKIE_MAX_AGE = 7 * 24 * 3600
+REFRESH_COOKIE_SECURE = env.bool("REFRESH_COOKIE_SECURE", default=False)
 
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
