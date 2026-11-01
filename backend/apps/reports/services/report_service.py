@@ -113,6 +113,7 @@ def create_report(
                 category=existing.category,
                 payment_method=existing.payment_method,
                 country_code=existing.country_code,
+                financial_loss=existing.financial_loss,
             )
             return ReportSubmissionResult(
                 report=existing,
@@ -365,6 +366,7 @@ def create_report(
                     category=existing.category,
                     payment_method=existing.payment_method,
                     country_code=existing.country_code,
+                    financial_loss=existing.financial_loss,
                 )
                 return ReportSubmissionResult(
                     report=existing,
@@ -392,6 +394,7 @@ def create_report(
         category=report.category,
         payment_method=report.payment_method,
         country_code=report.country_code,
+        financial_loss=report.financial_loss,
     )
 
     return ReportSubmissionResult(
@@ -451,6 +454,7 @@ def track_report(
         category=report.category,
         payment_method=report.payment_method,
         country_code=report.country_code,
+        financial_loss=report.financial_loss,
     )
 
     return report, playbook

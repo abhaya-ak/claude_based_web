@@ -27,9 +27,9 @@ Phase 4 — Reports and evidence vault, F1.1 (planning)
 | └─ 3.7 Smoke & logging | S4 | done | 50537f4 | PowerShell 5.1 auth smoke script (15 steps) and user_id in AccessLogMiddleware |
 | M0 Walking skeleton deployed to AWS | S4 | todo | | |
 | 4 Reports & Evidence | S1 | todo | | Phase 4 reports and evidence vault (F1.1) |
-| ├─ 4.1 Normalisers & validators | S1 | done | | Pure normalisers (phone, URL, domain, email, bank), allow-lists (country, currency, admin_area) |
-| ├─ 4.2 Evidence vault | S1 | todo | | Magic-byte sniffing, Pillow re-encode, SHA-256, S3 storage, moto[server], ensure_evidence_bucket |
-| ├─ 4.3 Report service & ops migration | S1 | todo | | create_report, Crockford base32, access key, idempotency, rate limits, ops 0003 REPORT_TRACK_FAILED |
+| ├─ 4.1 Normalisers & validators | S1 | done | 6fb18c4 | Pure normalisers (phone, URL, domain, email, bank), allow-lists (country, currency, admin_area) |
+| ├─ 4.2 Evidence vault | S1 | done | 553a4a7 | Magic-byte sniffing, Pillow re-encode, SHA-256, S3 storage, moto[server], ensure_evidence_bucket |
+| ├─ 4.3 Report service & ops migration | S1 | done | e6eff1a | create_report, Crockford base32, access key, idempotency, rate limits, ops 0003 REPORT_TRACK_FAILED |
 | ├─ 4.4 Playbooks & options | S1 | todo | | RecoveryPlaybook selector, seed_playbooks command, options data |
 | ├─ 4.5 Endpoints & serialization | S1 | todo | | /reports/options/, POST /reports/, /reports/track/, /reports/mine/, OpenAPI, RBAC matrix |
 | └─ 4.6 Orphan cleanup, smoke & gate | S1 | todo | | Orphan S3 cleanup job, smoke_reports.ps1, smoke_auth.ps1 fixes, Phase 4 closing gate |
@@ -124,6 +124,12 @@ Phase 4 — Reports and evidence vault, F1.1 (planning)
 | **D74** | Pure normalisers raise `NormalizationError(field, code)`. Serializers map to standard 400 `validation_error` with field details in Task 4.5 | Phase 4 approval, `docs/contracts.md` | Approved |
 | **D75** | Dev and test settings provide deterministic fake `INDICATOR_HMAC_KEY` and `EVIDENCE_BUCKET`; `.env.example` lists them; prod fails fast on missing keys. Bank-account HMAC must be deterministic and key-dependent (both tested) | Phase 4 approval, `docs/02-project-architecture.md` §12 | Approved |
 | **D76** | Playbook texts (Task 4.4): generic guidance, no phone numbers, no URLs, "not legal advice", owner reviews wording. Deferred: verified hotlines, wording review | Phase 4 approval, `docs/03-backend-build-plan.md` | Approved |
+| **D77** | Playbook wording: generic plain-language guidance, short steps, no phone numbers or URLs, ending with "This is general guidance, not legal advice." Stored in `apps/reports/data/playbooks.json`; idempotent `seed_playbooks` command; hotlines merge from `apps/reports/data/hotlines.json` when present | Phase 4 approval, `docs/03-backend-build-plan.md` | Approved |
+| **D78** | Report response includes playbook: `{title, steps:[{title, detail}], hotlines:[]}` per D66. Bank transfer with loss > 0 contains bank-freeze step (tested by step marker) | Phase 4 approval, `docs/03-backend-build-plan.md` | Approved |
+| **D79** | Anonymous status checks: `POST /reports/track/` uniform 404 for wrong key vs unknown reference. 10 failures per `ip_hash` per 15m then 429 with `Retry-After` | Phase 4 approval, `docs/02-project-architecture.md` §16 | Approved |
+| **D80** | `GET /reports/mine/` returns fields per D65, newest first, paginated (D34); anonymous reports never appear in anyone's list | Phase 4 approval, `docs/03-backend-build-plan.md` | Approved |
+| **D81** | Multipart handling: repeatable `evidence` file field, plain form fields, `indicators` JSON string field; validation errors use D26; documented max lengths; OpenAPI schemas reference `ErrorResponse` | Phase 4 approval, `docs/contracts.md` | Approved |
+| **D82** | Orphan cleanup job (`run_jobs`, advisory lock): deletes only `evidence/` keys >24h old with no row in `reports_reportevidence`; re-checks DB before delete; max 500 keys/run; logs counts only; ignores other prefixes | Phase 4 approval, `docs/02-project-architecture.md` §14 | Approved |
 
 ## Phase 3 Verification (Proven Items)
 - **TO BE PROVEN #1 (UUID user ID in JWT):** PROVEN. SimpleJWT encodes and decodes UUID user IDs without string-cast issues across access/refresh tokens.
@@ -131,11 +137,11 @@ Phase 4 — Reports and evidence vault, F1.1 (planning)
 - **TO BE PROVEN #3 (Multi-session token revocation):** PROVEN. OutstandingToken iteration on password change blacklists all active refresh tokens for the user.
 - **TO BE PROVEN #4 (Postgres advisory lock concurrency):** PROVEN. `run_jobs` acquires `pg_try_advisory_lock`; concurrent worker holding lock causes `run_jobs` to skip cleanly with no race conditions.
 
-## Phase 4 Verification (To Be Proven)
-- **TO BE PROVEN #5 (Offline tldextract):** `tldextract` extracts registrable domains completely offline without network DNS/PSL lookups using bundled snapshot.
-- **TO BE PROVEN #6 (S3 atomic upload rollback):** Simulated DB transaction failure after S3 PUT successfully deletes uploaded S3 keys.
-- **TO BE PROVEN #7 (Image decompression bomb resistance):** Pillow limits image MAX_IMAGE_PIXELS and re-encoding strips all EXIF metadata.
-- **TO BE PROVEN #8 (Idempotency replay without access key leak):** Replaying an anonymous report with existing Idempotency-Key returns 200 with original reference and playbook, but never regenerates or exposes the access key.
+## Phase 4 Verification (Proven Items)
+- **TO BE PROVEN #5 (Offline tldextract):** PROVEN. `tldextract` extracts registrable domains completely offline without network DNS/PSL lookups using bundled snapshot.
+- **TO BE PROVEN #6 (S3 atomic upload rollback):** PROVEN. Simulated DB transaction failure after S3 PUT successfully deletes uploaded S3 keys.
+- **TO BE PROVEN #7 (Image decompression bomb resistance):** PROVEN. Pillow limits image MAX_IMAGE_PIXELS and re-encoding strips all EXIF metadata.
+- **TO BE PROVEN #8 (Idempotency replay without access key leak):** PROVEN. Replaying an anonymous report with existing Idempotency-Key returns 200 with original reference and playbook, but never regenerates or exposes the access key.
 
 ## Standing rules for model tasks
 - Index names max 30 characters; check every name.

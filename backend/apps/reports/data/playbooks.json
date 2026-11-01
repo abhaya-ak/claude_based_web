@@ -1,0 +1,336 @@
+[
+  {
+    "category": null,
+    "payment_method": null,
+    "country_code": null,
+    "title": "General Scam Response & Recovery",
+    "priority": 10,
+    "steps": [
+      {
+        "marker": "cease_contact",
+        "title": "Cease all communication",
+        "detail": "Immediately stop all interactions with the suspected scammer. Block phone numbers, messaging accounts, and email addresses."
+      },
+      {
+        "marker": "secure_accounts",
+        "title": "Secure online accounts",
+        "detail": "Change passwords on your primary email, banking portals, and social media accounts. Enable multi-factor authentication everywhere."
+      },
+      {
+        "marker": "preserve_evidence",
+        "title": "Preserve incident records",
+        "detail": "Take clear screenshots of conversations, transaction receipts, website addresses, and caller numbers before deleting anything."
+      },
+      {
+        "marker": "report_authorities",
+        "title": "Lodge an official report",
+        "detail": "File a report with your local police department or national cybercrime agency for official investigation and documentation."
+      },
+      {
+        "marker": "disclaimer",
+        "title": "Important note",
+        "detail": "This is general guidance, not legal advice."
+      }
+    ]
+  },
+  {
+    "category": null,
+    "payment_method": "BANK_TRANSFER",
+    "country_code": null,
+    "title": "Bank Transfer Scam Recovery (General)",
+    "priority": 50,
+    "steps": [
+      {
+        "marker": "bank_freeze",
+        "title": "Emergency bank contact & transaction recall",
+        "detail": "Immediately contact your bank's fraud hotline. Request an urgent freeze on your account and ask whether the outbound transfer can be halted or recalled."
+      },
+      {
+        "marker": "record_tx_details",
+        "title": "Document transaction identifiers",
+        "detail": "Note the recipient bank name, account number, account holder name, reference number, exact amount, and transfer timestamp."
+      },
+      {
+        "marker": "police_report",
+        "title": "File a formal police report",
+        "detail": "Provide bank statements and transaction receipts to the police. Obtain a copy of the official police report for your bank's fraud department."
+      },
+      {
+        "marker": "monitor_credit",
+        "title": "Monitor statements for suspicious activity",
+        "detail": "Review your account statements daily for unauthorized debits or recurring mandates. Request new account numbers if security was compromised."
+      },
+      {
+        "marker": "disclaimer",
+        "title": "Important note",
+        "detail": "This is general guidance, not legal advice."
+      }
+    ]
+  },
+  {
+    "category": null,
+    "payment_method": "BANK_TRANSFER",
+    "country_code": "MY",
+    "title": "Bank Transfer Scam Recovery (Malaysia)",
+    "priority": 80,
+    "steps": [
+      {
+        "marker": "bank_freeze",
+        "title": "Call bank fraud desk & National Scam Response Centre",
+        "detail": "Immediately contact your financial institution's 24/7 fraud hotline to freeze compromised accounts and initiate interbank fund recall."
+      },
+      {
+        "marker": "record_tx_details",
+        "title": "Gather transfer and recipient information",
+        "detail": "Record the receiving bank, account number, beneficiary name, transfer reference code, and exact time of transaction."
+      },
+      {
+        "marker": "police_report",
+        "title": "Lodge Royal Malaysia Police (PDRM) report",
+        "detail": "Visit the nearest police station with transaction printouts. Submit the police report number to your bank within 24 hours."
+      },
+      {
+        "marker": "disclaimer",
+        "title": "Important note",
+        "detail": "This is general guidance, not legal advice."
+      }
+    ]
+  },
+  {
+    "category": null,
+    "payment_method": "BANK_TRANSFER",
+    "country_code": "NP",
+    "title": "Bank Transfer Scam Recovery (Nepal)",
+    "priority": 80,
+    "steps": [
+      {
+        "marker": "bank_freeze",
+        "title": "Contact bank branch & freeze outbound account",
+        "detail": "Immediately visit or call your bank's emergency customer service to report fraudulent transfer and block outgoing payments."
+      },
+      {
+        "marker": "record_tx_details",
+        "title": "Collect transaction vouchers & connectIPS logs",
+        "detail": "Save digital payment receipts, transaction IDs, and recipient account details from connectIPS, mobile banking, or branch slips."
+      },
+      {
+        "marker": "police_report",
+        "title": "Report to Nepal Police Cyber Bureau",
+        "detail": "Submit an official complaint with screenshots and transaction vouchers to the Nepal Police Cyber Bureau or local district police office."
+      },
+      {
+        "marker": "disclaimer",
+        "title": "Important note",
+        "detail": "This is general guidance, not legal advice."
+      }
+    ]
+  },
+  {
+    "category": null,
+    "payment_method": "E_WALLET",
+    "country_code": null,
+    "title": "E-Wallet Fraud Recovery (General)",
+    "priority": 50,
+    "steps": [
+      {
+        "marker": "lock_wallet",
+        "title": "Lock or unlink digital wallet",
+        "detail": "Access your e-wallet security settings to log out of all devices, change your PIN, and unlink saved bank accounts or debit cards."
+      },
+      {
+        "marker": "contact_provider",
+        "title": "Contact e-wallet support immediately",
+        "detail": "Submit a fraud report to the wallet provider with the transaction reference ID, recipient phone number or wallet ID, and timestamp."
+      },
+      {
+        "marker": "police_report",
+        "title": "File a cybercrime report",
+        "detail": "Lodge an official report with law enforcement, providing e-wallet statement exports and chat records."
+      },
+      {
+        "marker": "disclaimer",
+        "title": "Important note",
+        "detail": "This is general guidance, not legal advice."
+      }
+    ]
+  },
+  {
+    "category": null,
+    "payment_method": "E_WALLET",
+    "country_code": "MY",
+    "title": "E-Wallet Fraud Recovery (Malaysia)",
+    "priority": 80,
+    "steps": [
+      {
+        "marker": "lock_wallet",
+        "title": "Suspend e-wallet and reset security credentials",
+        "detail": "Immediately suspend your e-wallet account via provider customer support or in-app security toggle. Reset your 6-digit transaction PIN."
+      },
+      {
+        "marker": "contact_provider",
+        "title": "Lodge dispute with e-wallet operator",
+        "detail": "Submit an unauthorized transaction claim along with merchant details, DuitNow transfer reference, and scam conversation logs."
+      },
+      {
+        "marker": "police_report",
+        "title": "File police report at nearest station",
+        "detail": "File a PDRM report detailing the e-wallet transaction IDs and forward the report to the e-wallet security team."
+      },
+      {
+        "marker": "disclaimer",
+        "title": "Important note",
+        "detail": "This is general guidance, not legal advice."
+      }
+    ]
+  },
+  {
+    "category": null,
+    "payment_method": "E_WALLET",
+    "country_code": "NP",
+    "title": "Digital Wallet Fraud Recovery (Nepal)",
+    "priority": 80,
+    "steps": [
+      {
+        "marker": "lock_wallet",
+        "title": "Block digital wallet account & change MPIN",
+        "detail": "Immediately change your wallet transaction MPIN and contact provider customer support to freeze your wallet profile."
+      },
+      {
+        "marker": "contact_provider",
+        "title": "Report dispute to wallet support",
+        "detail": "Provide the transaction code, recipient mobile number, transfer purpose, and time to provider fraud support."
+      },
+      {
+        "marker": "police_report",
+        "title": "Report to Cyber Bureau",
+        "detail": "File an application with the Nepal Police Cyber Bureau including printouts of your wallet transaction statement."
+      },
+      {
+        "marker": "disclaimer",
+        "title": "Important note",
+        "detail": "This is general guidance, not legal advice."
+      }
+    ]
+  },
+  {
+    "category": null,
+    "payment_method": "CARD",
+    "country_code": null,
+    "title": "Payment Card Scam Recovery (General)",
+    "priority": 50,
+    "steps": [
+      {
+        "marker": "block_card",
+        "title": "Immediately block the payment card",
+        "detail": "Use your mobile banking app or call your card issuer's emergency number to block your debit or credit card permanently."
+      },
+      {
+        "marker": "file_chargeback",
+        "title": "Initiate unauthorized transaction dispute",
+        "detail": "Request a chargeback for unauthorized or fraudulent charges within your card issuer's dispute window."
+      },
+      {
+        "marker": "order_replacement",
+        "title": "Request card re-issuance",
+        "detail": "Ask your bank to issue a replacement card with a new primary account number and security code (CVV)."
+      },
+      {
+        "marker": "disclaimer",
+        "title": "Important note",
+        "detail": "This is general guidance, not legal advice."
+      }
+    ]
+  },
+  {
+    "category": null,
+    "payment_method": "CRYPTO",
+    "country_code": null,
+    "title": "Cryptocurrency Scam Recovery (General)",
+    "priority": 50,
+    "steps": [
+      {
+        "marker": "secure_private_keys",
+        "title": "Secure wallet private keys and seed phrases",
+        "detail": "Never share your seed phrase or private keys. If you entered your seed phrase on a phishing site, transfer any remaining assets to a fresh hardware wallet immediately."
+      },
+      {
+        "marker": "record_blockchain_tx",
+        "title": "Document transaction hash & wallet addresses",
+        "detail": "Record the destination wallet address, transaction hash (TxID), blockchain network, exact token amount, and timestamp from the block explorer."
+      },
+      {
+        "marker": "report_exchange",
+        "title": "Notify custodial exchanges",
+        "detail": "If the destination address belongs to a centralized exchange, report the transaction hash to their compliance department for address flagging."
+      },
+      {
+        "marker": "beware_recovery_scams",
+        "title": "Beware of recovery scammers",
+        "detail": "Do not pay anyone claiming they can hack or recover your lost cryptocurrency. Legitimate recovery services do not solicit via social media."
+      },
+      {
+        "marker": "disclaimer",
+        "title": "Important note",
+        "detail": "This is general guidance, not legal advice."
+      }
+    ]
+  },
+  {
+    "category": "PHISHING",
+    "payment_method": null,
+    "country_code": null,
+    "title": "Phishing Incident Response",
+    "priority": 30,
+    "steps": [
+      {
+        "marker": "reset_passwords",
+        "title": "Change compromised credentials",
+        "detail": "If you entered passwords on a fraudulent page, change them immediately across all services where that password was reused."
+      },
+      {
+        "marker": "terminate_sessions",
+        "title": "Revoke active login sessions",
+        "detail": "Use account security settings to terminate all active sessions and app authorizations."
+      },
+      {
+        "marker": "scan_malware",
+        "title": "Scan device for malicious software",
+        "detail": "If you downloaded any attachment or file from the phishing link, run a full antivirus and anti-malware scan on your device."
+      },
+      {
+        "marker": "disclaimer",
+        "title": "Important note",
+        "detail": "This is general guidance, not legal advice."
+      }
+    ]
+  },
+  {
+    "category": "IMPERSONATION",
+    "payment_method": null,
+    "country_code": null,
+    "title": "Impersonation Scam Response",
+    "priority": 30,
+    "steps": [
+      {
+        "marker": "verify_independently",
+        "title": "Verify through official public channels",
+        "detail": "Do not use contact numbers or links provided by the caller. Search independently for the organization's official public switchboard."
+      },
+      {
+        "marker": "warn_contacts",
+        "title": "Alert friends and family",
+        "detail": "If the scammer impersonated you or compromised your social media, warn your contacts not to respond to urgent money requests."
+      },
+      {
+        "marker": "report_platform",
+        "title": "Report impersonation account",
+        "detail": "Use in-app reporting tools on WhatsApp, Telegram, or Facebook to flag the scammer profile for impersonation."
+      },
+      {
+        "marker": "disclaimer",
+        "title": "Important note",
+        "detail": "This is general guidance, not legal advice."
+      }
+    ]
+  }
+]
