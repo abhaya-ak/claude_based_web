@@ -1,7 +1,7 @@
 # PROGRESS (the agent reads this at session start and updates it at the end of every task)
 
 ## Current phase
-Phase 6 — Triage workbench, F2.1 (tasks 6.1-6.3 complete)
+Phase 6 — Triage workbench, F2.1 (done, merge pending)
 
 ## Status
 | Phase | Owner | Status | Commit/PR | Notes |
@@ -40,12 +40,12 @@ Phase 6 — Triage workbench, F2.1 (tasks 6.1-6.3 complete)
 | ├─ 5.4 Internal callback & staff alerts | S4 | done | f9ed053 | POST /internal/scan-results/, HMAC auth, ScanResult save, staff SNS alert (12 tests) |
 | ├─ 5.5 Re-dispatch job & error handling | S4 | done | 6ee2e94 | run_jobs re-dispatch for pending scans >5m, max 5 attempts -> FAILED (5 tests) |
 | └─ 5.6 Route walk, queries & closing gate | S4 | done | | Route-walk, OpenAPI, num_queries tests, CI check --deploy |
-| 6 Triage | S2 | todo | | Phase 6 Triage Workbench (F2.1, tasks 6.1-6.3 complete, 36 tests) |
+| 6 Triage | S2 | done, merge pending | | Phase 6 Triage Workbench (F2.1 complete, 737 tests green) |
 | ├─ 6.1 Teardown cleanup, Queue & Detail APIs | S2 | done | 0a1e925 | Queue filtering, cluster_size annotation, report detail view, pytest connection cleanup (14 tests) |
 | ├─ 6.2 Evidence vault & Report rejection | S2 | done | d36a77d | Presigned S3 URLs (900s, attachment, analyst only), reject endpoint, audit & metrics (10 tests) |
-| ├─ 6.3 Multi-report cluster verification | S2 | done | 0e43645 | verify_indicator, monotonic locking, threat levels, TO BE PROVEN #12 concurrency (12 tests) |
-| ├─ 6.4 Indicators API & Contract §3.6 | S2 | done | 25cf6ce | Indicators list/detail, public_note patch, revoke, find_active_indicators, count_pending_by_indicator (24 tests) |
-| └─ 6.5 Route walk, queries & closing gate | S2 | todo | | Route-walk, RBAC matrix, query counts, OpenAPI regeneration, CI deploy check |
+| ├─ 6.3 Multi-report cluster verification | S2 | done | 3527867 | verify_indicator, monotonic locking, threat levels, TO BE PROVEN #12 concurrency (12 tests) |
+| ├─ 6.4 Indicators API & Contract §3.6 | S2 | done | b40eeca | Indicators list/detail, public_note patch, revoke, find_active_indicators, count_pending_by_indicator (24 tests) |
+| └─ 6.5 Route walk, queries & closing gate | S2 | done | d4b0012 | Route-walk, RBAC matrix, query counts, OpenAPI regeneration, CI deploy check |
 | 7 Lookup + alerts | S1 | todo | | |
 | 8 Analytics + broadcast | S2 | todo | | |
 | 9 Literacy CMS | S3 | todo | | |
