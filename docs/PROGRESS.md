@@ -1,7 +1,7 @@
 # PROGRESS (the agent reads this at session start and updates it at the end of every task)
 
 ## Current phase
-Phase 1B — Models + migrations (done, merge pending)
+Phase 3 — Accounts, authentication, RBAC (planning)
 
 ## Status
 | Phase | Owner | Status | Commit/PR | Notes |
@@ -10,7 +10,13 @@ Phase 1B — Models + migrations (done, merge pending)
 | 1A DB design review | all | done | 34a26cf | Design frozen, contracts merged |
 | 1B Models + migrations | all | done, merge pending | | 19 app tables, 168 tests, ERD + schema inventory gate complete |
 | 2 Scaffold | S4 | todo | | |
-| 3 Auth/RBAC | S4 | todo | | |
+| 3 Auth/RBAC | S4 | in_progress | | Planning Phase 3 |
+| 3.1 Foundation | S4 | done | | Token blacklist, ops 0002 (18 audit types), JWT/cookie, permissions, throttles |
+| 3.2 Public auth | S4 | todo | | register, register/staff, login, refresh, logout |
+| 3.3 Authenticated | S4 | todo | | me, password/change |
+| 3.4 Admin portal | S4 | todo | | list, approve, reject, change-role |
+| 3.5 Commands & jobs | S4 | todo | | create_admin, run_jobs (advisory lock) |
+| 3.6 Closing | S4 | todo | | Route-walk, RBAC matrix, OpenAPI, docs, gate |
 | M0 Walking skeleton deployed to AWS | S4 | todo | | |
 | 4 Reports | S1 | todo | | |
 | 5 Scanner | S4 | todo | | |
@@ -51,6 +57,18 @@ Phase 1B — Models + migrations (done, merge pending)
 | **D21** | `docs/erd.md` generated from live Django models via `backend/tools/generate_erd.py` | `backend/tools/generate_erd.py`, `docs/erd.md` | Implemented |
 | **D22** | Fixed-length `char(n)` columns in 03a implemented as `varchar(n)` because Django has no fixed-length type. Affected: `currency(3)`, `country_code(2)`, `sha256(64)`, `endpoint_hash(64)`, `unsubscribe_token_hash(64)`, `actor_ip_hash(64)`, `language(2)`. Exact lengths enforced by services/validators | `apps/reports/models.py`, `apps/alerts/models.py`, `apps/ops/models.py`, `apps/literacy/models.py` | Implemented |
 | **D23** | `public_note` (`intel_verifiedindicator`) and `alt_text` (`literacy_guideasset`) are `NOT NULL` with empty-string default; DB has no column defaults because Django applies defaults in Python | `apps/intel/models.py:public_note`, `apps/literacy/models.py:alt_text`, migrations `intel/0001_initial.py`, `literacy/0001_initial.py` | Implemented |
+| **D41** | Lift Phase 2 scope guard for `rest_framework_simplejwt.token_blacklist`; add 2 tables (`token_blacklist_outstandingtoken`, `token_blacklist_blacklistedtoken`) to schema inventory (27 tables total); preserve duplicate-index check; record in 03a §13 | Phase 3 plan, `docs/PROGRESS.md` | Approved |
+| **D42** | Migration `ops 0002` adds 3 audit event types (`USER_REGISTERED`, `ROLE_CHANGED`, `PASSWORD_CHANGED`); `ck_audit_event_type` updated to 18 allowed values; update `AuditEventType` enum, 03a §2 and §4.19; verify via sqlmigrate | Phase 3 plan, `docs/PROGRESS.md` | Approved |
+| **D43** | Refresh cookie: name `refresh`, HttpOnly, SameSite=Lax, Path=/api/v1/auth/, Max-Age 7 days; `REFRESH_COOKIE_SECURE` setting (dev False, prod True fail-fast); access token returned only in JSON body | `docs/02-project-architecture.md` §5.1, Phase 3 plan | Approved |
+| **D44** | `/auth/refresh/` and `/auth/logout/` read refresh token from cookie only (never body) and require `X-Requested-With: scamshield-web` header (missing → 403 `permission_denied`) | Phase 3 plan, `docs/PROGRESS.md` | Approved |
+| **D45** | Login: lower-cased email lookup; identical 401 `authentication_failed` message for unknown email, wrong password, inactive user; dummy password check on unknown email to resist timing attacks; unapproved staff returns 403 `account_not_approved` with no tokens; success returns `{access, user}` and sets cookie; audit `LOGIN_SUCCESS` and `LOGIN_FAILURE` (ip hash + target `("USER", user_id)` when user exists, never email) | `docs/03-backend-build-plan.md` Phase 3, Phase 3 plan | Approved |
+| **D46** | Registration: `POST /auth/register/` creates `CITIZEN` only (ignores payload `role`), returns 201 with user and no tokens; `POST /auth/register/staff/` accepts role in `{ANALYST, EDUCATOR}` only, requires `organization` and `credential_note` (max 1000 chars), sets `approval_status=PENDING`, returns 201 with message and no tokens; duplicate email returns 409 `conflict`; audit `USER_REGISTERED` / `STAFF_REGISTERED` | `docs/03-backend-build-plan.md` Phase 3, Phase 3 plan | Approved |
+| **D47** | Throttling from audit table: login failures max 10/ip_hash/15m and max 10/target account/15m; registrations max 10/ip_hash/1h; exceeding limit returns 429 `throttled` with `Retry-After` header and writes `RATE_LIMIT_BLOCK` audit row | `docs/02-project-architecture.md` §16 R-C6, Phase 3 plan | Approved |
+| **D48** | Passwords: min length 10 + Django common-password, numeric, and user-attribute validators; `POST /auth/password/change/` requires current password, blacklists all outstanding refresh tokens for that user, clears cookie, returns 204, audits `PASSWORD_CHANGED` | `docs/02-project-architecture.md` §5.2, Phase 3 plan | Approved |
+| **D49** | No custom claims in JWT; authorization reads role/approval from DB user; `SIMPLE_JWT` with `JWT_SIGNING_KEY`, HS256, access 15m, refresh 7d, rotation + blacklist enabled; prove UUID user id works in tokens (TO BE PROVEN) | `docs/03-backend-build-plan.md` Phase 3, Phase 3 plan | Approved |
+| **D50** | Admin rules: only `PENDING` staff can be approved or rejected (409 conflict otherwise); reject requires reason; approve sets `approved_by` and `approved_at`; admin cannot change own role; last active `ADMIN` cannot be demoted or deactivated; role change allowed in `{CITIZEN, ANALYST, EDUCATOR, ADMIN}`; audited via `ROLE_APPROVED`, `ROLE_REJECTED`, `ROLE_CHANGED` | `docs/03-backend-build-plan.md` Phase 3, Phase 3 plan | Approved |
+| **D51** | Idempotent `create_admin` command (password from `ADMIN_PASSWORD` env or interactive prompt, role `ADMIN`, `APPROVED`); `run_jobs` command with job registry, each job acquiring Postgres advisory lock (`pg_try_advisory_lock`) to skip concurrent runs; initial job: flush expired JWT tokens | `docs/02-project-architecture.md` §14, `docs/03-backend-build-plan.md` Phase 3 | Approved |
+| **D52** | Phase 3 API inventory: auth (`register`, `register/staff`, `login`, `refresh`, `logout`, `me`, `password/change`); admin (`GET /admin-portal/users/?status=`, `POST /admin-portal/users/{id}/approve/`, `/reject/`, `/change-role/`); add change-role to `docs/02-project-architecture.md` §6; explicit permission classes (`AllowAny` on public endpoints); explicit serializer field lists with no password hash exposed | `docs/02-project-architecture.md` §6, Phase 3 plan | Approved |
 
 ## Standing rules for model tasks
 - Index names max 30 characters; check every name.
