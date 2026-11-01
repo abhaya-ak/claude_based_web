@@ -72,6 +72,8 @@ class AccessLogMiddleware:
         duration_ms = round((time.monotonic() - start_time) * 1000, 2)
 
         req_id = getattr(request, "correlation_id", "") or get_correlation_id()
+        user = getattr(request, "user", None)
+        user_id = str(user.id) if (user and getattr(user, "is_authenticated", False)) else None
 
         access_logger.info(
             "%s %s %s %sms",
@@ -81,6 +83,7 @@ class AccessLogMiddleware:
             duration_ms,
             extra={
                 "request_id": req_id,
+                "user_id": user_id,
                 "method": request.method,
                 "path": request.path,
                 "status_code": response.status_code,

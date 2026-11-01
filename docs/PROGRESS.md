@@ -23,7 +23,8 @@ Phase 3 — Accounts, authentication, RBAC (done, merge pending)
 | ├─ 3.3 Authenticated | S4 | done | 5803925 | me, password/change, token blacklist |
 | ├─ 3.4 Admin portal | S4 | done | acf9869 | list, approve, reject, change-role |
 | ├─ 3.5 Commands & jobs | S4 | done | cb362fa | create_admin, run_jobs (advisory lock) |
-| └─ 3.6 Closing | S4 | done | 6b40cfa | Route-walk, RBAC matrix, OpenAPI, docs, gate |
+| ├─ 3.6 Closing | S4 | done | 6b40cfa | Route-walk, RBAC matrix, OpenAPI, docs, gate |
+| └─ 3.7 Smoke & logging | S4 | done | | PowerShell 5.1 auth smoke script (15 steps) and user_id in AccessLogMiddleware |
 | M0 Walking skeleton deployed to AWS | S4 | todo | | |
 | 4 Reports | S1 | todo | | |
 | 5 Scanner | S4 | todo | | |
@@ -132,3 +133,4 @@ Phase 3 — Accounts, authentication, RBAC (done, merge pending)
 - Regenerate OpenAPI: `cd backend; python manage.py spectacular --file openapi.yaml --validate`
 - Dump schema: `cd backend; python tools/dump_schema.py`
 - Generate ERD: `cd backend; python tools/generate_erd.py`
+- Run auth smoke tests: `powershell -File backend/tools/smoke_auth.ps1`

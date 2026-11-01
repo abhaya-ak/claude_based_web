@@ -290,3 +290,51 @@ class TestAccessLogMiddleware:
         assert "secret_leak" not in str(getattr(record, "path", ""))
         # Ensure authorization header is NOT logged
         assert "token123" not in record.getMessage()
+        # Ensure user_id is present and null for unauthenticated request
+        assert hasattr(record, "user_id")
+        assert getattr(record, "user_id", None) is None
+
+    def test_access_log_includes_user_id_for_authenticated_user(
+        self, rf: RequestFactory, caplog: pytest.LogCaptureFixture
+    ):
+        import uuid
+        from unittest.mock import MagicMock
+
+        request = rf.get("/api/v1/reports/")
+        request.correlation_id = "req-access-002"
+        mock_user = MagicMock()
+        mock_user.is_authenticated = True
+        mock_user.id = uuid.uuid4()
+        request.user = mock_user
+
+        def view(req):
+            return HttpResponse("OK", status=200)
+
+        middleware = AccessLogMiddleware(view)
+        with caplog.at_level(logging.INFO, logger="apps.core.access"):
+            middleware(request)
+
+        assert len(caplog.records) >= 1
+        record = caplog.records[-1]
+        assert getattr(record, "user_id", None) == str(mock_user.id)
+
+    def test_access_log_user_id_null_for_anonymous_user(
+        self, rf: RequestFactory, caplog: pytest.LogCaptureFixture
+    ):
+        from django.contrib.auth.models import AnonymousUser
+
+        request = rf.get("/api/v1/reports/")
+        request.correlation_id = "req-access-003"
+        request.user = AnonymousUser()
+
+        def view(req):
+            return HttpResponse("OK", status=200)
+
+        middleware = AccessLogMiddleware(view)
+        with caplog.at_level(logging.INFO, logger="apps.core.access"):
+            middleware(request)
+
+        assert len(caplog.records) >= 1
+        record = caplog.records[-1]
+        assert hasattr(record, "user_id")
+        assert getattr(record, "user_id", None) is None
