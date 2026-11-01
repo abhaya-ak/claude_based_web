@@ -21,6 +21,10 @@ PUBLIC_ALLOWLIST = {
     "/api/v1/reports/track/",
 }
 
+MACHINE_HMAC_ALLOWLIST = {
+    "/api/v1/internal/scan-results/",
+}
+
 
 def _collect_routes(patterns=None, prefix=""):
     """Recursively collect all endpoint paths from Django URL resolver."""
@@ -51,7 +55,7 @@ class TestRouteWalkAndPublicAllowlist:
     """
     R-A3: Route-walk test.
     Ensures every route under /api/v1/ requires authentication (returns 401)
-    unless explicitly present in PUBLIC_ALLOWLIST.
+    unless explicitly present in PUBLIC_ALLOWLIST or MACHINE_HMAC_ALLOWLIST.
     Never returns 500 when called anonymously.
     """
 
@@ -65,6 +69,9 @@ class TestRouteWalkAndPublicAllowlist:
         for raw_path, _pattern in api_v1_routes:
             is_allowlisted = raw_path in PUBLIC_ALLOWLIST or any(
                 allowed == raw_path for allowed in PUBLIC_ALLOWLIST
+            )
+            is_hmac_allowlisted = raw_path in MACHINE_HMAC_ALLOWLIST or any(
+                allowed == raw_path for allowed in MACHINE_HMAC_ALLOWLIST
             )
 
             concrete_path = _resolve_dummy_path(raw_path)
@@ -81,7 +88,12 @@ class TestRouteWalkAndPublicAllowlist:
                 f"Anonymous POST {concrete_path} resulted in 500 Server Error"
             )
 
-            if not is_allowlisted:
+            if is_hmac_allowlisted:
+                assert response_post.status_code == 403, (
+                    f"Machine HMAC route {raw_path} without headers did not return 403"
+                )
+                assert response_post.data.get("error", {}).get("code") == "permission_denied"
+            elif not is_allowlisted:
                 codes = {response_get.status_code, response_post.status_code}
                 assert 401 in codes, (
                     f"Non-allowlisted route {raw_path} (concrete: {concrete_path}) "
@@ -107,9 +119,9 @@ class TestRouteWalkAndPublicAllowlist:
             "/api/v1/auth/login/",
             "/api/v1/auth/refresh/",
             "/api/v1/auth/logout/",
-    "/api/v1/reports/options/",
-    "/api/v1/reports/",
-    "/api/v1/reports/track/",
+            "/api/v1/reports/options/",
+            "/api/v1/reports/",
+            "/api/v1/reports/track/",
         }
         for route in required_public:
             assert route in all_routes, f"Expected public route {route} not found in URLconf"

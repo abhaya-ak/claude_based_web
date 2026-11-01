@@ -460,6 +460,37 @@ paths:
               schema:
                 $ref: '#/components/schemas/UnavailableResponse'
           description: ''
+  /api/v1/internal/scan-results/:
+    post:
+      operationId: internal_scan_results_create
+      description: Receives scoring results from heuristic scanner Lambda, verified
+        via HMAC-SHA256.
+      summary: Internal scanner callback
+      tags:
+      - internal
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScanResultCallbackRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ScanResultCallbackRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ScanResultCallbackRequest'
+        required: true
+      responses:
+        '200':
+          description: Scan result processed and saved successfully.
+        '400':
+          description: Validation error in result payload.
+        '403':
+          description: Invalid signature, bad timestamp, or clock skew.
+        '404':
+          description: Report not found.
+        '429':
+          description: Throttled.
   /api/v1/reports/:
     post:
       operationId: reports_create
@@ -1183,6 +1214,36 @@ components:
         * `KEYWORD` - Keyword
         * `TLD` - TLD
         * `SHORTENER` - URL Shortener
+    ScanResultCallbackRequest:
+      type: object
+      properties:
+        report_id:
+          type: string
+          format: uuid
+        ruleset_version:
+          type: integer
+          minimum: 1
+        risk_score:
+          type: integer
+          maximum: 100
+          minimum: 0
+        is_high_priority:
+          type: boolean
+        breakdown:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        lambda_request_id:
+          type: string
+          nullable: true
+          maxLength: 64
+      required:
+      - breakdown
+      - is_high_priority
+      - report_id
+      - risk_score
+      - ruleset_version
     ScannerConfig:
       type: object
       properties:

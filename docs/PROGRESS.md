@@ -37,7 +37,7 @@ Phase 5 — Heuristic scanner, F4.1 (planning)
 | ├─ 5.1 Rule CRUD & config admin APIs | S4 | done | | Rule CRUD, config endpoint, atomic version bump, seed_default_rules (14 tests) |
 | ├─ 5.2 Lambda heuristic scoring logic | S4 | done | | Pure scoring.py, Lambda handler.py, HMAC signing, zero DB/VPC (12 tests) |
 | ├─ 5.3 Scanner dispatch service | S4 | done | | dispatch_scan payload builder, prior pending counts, async Lambda invoke (6 tests) |
-| ├─ 5.4 Internal callback & staff alerts | S4 | todo | | POST /internal/scan-results/, HMAC auth, ScanResult save, staff SNS alert |
+| ├─ 5.4 Internal callback & staff alerts | S4 | done | | POST /internal/scan-results/, HMAC auth, ScanResult save, staff SNS alert (12 tests) |
 | ├─ 5.5 Re-dispatch job & error handling | S4 | todo | | run_jobs re-dispatch for pending scans >5m, max 5 attempts -> FAILED |
 | └─ 5.6 Route walk, queries & closing gate | S4 | todo | | Route-walk, OpenAPI, num_queries tests, CI check --deploy |
 | 6 Triage | S2 | todo | | |

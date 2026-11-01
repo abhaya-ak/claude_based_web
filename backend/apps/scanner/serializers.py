@@ -49,3 +49,21 @@ class ScannerConfigSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
         read_only_fields = ["id", "ruleset_version", "updated_at"]
+
+
+class ScanResultCallbackSerializer(serializers.Serializer):
+    report_id = serializers.UUIDField(required=True)
+    ruleset_version = serializers.IntegerField(min_value=1, required=True)
+    risk_score = serializers.IntegerField(min_value=0, max_value=100, required=True)
+    is_high_priority = serializers.BooleanField(required=True)
+    breakdown = serializers.ListField(
+        child=serializers.DictField(),
+        required=True,
+    )
+    lambda_request_id = serializers.CharField(
+        max_length=64,
+        required=False,
+        allow_null=True,
+        allow_blank=True,
+        default=None,
+    )
