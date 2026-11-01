@@ -35,7 +35,7 @@ Phase 5 — Heuristic scanner, F4.1 (planning)
 | └─ 4.6 Orphan cleanup, smoke & gate | S1 | done | | Orphan S3 cleanup job, smoke_reports.ps1, smoke_auth.ps1 fixes, Phase 4 closing gate (6 tests) |
 | 5 Scanner | S4 | todo | | Phase 5 Heuristic Scanner (F4.1) |
 | ├─ 5.1 Rule CRUD & config admin APIs | S4 | done | | Rule CRUD, config endpoint, atomic version bump, seed_default_rules (14 tests) |
-| ├─ 5.2 Lambda heuristic scoring logic | S4 | todo | | Pure scoring.py, Lambda handler.py, HMAC signing, zero DB/VPC |
+| ├─ 5.2 Lambda heuristic scoring logic | S4 | done | | Pure scoring.py, Lambda handler.py, HMAC signing, zero DB/VPC (12 tests) |
 | ├─ 5.3 Scanner dispatch service | S4 | todo | | dispatch_scan payload builder, prior pending counts, async Lambda invoke |
 | ├─ 5.4 Internal callback & staff alerts | S4 | todo | | POST /internal/scan-results/, HMAC auth, ScanResult save, staff SNS alert |
 | ├─ 5.5 Re-dispatch job & error handling | S4 | todo | | run_jobs re-dispatch for pending scans >5m, max 5 attempts -> FAILED |
