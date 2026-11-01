@@ -81,6 +81,7 @@ jobs:
           JWT_SIGNING_KEY: fake-not-a-secret-jwt-signing-key-32-chars-minimum
           HMAC_IP_SALT: fake-not-a-secret-hmac-ip-salt-32-chars-minimum
           INDICATOR_HMAC_KEY: fake-not-a-secret-indicator-hmac-32-chars-min
+          EVIDENCE_BUCKET: scamshield-evidence-prod
           ALLOWED_HOSTS: api.scamshield.gov.sg,localhost
           PUBLIC_BASE_URL: https://scamshield.gov.sg
           TRUSTED_PROXY_HOPS: "1"

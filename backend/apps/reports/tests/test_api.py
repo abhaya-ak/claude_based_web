@@ -669,13 +669,46 @@ class TestReportTrackAPI:
         assert data["reference_code"] == ref_code
         assert data["status"] == "PENDING"
         assert data["category"] == ScamCategory.PHISHING
-        assert data["platform"] == Platform.SMS
+        assert "created_at" in data
         assert "playbook" in data
+        assert "financial_loss" not in data
+        assert "currency" not in data
+        assert "platform" not in data
+        assert set(data.keys()) == {
+            "reference_code",
+            "status",
+            "category",
+            "created_at",
+            "playbook",
+        }
 
         # Snapshot test: verify no forbidden fields in public tracking response
-        forbidden = ["message_text", "raw_value", "reporter", "ip_hash", "s3_key"]
+        forbidden = [
+            "message_text",
+            "raw_value",
+            "reporter",
+            "ip_hash",
+            "s3_key",
+            "financial_loss",
+            "currency",
+            "platform",
+        ]
         for f in forbidden:
             assert f not in json.dumps(data)
+
+    def test_track_failure_does_not_log_untrusted_input_in_audit_metadata(self, api_client):
+        pii_input = "test@victim.com"  # <= 24 chars, passes serializer max_length
+        res = api_client.post(
+            "/api/v1/reports/track/",
+            data={"reference_code": pii_input, "access_key": "any_key_123"},
+            format="json",
+        )
+        assert res.status_code == 404
+        last_log = SystemAuditLog.objects.filter(
+            event_type=AuditEventType.REPORT_TRACK_FAILED
+        ).latest("occurred_at")
+        assert pii_input not in json.dumps(last_log.metadata)
+        assert last_log.metadata == {"reason": "invalid_reference_or_key"}
 
     def test_track_identical_404_for_unknown_reference_and_wrong_access_key(self, api_client):
         # D79: POST /reports/track/ never reveals existence differences

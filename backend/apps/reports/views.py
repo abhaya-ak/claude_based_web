@@ -171,9 +171,6 @@ class ReportTrackView(APIView):
             "reference_code": report.reference_code,
             "status": report.status,
             "category": report.category,
-            "platform": report.platform,
-            "financial_loss": str(report.financial_loss),
-            "currency": report.currency,
             "created_at": report.created_at,
             "playbook": playbook,
         }

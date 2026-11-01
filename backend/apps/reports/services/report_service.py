@@ -428,7 +428,7 @@ def track_report(
         audit.log_event(
             event_type=AuditEventType.REPORT_TRACK_FAILED,
             ip_hash=ip_hash,
-            metadata={"ref_code": reference_code},
+            metadata={"reason": "invalid_reference_or_key"},
             severity=AuditSeverity.WARN,
         )
         raise exceptions.NotFound("Report not found.")

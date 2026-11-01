@@ -189,9 +189,6 @@ class ReportTrackResponseSerializer(serializers.Serializer):
     reference_code = serializers.CharField(max_length=24)
     status = serializers.CharField(max_length=10)
     category = serializers.CharField(max_length=20)
-    platform = serializers.CharField(max_length=12)
-    financial_loss = serializers.CharField()
-    currency = serializers.CharField(max_length=3)
     created_at = serializers.DateTimeField()
     playbook = PlaybookSerializer()
 

@@ -860,14 +860,6 @@ components:
         category:
           type: string
           maxLength: 20
-        platform:
-          type: string
-          maxLength: 12
-        financial_loss:
-          type: string
-        currency:
-          type: string
-          maxLength: 3
         created_at:
           type: string
           format: date-time
@@ -876,9 +868,6 @@ components:
       required:
       - category
       - created_at
-      - currency
-      - financial_loss
-      - platform
       - playbook
       - reference_code
       - status

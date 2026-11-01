@@ -1,7 +1,7 @@
 # PROGRESS (the agent reads this at session start and updates it at the end of every task)
 
 ## Current phase
-Phase 4 — Reports and evidence vault, F1.1 (complete, merge pending)
+Phase 4 — Reports and evidence vault, F1.1 (done, merge pending)
 
 ## Status
 | Phase | Owner | Status | Commit/PR | Notes |
@@ -130,6 +130,7 @@ Phase 4 — Reports and evidence vault, F1.1 (complete, merge pending)
 | **D80** | `GET /reports/mine/` returns fields per D65, newest first, paginated (D34); anonymous reports never appear in anyone's list | Phase 4 approval, `docs/03-backend-build-plan.md` | Approved |
 | **D81** | Multipart handling: repeatable `evidence` file field, plain form fields, `indicators` JSON string field; validation errors use D26; documented max lengths; OpenAPI schemas reference `ErrorResponse` | Phase 4 approval, `docs/contracts.md` | Approved |
 | **D82** | Orphan cleanup job (`run_jobs`, advisory lock): deletes only `evidence/` keys >24h old with no row in `reports_reportevidence`; re-checks DB before delete; max 500 keys/run; logs counts only; ignores other prefixes | Phase 4 approval, `docs/02-project-architecture.md` §14 | Approved |
+| **D83** | Public tracking response privacy: `POST /api/v1/reports/track/` response body contains only `{reference_code, status, category, created_at, playbook}`; `financial_loss`, `currency`, and `platform` are omitted to protect victim financial privacy; failed tracking audit logs record `{"reason": "invalid_reference_or_key"}` with no raw/untrusted reference_code | Phase 4 remediation (M-1, M-2) | Approved |
 
 ## Phase 3 Verification (Proven Items)
 - **TO BE PROVEN #1 (UUID user ID in JWT):** PROVEN. SimpleJWT encodes and decodes UUID user IDs without string-cast issues across access/refresh tokens.
