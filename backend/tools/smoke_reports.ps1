@@ -353,32 +353,46 @@ if ($res11Mine.Body -and $res11Mine.Body.results) {
 $success11 = ($res11.Status -eq 201) -and ($null -ne $ref11) -and (-not $foundAnonInMine)
 Report-Step 11 $success11 $res11.Status "201"
 
-# --- STEP 12: 6th anonymous report returns 429 ---
-$got429 = $false
-$lastStatus12 = 0
+# --- STEP 12: 5 valid anonymous reports return 201, 6th returns 429 with Retry-After ---
+$step12Statuses = @()
+$expectedStep12 = @(201, 201, 201, 201, 201, 429)
+$hasRetryAfter12 = $false
+$allMatches12 = $true
+
 for ($i = 1; $i -le 6; $i++) {
     $boundary12 = "----WebKitFormBoundary" + [System.Guid]::NewGuid().ToString("N")
+    $validPhone = "+6012345678$i"
     $fields12 = @{
         category = "PHISHING"
         platform = "SMS"
-        message_text = "Throttle test spam report payload."
+        message_text = "Throttle test spam report payload iteration $i."
         country_code = "MY"
         currency = "MYR"
         financial_loss = "0.00"
         payment_method = "NONE"
         admin_area = "Selangor"
-        indicators = '[{"type":"PHONE","value":"0111111111"}]'
+        indicators = "[{`"type`":`"PHONE`",`"value`":`"$validPhone`"}]"
     }
     $bBytes12 = Build-MultipartBody -Fields $fields12 -Files @() -Boundary $boundary12
     $res12 = Invoke-ApiRaw -Method "POST" -Path "/reports/" -BodyBytes $bBytes12 -ContentType "multipart/form-data; boundary=$boundary12"
-    $lastStatus12 = $res12.Status
-    if ($lastStatus12 -eq 429) {
-        $got429 = $true
-        break
+    $step12Statuses += $res12.Status
+    $expectedForReq = $expectedStep12[$i - 1]
+    Write-Host ("  Step 12 request {0}/6: HTTP {1} (expected: {2})" -f $i, $res12.Status, $expectedForReq)
+
+    if ($res12.Status -ne $expectedForReq) {
+        $allMatches12 = $false
+    }
+    if ($res12.Status -eq 429) {
+        $retryHdr = if ($res12.Headers) { $res12.Headers["Retry-After"] } else { $null }
+        if (-not [string]::IsNullOrEmpty($retryHdr)) {
+            $hasRetryAfter12 = $true
+        }
     }
 }
-$success12 = $got429
-Report-Step 12 $success12 $lastStatus12 "429"
+
+$success12 = $allMatches12 -and $hasRetryAfter12
+$lastStatus12 = if ($step12Statuses.Count -gt 0) { $step12Statuses[-1] } else { 0 }
+Report-Step 12 $success12 $lastStatus12 "429 (5x 201 then 429)"
 
 # --- STEP 13: Check evidence object in local moto bucket (port 5001) if running, else SKIP ---
 $motoRunning = $false

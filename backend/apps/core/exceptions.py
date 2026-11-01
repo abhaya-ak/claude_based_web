@@ -88,6 +88,31 @@ def custom_exception_handler(exc, context):
     # Let DRF handle standard exceptions first
     response = exception_handler(exc, context)
 
+    # Handle NormalizationError from reports normalizers and validators (D56, D74)
+    try:
+        from apps.reports.normalizers import NormalizationError
+    except ImportError:
+        NormalizationError = None
+
+    if NormalizationError and isinstance(exc, NormalizationError):
+        code = DualCode("validation_error", "VALIDATION_ERROR")
+        field = getattr(exc, "field", "indicator")
+        err_code = getattr(exc, "code", "invalid_indicator")
+        norm_resp = Response(
+            {
+                "error": {
+                    "code": code,
+                    "message": "Validation failed.",
+                    "details": {field: [err_code]},
+                    "request_id": request_id,
+                }
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+        if request_id:
+            norm_resp.headers["X-Request-ID"] = request_id
+        return norm_resp
+
     if response is not None:
         status_code = response.status_code
         details = None

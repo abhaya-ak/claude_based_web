@@ -12,6 +12,7 @@ from rest_framework.test import APIClient
 
 from apps.accounts.models import Role, User
 from apps.core import aws
+from apps.ops.models import AuditEventType, SystemAuditLog
 from apps.reports.models import (
     IndicatorType,
     PaymentMethod,
@@ -328,6 +329,129 @@ class TestReportCreateAPI:
         res6 = api_client.post("/api/v1/reports/", data=data, format="multipart", **headers)
         assert res6.status_code == 429
         assert "Retry-After" in res6.headers
+
+    @pytest.mark.parametrize(
+        "ind_type,ind_value,expected_field",
+        [
+            (IndicatorType.PHONE, "invalid-phone", "phone"),
+            (IndicatorType.URL, "ftp://invalid-scheme.test", "url"),
+            (IndicatorType.EMAIL, "not-an-email", "email"),
+            (IndicatorType.BANK_ACCOUNT, "not-digits", "bank_account"),
+        ],
+    )
+    def test_invalid_indicators_return_400_no_s3_no_db_no_audit(
+        self, api_client, ind_type, ind_value, expected_field
+    ):
+        png_bytes = create_valid_test_png()
+        data = {
+            "category": ScamCategory.PHISHING,
+            "platform": Platform.SMS,
+            "message_text": "Phishing test with invalid indicator",
+            "country_code": "MY",
+            "currency": "MYR",
+            "financial_loss": "0.00",
+            "payment_method": PaymentMethod.NONE,
+            "admin_area": "Selangor",
+            "indicators": json.dumps([{"type": ind_type, "value": ind_value}]),
+            "evidence": [
+                SimpleUploadedFile("proof.png", png_bytes, content_type="image/png"),
+            ],
+        }
+
+        s3 = aws.client("s3")
+        s3_before = s3.list_objects_v2(Bucket=settings.EVIDENCE_BUCKET).get("KeyCount", 0)
+        reports_before = ScamReport.objects.count()
+        audit_before = SystemAuditLog.objects.filter(
+            event_type=AuditEventType.REPORT_SUBMITTED
+        ).count()
+
+        response = api_client.post("/api/v1/reports/", data=data, format="multipart")
+
+        # Must return 400 validation_error (currently fails with 500)
+        assert response.status_code == 400
+        res_json = response.json()
+        assert res_json["error"]["code"] == "validation_error"
+        assert expected_field in res_json["error"]["details"]
+
+        # Ensure no submitted raw value echoed in response
+        assert ind_value not in json.dumps(res_json)
+
+        # Ensure no S3 upload, no report, no audit log
+        s3_after = s3.list_objects_v2(Bucket=settings.EVIDENCE_BUCKET).get("KeyCount", 0)
+        assert s3_after == s3_before
+        assert ScamReport.objects.count() == reports_before
+        assert (
+            SystemAuditLog.objects.filter(
+                event_type=AuditEventType.REPORT_SUBMITTED
+            ).count()
+            == audit_before
+        )
+
+    def test_rate_limit_remote_addr_and_invalid_bypass(self, api_client):
+        # 5 valid anonymous reports from one REMOTE_ADDR return 201, 6th returns 429
+        # Invalid requests do not count toward the limit
+        client_ip = "198.51.100.99"
+
+        # Send 3 invalid indicator requests first
+        for i in range(3):
+            bad_data = {
+                "category": ScamCategory.PHISHING,
+                "platform": Platform.SMS,
+                "message_text": "Invalid request attempt",
+                "country_code": "MY",
+                "currency": "MYR",
+                "indicators": json.dumps([{"type": IndicatorType.PHONE, "value": f"bad-{i}"}]),
+            }
+            res_bad = api_client.post(
+                "/api/v1/reports/",
+                data=bad_data,
+                format="multipart",
+                REMOTE_ADDR=client_ip,
+            )
+            assert res_bad.status_code == 400
+
+        # Send 5 valid anonymous reports
+        valid_phones = [
+            "+60123456781",
+            "+60123456782",
+            "+60123456783",
+            "+60123456784",
+            "+60123456785",
+        ]
+        for idx, phone in enumerate(valid_phones):
+            good_data = {
+                "category": ScamCategory.PHISHING,
+                "platform": Platform.SMS,
+                "message_text": f"Valid report narrative number {idx+1}",
+                "country_code": "MY",
+                "currency": "MYR",
+                "indicators": json.dumps([{"type": IndicatorType.PHONE, "value": phone}]),
+            }
+            res_good = api_client.post(
+                "/api/v1/reports/",
+                data=good_data,
+                format="multipart",
+                REMOTE_ADDR=client_ip,
+            )
+            assert res_good.status_code == 201
+
+        # 6th valid request from same REMOTE_ADDR must be throttled with 429 and Retry-After
+        overflow_data = {
+            "category": ScamCategory.PHISHING,
+            "platform": Platform.SMS,
+            "message_text": "6th report attempt exceeding limit",
+            "country_code": "MY",
+            "currency": "MYR",
+            "indicators": json.dumps([{"type": IndicatorType.PHONE, "value": "+60123456786"}]),
+        }
+        res_overflow = api_client.post(
+            "/api/v1/reports/",
+            data=overflow_data,
+            format="multipart",
+            REMOTE_ADDR=client_ip,
+        )
+        assert res_overflow.status_code == 429
+        assert "Retry-After" in res_overflow.headers
 
 
 @mock_aws
