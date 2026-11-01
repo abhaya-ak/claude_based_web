@@ -27,7 +27,7 @@ Phase 4 — Reports and evidence vault, F1.1 (planning)
 | └─ 3.7 Smoke & logging | S4 | done | 50537f4 | PowerShell 5.1 auth smoke script (15 steps) and user_id in AccessLogMiddleware |
 | M0 Walking skeleton deployed to AWS | S4 | todo | | |
 | 4 Reports & Evidence | S1 | todo | | Phase 4 reports and evidence vault (F1.1) |
-| ├─ 4.1 Normalisers & validators | S1 | todo | | Pure normalisers (phone, URL, domain, email, bank), allow-lists (country, currency, admin_area) |
+| ├─ 4.1 Normalisers & validators | S1 | done | | Pure normalisers (phone, URL, domain, email, bank), allow-lists (country, currency, admin_area) |
 | ├─ 4.2 Evidence vault | S1 | todo | | Magic-byte sniffing, Pillow re-encode, SHA-256, S3 storage, moto[server], ensure_evidence_bucket |
 | ├─ 4.3 Report service & ops migration | S1 | todo | | create_report, Crockford base32, access key, idempotency, rate limits, ops 0003 REPORT_TRACK_FAILED |
 | ├─ 4.4 Playbooks & options | S1 | todo | | RecoveryPlaybook selector, seed_playbooks command, options data |
@@ -116,6 +116,14 @@ Phase 4 — Reports and evidence vault, F1.1 (planning)
 | **D66** | RecoveryPlaybook selector: active playbook matching category, payment_method, country (null = any); most matching fields wins, then priority, then lowest id; bank-transfer with loss > 0 includes bank-freeze steps; `seed_playbooks` command seeds empty hotline lists (verified numbers supplied later in `hotlines.json`) | Phase 4 plan, `docs/03a-database-design.md` §4.5 | Approved |
 | **D67** | Scan hook: after commit, call `scanner_service.dispatch_scan(report_id)` stub (logs and returns, failures never fail report submission); emit metric `ReportsSubmitted` via `core.metrics`; report `scan_status` stays `PENDING` until Phase 5 | Phase 4 plan, `docs/contracts.md` §3.5 | Approved |
 | **D68** | Responses never contain: raw IP, report UUID, risk_score, reporter id, S3 keys, internal notes; logs and audit metadata never contain message text, indicators, or filenames; create response contains reference, status, playbook, access_key (anonymous only, once) | Phase 4 plan, `docs/02-project-architecture.md` §16 | Approved |
+| **D69** | Logged-in users may report anonymously via request field `anonymous` (bool). No valid auth or anonymous=true: `reporter` NULL, `is_anonymous` true, `access_key` issued, rate limit by `ip_hash`. Invalid or expired Bearer token returns 401 (never silent downgrade). Valid token + anonymous=true leaves no link to user in report, audit actor, or logs | Phase 4 approval, `docs/03-backend-build-plan.md` | Approved |
+| **D70** | Execution order in `create_report`: idempotency lookup, rate limit check, validation, generate report UUID in code, S3 upload, atomic DB write (audit inside), `on_commit` metric + scan stub. Concurrent requests with same Idempotency-Key: loser catches IntegrityError, deletes uploaded S3 keys, returns replay (never 500). Replays bypass rate limits | Phase 4 approval, `docs/03a-database-design.md` §7 | Approved |
+| **D71** | Size limits: reject Content-Length > 16 MB before parsing with 413 and error code `payload_too_large` (added to D26 error envelope); configure small `FILE_UPLOAD_MAX_MEMORY_SIZE` (2.5 MB) so large files spool to disk | Phase 4 approval, `docs/02-project-architecture.md` §4 | Approved |
+| **D72** | Image sanitation: Pillow open, verify `width * height <= 10,000,000` BEFORE load, treat `DecompressionBombWarning` as error, reject multi-frame/animated images, re-encode to same format, strip EXIF. `tldextract`: `TLDExtract(suffix_list_urls=(), cache_dir=None)` ensuring zero network and zero disk writes | Phase 4 approval, `docs/02-project-architecture.md` §9 | Approved |
+| **D73** | S3 `put_object`: `ContentType` from sniffed MIME, `ServerSideEncryption='AES256'`, `CacheControl='no-store'`. Deferred: Phase 6 must presign with `ResponseContentDisposition=attachment` | Phase 4 approval, `docs/02-project-architecture.md` §9 | Approved |
+| **D74** | Pure normalisers raise `NormalizationError(field, code)`. Serializers map to standard 400 `validation_error` with field details in Task 4.5 | Phase 4 approval, `docs/contracts.md` | Approved |
+| **D75** | Dev and test settings provide deterministic fake `INDICATOR_HMAC_KEY` and `EVIDENCE_BUCKET`; `.env.example` lists them; prod fails fast on missing keys. Bank-account HMAC must be deterministic and key-dependent (both tested) | Phase 4 approval, `docs/02-project-architecture.md` §12 | Approved |
+| **D76** | Playbook texts (Task 4.4): generic guidance, no phone numbers, no URLs, "not legal advice", owner reviews wording. Deferred: verified hotlines, wording review | Phase 4 approval, `docs/03-backend-build-plan.md` | Approved |
 
 ## Phase 3 Verification (Proven Items)
 - **TO BE PROVEN #1 (UUID user ID in JWT):** PROVEN. SimpleJWT encodes and decodes UUID user IDs without string-cast issues across access/refresh tokens.
@@ -140,7 +148,8 @@ Phase 4 — Reports and evidence vault, F1.1 (planning)
 - Proof list: ruff, plain pytest -q, makemigrations --check --dry-run, showmigrations, FULL sqlmigrate for each new migration, git status --short. Never commit without my OK.
 
 ## Deferred
-- **Verified hotline numbers (D66, Phase 4):** Seeded playbooks have empty hotlines; owner will provide verified Malaysian/Nepali emergency hotlines in `backend/apps/reports/data/hotlines.json` before production deployment.
+- **Verified hotline numbers & playbook wording (D66, D76, Phase 4):** Seeded playbooks have empty hotlines; owner will provide verified Malaysian/Nepali emergency hotlines in `backend/apps/reports/data/hotlines.json` and review guidance text before production deployment.
+- **Evidence presigned attachment disposition (D73, Phase 6):** Phase 6 analyst pre-signing must set `ResponseContentDisposition='attachment'`.
 - **Audit log append-only trigger (Phase 11):** Must allow an UPDATE that only sets `actor_id` to NULL (Django SET_NULL on user delete), allow DELETE only in the retention purge, and ideally use a separate DB role.
 - **Default heuristic rules command (Phase 5):** Management command `seed_default_rules` requiring an existing admin user to author the initial ruleset (cannot run in data migration without an admin user).
 - **Frontend build plan:** Blocked until the frontend requirements and UI design specification document is drafted.
