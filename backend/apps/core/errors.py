@@ -50,29 +50,39 @@ def custom_exception_handler(exc, context):
         return response
 
     # Determine code and message
-    code = getattr(exc, "default_code", None)
-    if isinstance(exc, exceptions.APIException) and hasattr(exc, "get_codes"):
-        codes = exc.get_codes()
-        if isinstance(codes, str):
-            code = codes
-        elif isinstance(codes, dict) and "code" in codes:
-            code = codes["code"]
-
-    if not code:
-        if response.status_code == status.HTTP_400_BAD_REQUEST:
-            code = "validation_error"
-        elif response.status_code == status.HTTP_401_UNAUTHORIZED:
-            code = "authentication_failed"
-        elif response.status_code == status.HTTP_403_FORBIDDEN:
-            code = "permission_denied"
-        elif response.status_code == status.HTTP_404_NOT_FOUND:
-            code = "not_found"
-        elif response.status_code == status.HTTP_409_CONFLICT:
-            code = "conflict"
-        elif response.status_code == status.HTTP_429_TOO_MANY_REQUESTS:
-            code = "throttled"
-        else:
-            code = "error"
+    if isinstance(exc, exceptions.ValidationError):
+        code = "validation_error"
+    elif isinstance(exc, AccountNotApproved):
+        code = "account_not_approved"
+    elif isinstance(exc, ConflictError):
+        code = "conflict"
+    elif isinstance(exc, exceptions.Throttled):
+        code = "throttled"
+    elif isinstance(exc, exceptions.NotAuthenticated):
+        code = "not_authenticated"
+    elif isinstance(exc, exceptions.AuthenticationFailed):
+        code = getattr(exc, "default_code", "authentication_failed")
+    elif isinstance(exc, exceptions.PermissionDenied):
+        code = "permission_denied"
+    elif isinstance(exc, exceptions.NotFound):
+        code = "not_found"
+    else:
+        code = getattr(exc, "default_code", None)
+        if not code:
+            if response.status_code == status.HTTP_400_BAD_REQUEST:
+                code = "validation_error"
+            elif response.status_code == status.HTTP_401_UNAUTHORIZED:
+                code = "authentication_failed"
+            elif response.status_code == status.HTTP_403_FORBIDDEN:
+                code = "permission_denied"
+            elif response.status_code == status.HTTP_404_NOT_FOUND:
+                code = "not_found"
+            elif response.status_code == status.HTTP_409_CONFLICT:
+                code = "conflict"
+            elif response.status_code == status.HTTP_429_TOO_MANY_REQUESTS:
+                code = "throttled"
+            else:
+                code = "error"
 
     # Map message and details
     details = {}

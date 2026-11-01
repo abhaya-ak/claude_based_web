@@ -12,7 +12,7 @@ Phase 3 — Accounts, authentication, RBAC (planning)
 | 2 Scaffold | S4 | todo | | |
 | 3 Auth/RBAC | S4 | in_progress | | Planning Phase 3 |
 | 3.1 Foundation | S4 | done | | Token blacklist, ops 0002 (18 audit types), JWT/cookie, permissions, throttles |
-| 3.2 Public auth | S4 | todo | | register, register/staff, login, refresh, logout |
+| 3.2 Public auth | S4 | done | | register, register/staff, login, refresh, logout |
 | 3.3 Authenticated | S4 | todo | | me, password/change |
 | 3.4 Admin portal | S4 | todo | | list, approve, reject, change-role |
 | 3.5 Commands & jobs | S4 | todo | | create_admin, run_jobs (advisory lock) |
