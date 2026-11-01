@@ -1,7 +1,7 @@
 # PROGRESS (the agent reads this at session start and updates it at the end of every task)
 
 ## Current phase
-Phase 4 — Reports and evidence vault, F1.1 (done, merge pending)
+Phase 5 — Heuristic scanner, F4.1 (planning)
 
 ## Status
 | Phase | Owner | Status | Commit/PR | Notes |
@@ -33,7 +33,13 @@ Phase 4 — Reports and evidence vault, F1.1 (done, merge pending)
 | ├─ 4.4 Playbooks & options | S1 | done | d656360 | RecoveryPlaybook selector, seed_playbooks command, options data (7 tests) |
 | ├─ 4.5 Endpoints & serialization | S1 | done | effb868 | /reports/options/, POST /reports/, /reports/track/, /reports/mine/, OpenAPI, RBAC matrix (15 tests) |
 | └─ 4.6 Orphan cleanup, smoke & gate | S1 | done | | Orphan S3 cleanup job, smoke_reports.ps1, smoke_auth.ps1 fixes, Phase 4 closing gate (6 tests) |
-| 5 Scanner | S4 | todo | | |
+| 5 Scanner | S4 | todo | | Phase 5 Heuristic Scanner (F4.1) |
+| ├─ 5.1 Rule CRUD & config admin APIs | S4 | done | | Rule CRUD, config endpoint, atomic version bump, seed_default_rules (14 tests) |
+| ├─ 5.2 Lambda heuristic scoring logic | S4 | todo | | Pure scoring.py, Lambda handler.py, HMAC signing, zero DB/VPC |
+| ├─ 5.3 Scanner dispatch service | S4 | todo | | dispatch_scan payload builder, prior pending counts, async Lambda invoke |
+| ├─ 5.4 Internal callback & staff alerts | S4 | todo | | POST /internal/scan-results/, HMAC auth, ScanResult save, staff SNS alert |
+| ├─ 5.5 Re-dispatch job & error handling | S4 | todo | | run_jobs re-dispatch for pending scans >5m, max 5 attempts -> FAILED |
+| └─ 5.6 Route walk, queries & closing gate | S4 | todo | | Route-walk, OpenAPI, num_queries tests, CI check --deploy |
 | 6 Triage | S2 | todo | | |
 | 7 Lookup + alerts | S1 | todo | | |
 | 8 Analytics + broadcast | S2 | todo | | |
@@ -131,6 +137,16 @@ Phase 4 — Reports and evidence vault, F1.1 (done, merge pending)
 | **D81** | Multipart handling: repeatable `evidence` file field, plain form fields, `indicators` JSON string field; validation errors use D26; documented max lengths; OpenAPI schemas reference `ErrorResponse` | Phase 4 approval, `docs/contracts.md` | Approved |
 | **D82** | Orphan cleanup job (`run_jobs`, advisory lock): deletes only `evidence/` keys >24h old with no row in `reports_reportevidence`; re-checks DB before delete; max 500 keys/run; logs counts only; ignores other prefixes | Phase 4 approval, `docs/02-project-architecture.md` §14 | Approved |
 | **D83** | Public tracking response privacy: `POST /api/v1/reports/track/` response body contains only `{reference_code, status, category, created_at, playbook}`; `financial_loss`, `currency`, and `platform` are omitted to protect victim financial privacy; failed tracking audit logs record `{"reason": "invalid_reference_or_key"}` with no raw/untrusted reference_code | Phase 4 remediation (M-1, M-2) | Approved |
+| **D84** | Admin Rule CRUD Endpoints: `GET/POST /api/v1/admin-portal/rules/` and `GET/PATCH/DELETE /api/v1/admin-portal/rules/{id}/` strictly restricted to `HasRole("ADMIN")`. Query filters: `rule_type`, `is_active`. Paginated. Input validation: `pattern` lowercase, non-blank; `weight` 1..50; `(rule_type, pattern)` unique | Phase 5 plan, `docs/03-backend-build-plan.md` | Approved |
+| **D85** | ScannerConfig Singleton API: `GET/PATCH /api/v1/admin-portal/scanner-config/` restricted to `HasRole("ADMIN")`. Enforces singleton `id=1`. Configurable thresholds: `keyword_cap_points` (0..100), `ip_url_points` (0..100), `prior_pending_points` (0..100), `high_priority_threshold` (1..100) | Phase 5 plan, `docs/03a-database-design.md` §4.17 | Approved |
+| **D86** | Atomic Ruleset Version Bump & Audit: Any create, update (`PATCH`), or delete on `HeuristicRule` or update on `ScannerConfig` executes inside `transaction.atomic()`, increments `ScannerConfig.ruleset_version = F("ruleset_version") + 1`, and logs audit `RULE_CHANGED` or `CONFIG_CHANGED` with actor and sanitized metadata (no PII) | Phase 5 plan, `docs/03-backend-build-plan.md` | Approved |
+| **D87** | Scanner Payload Assembly & Prior Pending Count: `dispatch_scan` queries report + indicators, active rules, config, and prior pending counts. Prior pending counts query filters `ReportIndicator` on matching `(indicator_type, normalized_value)` where `report__status="PENDING"` and excludes `report_id=report.id`, using a single aggregated query (`Count("report_id", distinct=True)`). Hostnames extracted scheme-less and lowercase | Phase 5 plan, `docs/contracts.md` §3.5 | Approved |
+| **D88** | Non-Blocking Lambda Invocation: Boto3 `lambda.invoke(FunctionName=..., InvocationType="Event", Payload=...)` called inside `transaction.on_commit()`. Client uses `connect_timeout=2`, `read_timeout=5`, `max_attempts=2`. Wrapped in `try...except Exception: logger.warning(...)`. DB updates `scan_dispatched_at=timezone.now()`, `scan_attempts=F("scan_attempts") + 1`. Never raises to caller | Phase 5 plan, `docs/02-project-architecture.md` §16 R-A6 | Approved |
+| **D89** | Pure Lambda Package (`backend/lambda/heuristic_scanner/`): Zero external runtime dependencies (Python standard library only). Contains `scoring.py` (pure scoring logic: whole-word regex keyword match, TLD max weight, IP-based URL check, shortener exact/subdomain match, prior pending, caps) and `handler.py` (Lambda entrypoint). Formats breakdown: `[{"rule": pattern, "type": rule_type, "points": weight}]`. Signs request using HMAC-SHA256 and POSTs to `/api/v1/internal/scan-results/` | Phase 5 plan, `docs/03-backend-build-plan.md` | Approved |
+| **D90** | Internal Callback Security (`POST /api/v1/internal/scan-results/`): Excluded from JWT auth. Validates `X-Timestamp` (integer seconds within ±300s clock skew) and `X-Signature` (`hmac.compare_digest(expected, sig)`). Support both `SCANNER_CALLBACK_SECRET` and `INTERNAL_CALLBACK_HMAC_KEY` in settings (prod fail-fast if missing or < 32 chars). HMAC is computed over `f"{timestamp}.".encode("utf-8") + request.body` (raw request bytes, never re-serialized `request.data`). Rate-limited. Stale or mismatched signatures reject with 403 `PERMISSION_DENIED` | Phase 5 plan, `docs/02-project-architecture.md` §5.5 | Approved |
+| **D91** | Scan Result Persistence & High-Priority Alerts: Idempotent per `(report_id, ruleset_version)`. In `transaction.atomic()`, creates `ScanResult` and updates `ScamReport` (`risk_score`, `is_high_priority`, `scan_status=DONE`). If `is_high_priority=True`, publishes notification to `STAFF_TOPIC_ARN` via `transaction.on_commit()`. Emits CloudWatch metrics `ScansCompleted` and `ScansHighPriority` | Phase 5 plan, `docs/03-backend-build-plan.md` | Approved |
+| **D92** | Advisory-Locked Scan Re-dispatch Job: Job `redispatch_pending_scans` registered in `apps/scanner/jobs.py` for `run_jobs`. Selects reports where `scan_status='PENDING'` and `(scan_dispatched_at IS NULL OR scan_dispatched_at <= now() - 5m)`. If `scan_attempts < 5`, re-dispatches. If `scan_attempts >= 5`, updates `scan_status='FAILED'`, logs audit `SCAN_FAILED`, and emits metric `ScansFailed` | Phase 5 plan, `docs/03-backend-build-plan.md` | Approved |
+| **D93** | Default Heuristic Rules Seed Command: Management command `seed_default_rules` idempotently loads baseline rules (FR-4.1.3 keywords, TLDs, shorteners) authored by the first available `ADMIN` user. Safe to re-run. Resolves deferred item from Phase 1B/4 | Phase 5 plan, `docs/PROGRESS.md` Deferred | Approved |
 
 ## Phase 3 Verification (Proven Items)
 - **TO BE PROVEN #1 (UUID user ID in JWT):** PROVEN. SimpleJWT encodes and decodes UUID user IDs without string-cast issues across access/refresh tokens.

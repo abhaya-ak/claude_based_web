@@ -4,6 +4,192 @@ info:
   version: 1.0.0
   description: Scam reporting, lookup, and literacy platform REST API.
 paths:
+  /api/v1/admin-portal/rules/:
+    get:
+      operationId: admin_portal_rules_list
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      tags:
+      - admin-portal
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedHeuristicRuleList'
+          description: ''
+    post:
+      operationId: admin_portal_rules_create
+      tags:
+      - admin-portal
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HeuristicRuleRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/HeuristicRuleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HeuristicRuleRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HeuristicRule'
+          description: ''
+  /api/v1/admin-portal/rules/{id}/:
+    get:
+      operationId: admin_portal_rules_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - admin-portal
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HeuristicRule'
+          description: ''
+    put:
+      operationId: admin_portal_rules_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - admin-portal
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HeuristicRuleRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/HeuristicRuleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HeuristicRuleRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HeuristicRule'
+          description: ''
+    patch:
+      operationId: admin_portal_rules_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - admin-portal
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedHeuristicRuleRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedHeuristicRuleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedHeuristicRuleRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HeuristicRule'
+          description: ''
+    delete:
+      operationId: admin_portal_rules_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - admin-portal
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/admin-portal/scanner-config/:
+    get:
+      operationId: admin_portal_scanner_config_retrieve
+      tags:
+      - admin-portal
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScannerConfig'
+          description: ''
+    patch:
+      operationId: admin_portal_scanner_config_partial_update
+      tags:
+      - admin-portal
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedScannerConfigRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedScannerConfigRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedScannerConfigRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScannerConfig'
+          description: ''
   /api/v1/admin-portal/users/:
     get:
       operationId: admin_portal_users_list
@@ -563,6 +749,64 @@ components:
           - request_id
       required:
       - error
+    HeuristicRule:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        rule_type:
+          $ref: '#/components/schemas/RuleTypeEnum'
+        pattern:
+          type: string
+          maxLength: 100
+        weight:
+          type: integer
+          maximum: 50
+          minimum: 1
+        is_active:
+          type: boolean
+          default: true
+        created_by:
+          type: string
+          format: uuid
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - created_by
+      - id
+      - pattern
+      - rule_type
+      - updated_at
+      - weight
+    HeuristicRuleRequest:
+      type: object
+      properties:
+        rule_type:
+          $ref: '#/components/schemas/RuleTypeEnum'
+        pattern:
+          type: string
+          minLength: 1
+          maxLength: 100
+        weight:
+          type: integer
+          maximum: 50
+          minimum: 1
+        is_active:
+          type: boolean
+          default: true
+      required:
+      - pattern
+      - rule_type
+      - weight
     LivenessResponse:
       type: object
       properties:
@@ -613,6 +857,29 @@ components:
       - currency
       - platform
       - reference_code
+    PaginatedHeuristicRuleList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/HeuristicRule'
     PaginatedMyReportItemList:
       type: object
       required:
@@ -650,6 +917,41 @@ components:
       required:
       - current_password
       - new_password
+    PatchedHeuristicRuleRequest:
+      type: object
+      properties:
+        rule_type:
+          $ref: '#/components/schemas/RuleTypeEnum'
+        pattern:
+          type: string
+          minLength: 1
+          maxLength: 100
+        weight:
+          type: integer
+          maximum: 50
+          minimum: 1
+        is_active:
+          type: boolean
+          default: true
+    PatchedScannerConfigRequest:
+      type: object
+      properties:
+        keyword_cap_points:
+          type: integer
+          maximum: 100
+          minimum: 0
+        ip_url_points:
+          type: integer
+          maximum: 100
+          minimum: 0
+        prior_pending_points:
+          type: integer
+          maximum: 100
+          minimum: 0
+        high_priority_threshold:
+          type: integer
+          maximum: 100
+          minimum: 1
     PaymentMethodEnum:
       enum:
       - NONE
@@ -871,6 +1173,49 @@ components:
       - playbook
       - reference_code
       - status
+    RuleTypeEnum:
+      enum:
+      - KEYWORD
+      - TLD
+      - SHORTENER
+      type: string
+      description: |-
+        * `KEYWORD` - Keyword
+        * `TLD` - TLD
+        * `SHORTENER` - URL Shortener
+    ScannerConfig:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        keyword_cap_points:
+          type: integer
+          maximum: 100
+          minimum: 0
+        ip_url_points:
+          type: integer
+          maximum: 100
+          minimum: 0
+        prior_pending_points:
+          type: integer
+          maximum: 100
+          minimum: 0
+        high_priority_threshold:
+          type: integer
+          maximum: 100
+          minimum: 1
+        ruleset_version:
+          type: integer
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - id
+      - ruleset_version
+      - updated_at
     StaffRegisterRequest:
       type: object
       properties:
