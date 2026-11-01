@@ -619,6 +619,58 @@ paths:
           description: Report not found
         '429':
           description: Too many failed tracking attempts
+  /api/v1/triage/queue/:
+    get:
+      operationId: triage_queue_list
+      description: Returns pending scam reports annotated with cluster_size.
+      summary: List triage queue
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      tags:
+      - triage
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedQueueReportList'
+          description: ''
+  /api/v1/triage/reports/{id}/:
+    get:
+      operationId: triage_reports_retrieve
+      description: Returns full analyst detail for a scam report.
+      summary: Get triage report detail
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - triage
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportDetail'
+          description: ''
 components:
   schemas:
     AdminUser:
@@ -780,6 +832,32 @@ components:
           - request_id
       required:
       - error
+    EvidenceMetadata:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        content_type:
+          type: string
+          readOnly: true
+        size_bytes:
+          type: integer
+          readOnly: true
+        sha256:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - content_type
+      - created_at
+      - id
+      - sha256
+      - size_bytes
     HeuristicRule:
       type: object
       properties:
@@ -838,6 +916,42 @@ components:
       - pattern
       - rule_type
       - weight
+    IndicatorDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        type:
+          allOf:
+          - $ref: '#/components/schemas/TypeEnum'
+          readOnly: true
+        raw_value:
+          type: string
+          readOnly: true
+        normalized_value:
+          type: string
+          readOnly: true
+        display_value:
+          type: string
+          readOnly: true
+        verified_indicator:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - display_value
+      - id
+      - normalized_value
+      - raw_value
+      - type
+      - verified_indicator
     LivenessResponse:
       type: object
       properties:
@@ -934,6 +1048,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/MyReportItem'
+    PaginatedQueueReportList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/QueueReport'
     PasswordChangeRequest:
       type: object
       properties:
@@ -1037,6 +1174,73 @@ components:
       required:
       - steps
       - title
+    QueueReport:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        reference_code:
+          type: string
+          readOnly: true
+        category:
+          allOf:
+          - $ref: '#/components/schemas/CategoryEnum'
+          readOnly: true
+        platform:
+          allOf:
+          - $ref: '#/components/schemas/PlatformEnum'
+          readOnly: true
+        financial_loss:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        currency:
+          type: string
+          readOnly: true
+        incident_date:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusEnum'
+          readOnly: true
+        risk_score:
+          type: integer
+          readOnly: true
+          nullable: true
+        is_high_priority:
+          type: boolean
+          readOnly: true
+        scan_status:
+          allOf:
+          - $ref: '#/components/schemas/ScanStatusEnum'
+          readOnly: true
+        cluster_size:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - category
+      - cluster_size
+      - created_at
+      - currency
+      - financial_loss
+      - id
+      - incident_date
+      - is_high_priority
+      - platform
+      - reference_code
+      - risk_score
+      - scan_status
+      - status
     ReadinessResponse:
       type: object
       properties:
@@ -1122,6 +1326,129 @@ components:
       - playbook
       - reference_code
       - status
+    ReportDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        reference_code:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusEnum'
+          readOnly: true
+        category:
+          allOf:
+          - $ref: '#/components/schemas/CategoryEnum'
+          readOnly: true
+        platform:
+          allOf:
+          - $ref: '#/components/schemas/PlatformEnum'
+          readOnly: true
+        financial_loss:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        currency:
+          type: string
+          readOnly: true
+        payment_method:
+          allOf:
+          - $ref: '#/components/schemas/PaymentMethodEnum'
+          readOnly: true
+        country_code:
+          type: string
+          readOnly: true
+        admin_area:
+          type: string
+          readOnly: true
+          nullable: true
+        incident_date:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        message_text:
+          type: string
+          readOnly: true
+        risk_score:
+          type: integer
+          readOnly: true
+          nullable: true
+        is_high_priority:
+          type: boolean
+          readOnly: true
+        scan_status:
+          allOf:
+          - $ref: '#/components/schemas/ScanStatusEnum'
+          readOnly: true
+        cluster_size:
+          type: integer
+          readOnly: true
+        indicators:
+          type: array
+          items:
+            $ref: '#/components/schemas/IndicatorDetail'
+          readOnly: true
+        evidence_files:
+          type: array
+          items:
+            $ref: '#/components/schemas/EvidenceMetadata'
+          readOnly: true
+        scan_result:
+          allOf:
+          - $ref: '#/components/schemas/ScanResultDetail'
+          readOnly: true
+        reviewed_by:
+          type: string
+          format: email
+          readOnly: true
+        reviewed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        review_note:
+          type: string
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - admin_area
+      - category
+      - cluster_size
+      - country_code
+      - created_at
+      - currency
+      - evidence_files
+      - financial_loss
+      - id
+      - incident_date
+      - indicators
+      - is_high_priority
+      - message_text
+      - payment_method
+      - platform
+      - reference_code
+      - review_note
+      - reviewed_at
+      - reviewed_by
+      - risk_score
+      - scan_result
+      - scan_status
+      - status
+      - updated_at
     ReportOptionsResponse:
       type: object
       properties:
@@ -1244,6 +1571,40 @@ components:
       - report_id
       - risk_score
       - ruleset_version
+    ScanResultDetail:
+      type: object
+      properties:
+        ruleset_version:
+          type: integer
+          readOnly: true
+        risk_score:
+          type: integer
+          readOnly: true
+        is_high_priority:
+          type: boolean
+          readOnly: true
+        breakdown:
+          readOnly: true
+        scanned_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - breakdown
+      - is_high_priority
+      - risk_score
+      - ruleset_version
+      - scanned_at
+    ScanStatusEnum:
+      enum:
+      - PENDING
+      - DONE
+      - FAILED
+      type: string
+      description: |-
+        * `PENDING` - Pending
+        * `DONE` - Done
+        * `FAILED` - Failed
     ScannerConfig:
       type: object
       properties:
@@ -1341,6 +1702,20 @@ components:
       required:
       - detail
       - title
+    TypeEnum:
+      enum:
+      - PHONE
+      - URL
+      - DOMAIN
+      - EMAIL
+      - BANK_ACCOUNT
+      type: string
+      description: |-
+        * `PHONE` - Phone
+        * `URL` - URL
+        * `DOMAIN` - Domain
+        * `EMAIL` - Email
+        * `BANK_ACCOUNT` - Bank Account
     UnavailableResponse:
       type: object
       properties:

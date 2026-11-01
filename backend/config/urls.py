@@ -114,4 +114,5 @@ urlpatterns = [
     path("api/v1/admin-portal/", include("apps.scanner.urls_admin")),
     path("api/v1/reports/", include("apps.reports.urls")),
     path("api/v1/internal/", include("apps.scanner.urls_internal")),
+    path("api/v1/triage/", include("apps.intel.urls")),
 ]

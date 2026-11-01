@@ -1,4 +1,30 @@
 import pytest
+from django.db.backends.base.creation import BaseDatabaseCreation
+
+# Ensure any lingering test database connections are closed/terminated before DROP DATABASE
+_orig_destroy_test_db = BaseDatabaseCreation._destroy_test_db
+
+
+def _clean_destroy_test_db(self, test_database_name, verbosity):
+    from django.db import connections
+
+    connections.close_all()
+    try:
+        with self._nodb_cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT pg_terminate_backend(pid)
+                FROM pg_stat_activity
+                WHERE datname = %s AND pid <> pg_backend_pid();
+            """,
+                [test_database_name],
+            )
+    except Exception:
+        pass
+    return _orig_destroy_test_db(self, test_database_name, verbosity)
+
+
+BaseDatabaseCreation._destroy_test_db = _clean_destroy_test_db
 
 
 @pytest.fixture(autouse=True)
