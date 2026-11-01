@@ -9,7 +9,10 @@ from django.utils import timezone
 from moto import mock_aws
 
 from apps.core import aws
-from apps.reports.jobs import MAX_ORPHAN_DELETES_PER_RUN, clean_orphan_evidence
+from apps.reports.jobs import (
+    ORPHAN_BATCH_LIMIT,
+    clean_orphan_evidence,
+)
 from apps.reports.models import (
     Platform,
     ReportEvidence,
@@ -132,11 +135,16 @@ class TestOrphanEvidenceCleanupJob:
         assert s3.head_object(Bucket=bucket, Key=export_key)["ContentLength"] > 0
         assert s3.head_object(Bucket=bucket, Key=guide_key)["ContentLength"] > 0
 
+    def test_orphan_batch_limit_constant(self):
+        assert ORPHAN_BATCH_LIMIT == 500
+
     def test_max_500_cap_per_run(self, s3_evidence_bucket, monkeypatch):
         s3 = s3_evidence_bucket
         bucket = settings.EVIDENCE_BUCKET
 
-        total_keys = MAX_ORPHAN_DELETES_PER_RUN + 5
+        monkeypatch.setattr("apps.reports.jobs.ORPHAN_BATCH_LIMIT", 5)
+
+        total_keys = 8
         for i in range(total_keys):
             key = f"evidence/test-bulk/orphan_{i:04d}.png"
             s3.put_object(Bucket=bucket, Key=key, Body=b"x")
@@ -146,11 +154,11 @@ class TestOrphanEvidenceCleanupJob:
         monkeypatch.setattr(timezone, "now", lambda: future)
 
         res = clean_orphan_evidence()
-        assert res["deleted_count"] == MAX_ORPHAN_DELETES_PER_RUN
+        assert res["deleted_count"] == 5
 
-        # 5 keys should remain
+        # 3 keys should remain
         remaining = s3.list_objects_v2(Bucket=bucket, Prefix="evidence/test-bulk/")
-        assert remaining.get("KeyCount") == 5
+        assert remaining.get("KeyCount") == 3
 
     def test_run_jobs_invokes_clean_orphan_evidence(
         self, s3_evidence_bucket

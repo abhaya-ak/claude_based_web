@@ -1,5 +1,6 @@
 import io
 import uuid
+import warnings
 
 import pytest
 from botocore.exceptions import ClientError
@@ -114,6 +115,48 @@ class TestImageProcessing:
         assert clean_bytes.startswith(b"\x89PNG")
         clean_im = Image.open(io.BytesIO(clean_bytes))
         assert clean_im.size == (10, 10)
+
+    def test_png_pixel_data_preserved_and_metadata_stripped(self):
+        # Create non-trivial image with distinct pixels and text metadata
+        orig = Image.new("RGBA", (4, 4))
+        for x in range(4):
+            for y in range(4):
+                orig.putpixel((x, y), (x * 40, y * 50, (x + y) * 25, 255))
+
+        bio = io.BytesIO()
+        from PIL.PngImagePlugin import PngInfo
+
+        info = PngInfo()
+        info.add_text("ReporterNotes", "Confidential user statement")
+        orig.save(bio, format="PNG", pnginfo=info)
+        raw_png = bio.getvalue()
+
+        # Verify metadata exists on original
+        with Image.open(io.BytesIO(raw_png)) as check_orig:
+            assert "ReporterNotes" in check_orig.text
+
+        # Re-encode through evidence processor
+        clean_bytes = process_image(raw_png, "image/png")
+        with Image.open(io.BytesIO(clean_bytes)) as clean_im:
+            # Metadata stripped
+            assert "ReporterNotes" not in getattr(clean_im, "text", {})
+            # Pixel data preserved identically
+            assert clean_im.size == orig.size
+            assert clean_im.mode == orig.mode
+            assert clean_im.tobytes() == orig.tobytes()
+
+    def test_evidence_processing_emits_zero_warnings(self):
+        raw_png = create_minimal_png()
+        raw_jpeg = create_minimal_jpeg(with_exif=True)
+        with warnings.catch_warnings(record=True) as recorded:
+            warnings.simplefilter("always")
+            process_image(raw_png, "image/png")
+            process_image(raw_jpeg, "image/jpeg")
+
+        evidence_warnings = [
+            w for w in recorded if "evidence.py" in str(w.filename)
+        ]
+        assert len(evidence_warnings) == 0
 
     def test_decompression_bomb_pixel_cap_rejected(self):
         # 10,001 x 1,000 = 10,001,000 pixels > 10,000,000

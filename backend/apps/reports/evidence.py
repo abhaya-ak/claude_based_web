@@ -92,8 +92,9 @@ def process_image(data: bytes, expected_content_type: str) -> bytes:
                     rgb_im.save(out_bio, format="JPEG", quality=85, optimize=True)
                 else:
                     # PNG: reconstruct clean image without metadata chunks
-                    clean_im = Image.new(im.mode, im.size)
-                    clean_im.putdata(list(im.getdata()))
+                    clean_im = Image.frombytes(im.mode, im.size, im.tobytes())
+                    if im.palette:
+                        clean_im.putpalette(im.palette)
                     clean_im.save(out_bio, format="PNG", optimize=True)
 
                 return out_bio.getvalue()

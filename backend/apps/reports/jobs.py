@@ -10,7 +10,8 @@ from apps.reports.models import ReportEvidence
 
 logger = logging.getLogger(__name__)
 
-MAX_ORPHAN_DELETES_PER_RUN = 500
+ORPHAN_BATCH_LIMIT = 500
+MAX_ORPHAN_DELETES_PER_RUN = ORPHAN_BATCH_LIMIT
 
 
 @register_job("clean_orphan_evidence")
@@ -53,10 +54,10 @@ def clean_orphan_evidence() -> dict:
             s3.delete_object(Bucket=bucket, Key=key)
             deleted_count += 1
 
-            if deleted_count >= MAX_ORPHAN_DELETES_PER_RUN:
+            if deleted_count >= ORPHAN_BATCH_LIMIT:
                 break
 
-        if deleted_count >= MAX_ORPHAN_DELETES_PER_RUN:
+        if deleted_count >= ORPHAN_BATCH_LIMIT:
             break
 
     logger.info(
