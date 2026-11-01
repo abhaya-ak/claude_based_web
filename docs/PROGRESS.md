@@ -1,7 +1,7 @@
 # PROGRESS (the agent reads this at session start and updates it at the end of every task)
 
 ## Current phase
-Phase 1B — Models + migrations (done, merge pending)
+Phase 3 — Accounts, authentication, RBAC (done, merge pending)
 
 ## Status
 | Phase | Owner | Status | Commit/PR | Notes |
@@ -9,8 +9,22 @@ Phase 1B — Models + migrations (done, merge pending)
 | 0 Governance | all | done | 34a26cf | Task 0 done; repo setup, rules, contracts frozen |
 | 1A DB design review | all | done | 34a26cf | Design frozen, contracts merged |
 | 1B Models + migrations | all | done, merge pending | | 19 app tables, 168 tests, ERD + schema inventory gate complete |
-| 2 Scaffold | S4 | todo | | |
-| 3 Auth/RBAC | S4 | todo | | |
+| 2 Scaffold | S4 | done | | Phase 2 foundations |
+| ├─ 2.1 Settings & test safety | S4 | done | | Settings split (base/dev/test/prod), root URLs, JSON handlers, .env.example, AWS test safety fixture (35 new tests) |
+| ├─ 2.2 Error envelope & logging | S4 | done | | Error envelope, pagination, request ID ContextVar/middleware, PII scrubber, access log (35 new tests) |
+| ├─ 2.3 Health & client IP | S4 | done | | HealthCheckMiddleware (first), liveness/readiness endpoints, client IP & HMAC hashing (12 new tests) |
+| ├─ 2.4 AWS, metrics & audit | S4 | done | | AWS client factory (timeouts/caching), metrics emitter, audit log_event with lazy ops model import (26 new tests) |
+| ├─ 2.5 OpenAPI schema | S4 | done | | drf-spectacular, committed backend/openapi.yaml, drift check, docs UI disabled in prod (4 new tests) |
+| ├─ 2.6 Containerization | S4 | done | | Multi-stage Dockerfile (python:3.13-slim, non-root, libmagic1), gunicorn entrypoint no access log, health & non-root proof |
+| └─ 2.7 CI & closing gate | S4 | done | | GitHub Actions CI, pre-commit, deployment checks, Phase 2 gate |
+| 3 Auth/RBAC | S4 | done, merge pending | | Phase 3 complete (Tasks 3.1 - 3.6), all 221 tests green |
+| ├─ 3.1 Foundation | S4 | done | e6f44e5 | Token blacklist, ops 0002 (18 audit types), JWT/cookie, permissions, throttles |
+| ├─ 3.2 Public auth | S4 | done | a486c82 | register, register/staff, login, refresh, logout |
+| ├─ 3.3 Authenticated | S4 | done | 5803925 | me, password/change, token blacklist |
+| ├─ 3.4 Admin portal | S4 | done | acf9869 | list, approve, reject, change-role |
+| ├─ 3.5 Commands & jobs | S4 | done | cb362fa | create_admin, run_jobs (advisory lock) |
+| ├─ 3.6 Closing | S4 | done | 6b40cfa | Route-walk, RBAC matrix, OpenAPI, docs, gate |
+| └─ 3.7 Smoke & logging | S4 | done | | PowerShell 5.1 auth smoke script (15 steps) and user_id in AccessLogMiddleware |
 | M0 Walking skeleton deployed to AWS | S4 | todo | | |
 | 4 Reports | S1 | todo | | |
 | 5 Scanner | S4 | todo | | |
@@ -51,6 +65,42 @@ Phase 1B — Models + migrations (done, merge pending)
 | **D21** | `docs/erd.md` generated from live Django models via `backend/tools/generate_erd.py` | `backend/tools/generate_erd.py`, `docs/erd.md` | Implemented |
 | **D22** | Fixed-length `char(n)` columns in 03a implemented as `varchar(n)` because Django has no fixed-length type. Affected: `currency(3)`, `country_code(2)`, `sha256(64)`, `endpoint_hash(64)`, `unsubscribe_token_hash(64)`, `actor_ip_hash(64)`, `language(2)`. Exact lengths enforced by services/validators | `apps/reports/models.py`, `apps/alerts/models.py`, `apps/ops/models.py`, `apps/literacy/models.py` | Implemented |
 | **D23** | `public_note` (`intel_verifiedindicator`) and `alt_text` (`literacy_guideasset`) are `NOT NULL` with empty-string default; DB has no column defaults because Django applies defaults in Python | `apps/intel/models.py:public_note`, `apps/literacy/models.py:alt_text`, migrations `intel/0001_initial.py`, `literacy/0001_initial.py` | Implemented |
+| **D24** | Daily work stays in venv (PowerShell). Docker runs DB; backend container proves production image boots and passes healthcheck. Both paths documented in PROGRESS | Phase 2 planning | Approved |
+| **D25** | Scope guard: Phase 2 creates NO models and NO migrations. Schema inventory test stays green (25 tables). `makemigrations --check` stays clean. Contrib apps stay pinned | Phase 2 planning | Approved |
+| **D26** | Error envelope for non-2xx: `{"error":{"code","message","details","request_id"}}`. Handlers for 400, 401, 403, 404, 405, 409, 429 (Retry-After), 500 (no stack trace leak). Root URL handlers for non-DRF errors | Phase 2 planning, `docs/02-project-architecture.md` §4 | Approved |
+| **D27** | Request ID: incoming `X-Request-ID` validated against `^[A-Za-z0-9._-]{8,64}$`, else generate uuid4 hex. Returned as `X-Request-ID`. ContextVar for logs, errors, audit | Phase 2 planning | Approved |
+| **D28** | JSON logging to stdout via `python-json-logger`. PII scrubber filter masks 16 forbidden keys anywhere in log record. Single-line access log (NO query string, bodies, or headers) | Phase 2 planning, `docs/02-project-architecture.md` §15 | Approved |
+| **D29** | Health endpoints: `/api/v1/health/` liveness (`{"status":"ok"}`); `/api/v1/health/ready/` readiness (`SELECT 1`, 2s timeout; 200 or 503). `HealthCheckMiddleware` is FIRST in MIDDLEWARE, answers before host validation (R-D4) | Phase 2 planning, `docs/02-project-architecture.md` R-D4 | Approved |
+| **D30** | Client IP: `TRUSTED_PROXY_HOPS` setting (dev/test 0, prod required). Client IP = `XFF[-(N+1)]` with `REMOTE_ADDR` fallback; validated via `ipaddress`. `core.ip.client_ip_hash(request)` is 64 hex chars | Phase 2 planning, `docs/02-project-architecture.md` R-C7 | Approved |
+| **D31** | AWS client factory: `core.aws.client(service)` with connect_timeout=2s, read_timeout=5s, max_attempts=2, region from `AWS_REGION`, optional `AWS_ENDPOINT_URL`, thread-safe cache, `reset_clients()`. Test autouse fixture blocks real AWS | Phase 2 planning, `docs/contracts.md` §3.4 | Approved |
+| **D32** | Metrics: `core.metrics.emit` never raises. Allowed metric names (7) and dimensions (Environment, Platform). `METRICS_ENABLED` switches CloudWatch PutMetricData in `ScamShield/Operations` | Phase 2 planning, `docs/contracts.md` §3.2 | Approved |
+| **D33** | Audit writer: `core.audit.log_event` implemented in Phase 2. Validates event_type and severity against ops enums; raises ValueError on scrubbed keys; fills request_id; writes in caller's transaction | Phase 2 planning, `docs/contracts.md` §3.1 | Approved |
+| **D34** | Pagination: `StandardPagination`, limit/offset, default 20, max 100, response `{count, next, previous, results}` | Phase 2 planning, `docs/02-project-architecture.md` §4 | Approved |
+| **D35** | Settings split `base/dev/test/prod`. Prod fails fast on missing/invalid secrets, hosts, hops, or DEBUG=True. DB: `CONN_MAX_AGE=60`, `statement_timeout=10000`, `sslmode=require`. JSON-only renderer. Admin uninstalled | Phase 2 planning, `docs/02-project-architecture.md` §12, R-A1 | Approved |
+| **D36** | Deploy checks: silence ONLY `security.W004` and `security.W008` in `SILENCED_SYSTEM_CHECKS` citing R-D5 (CloudFront handles HTTPS/HSTS). All other checks pass with `--fail-level WARNING` | Phase 2 planning, `docs/02-project-architecture.md` R-D5 | Approved |
+| **D37** | Gunicorn: no access log (avoids logging query strings); error log to stdout; flags per 02 §13. Docs 02 §13 updated. API docs/schema UI disabled in prod | Phase 2 planning, `docs/02-project-architecture.md` §13 | Approved |
+| **D38** | `APPEND_SLASH=False`; every route ends with a slash | Phase 2 planning | Approved |
+| **D39** | Hash-pinned lock files deferred to Phase 13 (Linux build). Dependencies unchanged in Phase 2 | Phase 2 planning | Approved |
+| **D40** | Phase 2 adjustments (tasks 2.2-2.5): `openapi.yaml` located at `backend/openapi.yaml` (regenerated via `manage.py spectacular --file openapi.yaml --validate`); `ProtectedSpectacular*View` classes for dynamic runtime `ENABLE_API_DOCS` toggle; `ErrorResponse` schema component via `SPECTACULAR_SETTINGS["APPEND_COMPONENTS"]`; typed `@extend_schema` on health views | Phase 2 task 2.5b | Implemented |
+| **D41** | Lift Phase 2 scope guard for `rest_framework_simplejwt.token_blacklist`; add 2 tables (`token_blacklist_outstandingtoken`, `token_blacklist_blacklistedtoken`) to schema inventory (27 tables total); preserve duplicate-index check; record in 03a §13 | Phase 3 plan, `docs/PROGRESS.md` | Approved |
+| **D42** | Migration `ops 0002` adds 3 audit event types (`USER_REGISTERED`, `ROLE_CHANGED`, `PASSWORD_CHANGED`); `ck_audit_event_type` updated to 18 allowed values; update `AuditEventType` enum, 03a §2 and §4.19; verify via sqlmigrate | Phase 3 plan, `docs/PROGRESS.md` | Approved |
+| **D43** | Refresh cookie: name `refresh`, HttpOnly, SameSite=Lax, Path=/api/v1/auth/, Max-Age 7 days; `REFRESH_COOKIE_SECURE` setting (dev False, prod True fail-fast); access token returned only in JSON body | `docs/02-project-architecture.md` §5.1, Phase 3 plan | Approved |
+| **D44** | `/auth/refresh/` and `/auth/logout/` read refresh token from cookie only (never body) and require `X-Requested-With: scamshield-web` header (missing → 403 `permission_denied`) | Phase 3 plan, `docs/PROGRESS.md` | Approved |
+| **D45** | Login: lower-cased email lookup; identical 401 `authentication_failed` message for unknown email, wrong password, inactive user; dummy password check on unknown email to resist timing attacks; unapproved staff returns 403 `account_not_approved` with no tokens; success returns `{access, user}` and sets cookie; audit `LOGIN_SUCCESS` and `LOGIN_FAILURE` (ip hash + target `("USER", user_id)` when user exists, never email) | `docs/03-backend-build-plan.md` Phase 3, Phase 3 plan | Approved |
+| **D46** | Registration: `POST /auth/register/` creates `CITIZEN` only (ignores payload `role`), returns 201 with user and no tokens; `POST /auth/register/staff/` accepts role in `{ANALYST, EDUCATOR}` only, requires `organization` and `credential_note` (max 1000 chars), sets `approval_status=PENDING`, returns 201 with message and no tokens; duplicate email returns 409 `conflict`; audit `USER_REGISTERED` / `STAFF_REGISTERED` | `docs/03-backend-build-plan.md` Phase 3, Phase 3 plan | Approved |
+| **D47** | Throttling from audit table: login failures max 10/ip_hash/15m and max 10/target account/15m; registrations max 10/ip_hash/1h; exceeding limit returns 429 `throttled` with `Retry-After` header and writes `RATE_LIMIT_BLOCK` audit row | `docs/02-project-architecture.md` §16 R-C6, Phase 3 plan | Approved |
+| **D48** | Passwords: min length 10 + Django common-password, numeric, and user-attribute validators; `POST /auth/password/change/` requires current password, blacklists all outstanding refresh tokens for that user, clears cookie, returns 204, audits `PASSWORD_CHANGED` | `docs/02-project-architecture.md` §5.2, Phase 3 plan | Approved |
+| **D49** | No custom claims in JWT; authorization reads role/approval from DB user; `SIMPLE_JWT` with `JWT_SIGNING_KEY`, HS256, access 15m, refresh 7d, rotation + blacklist enabled; UUID user id in tokens verified (PROVEN in 3.1/3.2) | `docs/03-backend-build-plan.md` Phase 3, Phase 3 plan | Approved |
+| **D50** | Admin rules: only `PENDING` staff can be approved or rejected (409 conflict otherwise); reject requires reason; approve sets `approved_by` and `approved_at`; admin cannot change own role; last active `ADMIN` cannot be demoted or deactivated; role change allowed in `{CITIZEN, ANALYST, EDUCATOR, ADMIN}`; audited via `ROLE_APPROVED`, `ROLE_REJECTED`, `ROLE_CHANGED` | `docs/03-backend-build-plan.md` Phase 3, Phase 3 plan | Approved |
+| **D51** | Idempotent `create_admin` command (password from `ADMIN_PASSWORD` env or interactive prompt, role `ADMIN`, `APPROVED`); `run_jobs` command with job registry, each job acquiring Postgres advisory lock (`pg_try_advisory_lock`) to skip concurrent runs; initial job: flush expired JWT tokens | `docs/02-project-architecture.md` §14, `docs/03-backend-build-plan.md` Phase 3 | Approved |
+| **D52** | Phase 3 API inventory: auth (`register`, `register/staff`, `login`, `refresh`, `logout`, `me`, `password/change`); admin (`GET /admin-portal/users/?status=`, `POST /admin-portal/users/{id}/approve/`, `/reject/`, `/change-role/`); add change-role to `docs/02-project-architecture.md` §6; explicit permission classes (`AllowAny` on public endpoints); explicit serializer field lists with no password hash exposed | `docs/02-project-architecture.md` §6, Phase 3 plan | Approved |
+| **D53** | Phase 3 was first built on a branch without Phase 2 and integrated by merge | Integration task, `docs/PROGRESS.md` | Implemented |
+
+## Phase 3 Verification (Proven Items)
+- **TO BE PROVEN #1 (UUID user ID in JWT):** PROVEN. SimpleJWT encodes and decodes UUID user IDs without string-cast issues across access/refresh tokens.
+- **TO BE PROVEN #2 (Third-party table duplicate-index check):** PROVEN. Schema inventory asserts exactly 27 public tables with 0 duplicate indexes across both project and SimpleJWT tables.
+- **TO BE PROVEN #3 (Multi-session token revocation):** PROVEN. OutstandingToken iteration on password change blacklists all active refresh tokens for the user.
+- **TO BE PROVEN #4 (Postgres advisory lock concurrency):** PROVEN. `run_jobs` acquires `pg_try_advisory_lock`; concurrent worker holding lock causes `run_jobs` to skip cleanly with no race conditions.
 
 ## Standing rules for model tasks
 - Index names max 30 characters; check every name.
@@ -67,6 +117,7 @@ Phase 1B — Models + migrations (done, merge pending)
 - **Default heuristic rules command (Phase 5):** Management command `seed_default_rules` requiring an existing admin user to author the initial ruleset (cannot run in data migration without an admin user).
 - **Frontend build plan:** Blocked until the frontend requirements and UI design specification document is drafted.
 - **GitHub remote repository setup:** Configure git remote origin when the remote repository is created by the owner.
+- **Hash-pinned lock files (D39, Phase 13):** Exact sha256 hash pinning of dependency lock files deferred to Linux container build phase.
 
 ## Open questions for the owner
 - (none yet)
@@ -79,5 +130,7 @@ Phase 1B — Models + migrations (done, merge pending)
 - Migrate: `cd backend; python manage.py migrate`
 - Run tests: `cd backend; pytest -q`
 - Run lint: `cd backend; ruff check .`
+- Regenerate OpenAPI: `cd backend; python manage.py spectacular --file openapi.yaml --validate`
 - Dump schema: `cd backend; python tools/dump_schema.py`
 - Generate ERD: `cd backend; python tools/generate_erd.py`
+- Run auth smoke tests: `powershell -File backend/tools/smoke_auth.ps1`
