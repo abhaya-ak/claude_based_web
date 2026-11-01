@@ -4,7 +4,10 @@ pytest-django>=4.9
 pytest-cov>=5.0
 factory-boy>=3.3
 freezegun>=1.5
-moto[s3,sns,lambda,cloudwatch,ssm]>=5.0
+moto[s3,sns,lambda,cloudwatch,ssm,server]>=5.0
+# needed by moto_server
+flask
+flask-cors
 responses>=0.25
 ruff>=0.6
 pre-commit>=3.8

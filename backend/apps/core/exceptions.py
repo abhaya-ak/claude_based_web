@@ -56,6 +56,12 @@ class ConflictError(drf_exceptions.APIException):
     default_code = "conflict"
 
 
+class PayloadTooLarge(drf_exceptions.APIException):
+    status_code = status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
+    default_detail = "Request payload exceeds the maximum allowed size of 16 MB."
+    default_code = "payload_too_large"
+
+
 def _extract_request_id(request) -> str:
     if request:
         req_id = getattr(request, "correlation_id", None) or getattr(request, "id", None)
@@ -81,6 +87,31 @@ def custom_exception_handler(exc, context):
 
     # Let DRF handle standard exceptions first
     response = exception_handler(exc, context)
+
+    # Handle NormalizationError from reports normalizers and validators (D56, D74)
+    try:
+        from apps.reports.normalizers import NormalizationError
+    except ImportError:
+        NormalizationError = None
+
+    if NormalizationError and isinstance(exc, NormalizationError):
+        code = DualCode("validation_error", "VALIDATION_ERROR")
+        field = getattr(exc, "field", "indicator")
+        err_code = getattr(exc, "code", "invalid_indicator")
+        norm_resp = Response(
+            {
+                "error": {
+                    "code": code,
+                    "message": "Validation failed.",
+                    "details": {field: [err_code]},
+                    "request_id": request_id,
+                }
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+        if request_id:
+            norm_resp.headers["X-Request-ID"] = request_id
+        return norm_resp
 
     if response is not None:
         status_code = response.status_code
@@ -121,6 +152,10 @@ def custom_exception_handler(exc, context):
         elif isinstance(exc, ConflictError) or status_code == status.HTTP_409_CONFLICT:
             code = DualCode("conflict", "CONFLICT")
             detail = response.data.get("detail", "A conflict occurred.")
+            message = str(detail)
+        elif isinstance(exc, PayloadTooLarge) or status_code == status.HTTP_413_REQUEST_ENTITY_TOO_LARGE:
+            code = DualCode("payload_too_large", "PAYLOAD_TOO_LARGE")
+            detail = response.data.get("detail", "Request payload exceeds the maximum allowed size of 16 MB.") if isinstance(response.data, dict) else "Request payload exceeds the maximum allowed size of 16 MB."
             message = str(detail)
         else:
             if isinstance(response.data, dict) and "detail" in response.data:

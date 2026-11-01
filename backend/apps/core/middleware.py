@@ -3,6 +3,7 @@ import re
 import time
 import uuid
 
+from django.conf import settings
 from django.db import connection
 from django.http import JsonResponse
 
@@ -58,6 +59,39 @@ class CorrelationIdMiddleware:
 
         response["X-Request-ID"] = req_id
         return response
+
+
+class RequestSizeLimitMiddleware:
+    """Rejects Content-Length above 16 MB before parsing with 413 and code payload_too_large per D71."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        content_length = request.META.get("CONTENT_LENGTH")
+        if content_length:
+            try:
+                cl_int = int(content_length)
+                max_bytes = getattr(settings, "DATA_UPLOAD_MAX_MEMORY_SIZE", 16 * 1024 * 1024)
+                if cl_int > max_bytes:
+                    req_id = getattr(request, "correlation_id", "") or get_correlation_id()
+                    resp = JsonResponse(
+                        {
+                            "error": {
+                                "code": "payload_too_large",
+                                "message": f"Request payload exceeds the maximum allowed size of {max_bytes} bytes.",
+                                "details": None,
+                                "request_id": req_id,
+                            }
+                        },
+                        status=413,
+                    )
+                    if req_id:
+                        resp["X-Request-ID"] = req_id
+                    return resp
+            except (ValueError, TypeError):
+                pass
+        return self.get_response(request)
 
 
 class AccessLogMiddleware:

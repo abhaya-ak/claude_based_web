@@ -16,6 +16,9 @@ PUBLIC_ALLOWLIST = {
     "/api/v1/auth/login/",
     "/api/v1/auth/refresh/",
     "/api/v1/auth/logout/",
+    "/api/v1/reports/options/",
+    "/api/v1/reports/",
+    "/api/v1/reports/track/",
 }
 
 
@@ -104,6 +107,9 @@ class TestRouteWalkAndPublicAllowlist:
             "/api/v1/auth/login/",
             "/api/v1/auth/refresh/",
             "/api/v1/auth/logout/",
+    "/api/v1/reports/options/",
+    "/api/v1/reports/",
+    "/api/v1/reports/track/",
         }
         for route in required_public:
             assert route in all_routes, f"Expected public route {route} not found in URLconf"

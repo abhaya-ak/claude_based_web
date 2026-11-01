@@ -1,7 +1,7 @@
 # PROGRESS (the agent reads this at session start and updates it at the end of every task)
 
 ## Current phase
-Phase 3 — Accounts, authentication, RBAC (done, merge pending)
+Phase 4 — Reports and evidence vault, F1.1 (done, merge pending)
 
 ## Status
 | Phase | Owner | Status | Commit/PR | Notes |
@@ -24,9 +24,15 @@ Phase 3 — Accounts, authentication, RBAC (done, merge pending)
 | ├─ 3.4 Admin portal | S4 | done | acf9869 | list, approve, reject, change-role |
 | ├─ 3.5 Commands & jobs | S4 | done | cb362fa | create_admin, run_jobs (advisory lock) |
 | ├─ 3.6 Closing | S4 | done | 6b40cfa | Route-walk, RBAC matrix, OpenAPI, docs, gate |
-| └─ 3.7 Smoke & logging | S4 | done | | PowerShell 5.1 auth smoke script (15 steps) and user_id in AccessLogMiddleware |
+| └─ 3.7 Smoke & logging | S4 | done | 50537f4 | PowerShell 5.1 auth smoke script (15 steps) and user_id in AccessLogMiddleware |
 | M0 Walking skeleton deployed to AWS | S4 | todo | | |
-| 4 Reports | S1 | todo | | |
+| 4 Reports & Evidence | S1 | done, merge pending | | Phase 4 complete, 533 tests green |
+| ├─ 4.1 Normalisers & validators | S1 | done | 6fb18c4 | Pure normalisers (phone, URL, domain, email, bank), allow-lists (country, currency, admin_area) |
+| ├─ 4.2 Evidence vault | S1 | done | 553a4a7 | Magic-byte sniffing, Pillow re-encode, SHA-256, S3 storage, moto[server], ensure_evidence_bucket |
+| ├─ 4.3 Report service & ops migration | S1 | done | e6eff1a | create_report, Crockford base32, access key, idempotency, rate limits, ops 0003 REPORT_TRACK_FAILED |
+| ├─ 4.4 Playbooks & options | S1 | done | d656360 | RecoveryPlaybook selector, seed_playbooks command, options data (7 tests) |
+| ├─ 4.5 Endpoints & serialization | S1 | done | effb868 | /reports/options/, POST /reports/, /reports/track/, /reports/mine/, OpenAPI, RBAC matrix (15 tests) |
+| └─ 4.6 Orphan cleanup, smoke & gate | S1 | done | | Orphan S3 cleanup job, smoke_reports.ps1, smoke_auth.ps1 fixes, Phase 4 closing gate (6 tests) |
 | 5 Scanner | S4 | todo | | |
 | 6 Triage | S2 | todo | | |
 | 7 Lookup + alerts | S1 | todo | | |
@@ -95,12 +101,48 @@ Phase 3 — Accounts, authentication, RBAC (done, merge pending)
 | **D51** | Idempotent `create_admin` command (password from `ADMIN_PASSWORD` env or interactive prompt, role `ADMIN`, `APPROVED`); `run_jobs` command with job registry, each job acquiring Postgres advisory lock (`pg_try_advisory_lock`) to skip concurrent runs; initial job: flush expired JWT tokens | `docs/02-project-architecture.md` §14, `docs/03-backend-build-plan.md` Phase 3 | Approved |
 | **D52** | Phase 3 API inventory: auth (`register`, `register/staff`, `login`, `refresh`, `logout`, `me`, `password/change`); admin (`GET /admin-portal/users/?status=`, `POST /admin-portal/users/{id}/approve/`, `/reject/`, `/change-role/`); add change-role to `docs/02-project-architecture.md` §6; explicit permission classes (`AllowAny` on public endpoints); explicit serializer field lists with no password hash exposed | `docs/02-project-architecture.md` §6, Phase 3 plan | Approved |
 | **D53** | Phase 3 was first built on a branch without Phase 2 and integrated by merge | Integration task, `docs/PROGRESS.md` | Implemented |
+| **D54** | Endpoints: `GET /reports/options/` (public), `POST /reports/` (public), `POST /reports/track/` (public), `GET /reports/mine/` (authenticated). Every one is an explicit permission; add public ones to route-walk allow-list | Phase 4 plan, `docs/03-backend-build-plan.md` | Approved |
+| **D55** | Country codes: `MY`, `NP`, `ZZ` (other). Currencies: `MYR`, `NPR`, `USD`. `admin_area` validated against static allow-list file (`apps/reports/data/admin_areas.json`). Phone parsing default region follows `country_code`; `ZZ` requires leading `+` | Phase 4 plan, `docs/03-backend-build-plan.md` | Approved |
+| **D56** | Normalisers (`apps/reports/normalizers.py`, pure functions, >=10 cases per type): phone to E.164 (`phonenumbers`); URL to scheme-less canonical form (lower-case host, punycode, drop tracking query params/fragments, default ports, trailing slash; max 2048 chars); DOMAIN auto-derived from every URL via `tldextract` offline (bundled snapshot); email lower-cased; BANK_ACCOUNT digits-only, `normalized_value` = HMAC-SHA256 hex with `INDICATOR_HMAC_KEY` (D2/D5), `display_value` masked. Invalid input returns 400 `validation_error` with field details | Phase 4 plan, `docs/03-backend-build-plan.md` | Approved |
+| **D57** | Submission limits (D1): 1 to 5 submitted indicators, derived DOMAIN rows excluded (max 10 rows total); `message_text` 1 to 5000 chars trimmed with control chars stripped; `financial_loss` 0 to 9999999999.99; if `payment_method` is `NONE` then loss must be 0 | Phase 4 plan, `docs/03-backend-build-plan.md` | Approved |
+| **D58** | Evidence: <=3 files, <=5 MB each, <=16 MB total request; type determined by magic bytes only (PNG, JPEG, PDF signatures); images re-encoded with Pillow (stripping EXIF) with decompression bomb pixel cap; PDFs stored unmodified after signature + size checks; compute sha256; S3 key `evidence/{report_id}/{uuid4}.{ext}`; S3 upload with SSE-S3 AES256, private; UUID filenames only (original filename never stored) | Phase 4 plan, `docs/02-project-architecture.md` §9 | Approved |
+| **D59** | Upload order (03a §7): validate all, upload to S3, write DB in one atomic block; on DB failure best-effort delete S3 keys (logged); orphan cleanup job in `run_jobs` deletes `evidence/` keys >24h with no DB row | Phase 4 plan, `docs/03a-database-design.md` §7 | Approved |
+| **D60** | Local S3: add `moto[server]` to `backend/requirements/dev.txt` only; local runs use `moto_server -p 5000`, `AWS_ENDPOINT_URL=http://localhost:5000`, and bucket created by idempotent command `ensure_evidence_bucket`; tests use `mock_aws`; bucket name from setting `EVIDENCE_BUCKET` | Phase 4 plan, `docs/02-project-architecture.md` §9 | Approved |
+| **D61** | Reference code `SCM-<year>-<8 Crockford base32 characters>` from CSPRNG, unique with collision retry (max 5); anonymous reports get 128-bit `access_key` returned ONCE (store only sha256 hex in `access_key_hash`, constant-time compare); logged-in reports set `reporter` and no access key | Phase 4 plan, `docs/03a-database-design.md` §4.2 | Approved |
+| **D62** | Idempotency: header `Idempotency-Key` (UUID) stored in `client_submission_id`; replay returns 200 with same reference and playbook, never creates rows or S3 objects, and never returns `access_key` again (indicates already issued); missing header allowed (no idempotency); invalid header returns 400 | Phase 4 plan, `docs/03a-database-design.md` §4.2 | Approved |
+| **D63** | Rate limits via audit table (D47): anonymous 5 reports per `ip_hash` per hour; logged-in 20 per `user` per hour; block returns 429 `throttled` with `Retry-After`, audits `RATE_LIMIT_BLOCK`, emits `RateLimitBlocks` metric; accepted reports audit `REPORT_SUBMITTED` inside transaction | Phase 4 plan, `docs/02-project-architecture.md` §16 R-C6 | Approved |
+| **D64** | Tracking: `POST /reports/track/` with `{reference, access_key}`; wrong key and unknown reference return identical 404 `not_found`; failed tracking throttled (10 per `ip_hash` per 15 min -> 429); ops migration 0003 adds audit event type `REPORT_TRACK_FAILED` (ck constraint updated to 19 values) | Phase 4 plan, `docs/03-backend-build-plan.md` Phase 4 | Approved |
+| **D65** | Mine: `GET /reports/mine/` paginated (D34), newest first, caller reports only; fields limited to reference, category, platform, status, financial_loss, currency, created_at; no internal IDs or risk scores | Phase 4 plan, `docs/03-backend-build-plan.md` Phase 4 | Approved |
+| **D66** | RecoveryPlaybook selector: active playbook matching category, payment_method, country (null = any); most matching fields wins, then priority, then lowest id; bank-transfer with loss > 0 includes bank-freeze steps; `seed_playbooks` command seeds empty hotline lists (verified numbers supplied later in `hotlines.json`) | Phase 4 plan, `docs/03a-database-design.md` §4.5 | Approved |
+| **D67** | Scan hook: after commit, call `scanner_service.dispatch_scan(report_id)` stub (logs and returns, failures never fail report submission); emit metric `ReportsSubmitted` via `core.metrics`; report `scan_status` stays `PENDING` until Phase 5 | Phase 4 plan, `docs/contracts.md` §3.5 | Approved |
+| **D68** | Responses never contain: raw IP, report UUID, risk_score, reporter id, S3 keys, internal notes; logs and audit metadata never contain message text, indicators, or filenames; create response contains reference, status, playbook, access_key (anonymous only, once) | Phase 4 plan, `docs/02-project-architecture.md` §16 | Approved |
+| **D69** | Logged-in users may report anonymously via request field `anonymous` (bool). No valid auth or anonymous=true: `reporter` NULL, `is_anonymous` true, `access_key` issued, rate limit by `ip_hash`. Invalid or expired Bearer token returns 401 (never silent downgrade). Valid token + anonymous=true leaves no link to user in report, audit actor, or logs | Phase 4 approval, `docs/03-backend-build-plan.md` | Approved |
+| **D70** | Execution order in `create_report`: idempotency lookup, rate limit check, validation, generate report UUID in code, S3 upload, atomic DB write (audit inside), `on_commit` metric + scan stub. Concurrent requests with same Idempotency-Key: loser catches IntegrityError, deletes uploaded S3 keys, returns replay (never 500). Replays bypass rate limits | Phase 4 approval, `docs/03a-database-design.md` §7 | Approved |
+| **D71** | Size limits: reject Content-Length > 16 MB before parsing with 413 and error code `payload_too_large` (added to D26 error envelope); configure small `FILE_UPLOAD_MAX_MEMORY_SIZE` (2.5 MB) so large files spool to disk | Phase 4 approval, `docs/02-project-architecture.md` §4 | Approved |
+| **D72** | Image sanitation: Pillow open, verify `width * height <= 10,000,000` BEFORE load, treat `DecompressionBombWarning` as error, reject multi-frame/animated images, re-encode to same format, strip EXIF. `tldextract`: `TLDExtract(suffix_list_urls=(), cache_dir=None)` ensuring zero network and zero disk writes | Phase 4 approval, `docs/02-project-architecture.md` §9 | Approved |
+| **D73** | S3 `put_object`: `ContentType` from sniffed MIME, `ServerSideEncryption='AES256'`, `CacheControl='no-store'`. Deferred: Phase 6 must presign with `ResponseContentDisposition=attachment` | Phase 4 approval, `docs/02-project-architecture.md` §9 | Approved |
+| **D74** | Pure normalisers raise `NormalizationError(field, code)`. Serializers map to standard 400 `validation_error` with field details in Task 4.5 | Phase 4 approval, `docs/contracts.md` | Approved |
+| **D75** | Dev and test settings provide deterministic fake `INDICATOR_HMAC_KEY` and `EVIDENCE_BUCKET`; `.env.example` lists them; prod fails fast on missing keys. Bank-account HMAC must be deterministic and key-dependent (both tested) | Phase 4 approval, `docs/02-project-architecture.md` §12 | Approved |
+| **D76** | Playbook texts (Task 4.4): generic guidance, no phone numbers, no URLs, "not legal advice", owner reviews wording. Deferred: verified hotlines, wording review | Phase 4 approval, `docs/03-backend-build-plan.md` | Approved |
+| **D77** | Playbook wording: generic plain-language guidance, short steps, no phone numbers or URLs, ending with "This is general guidance, not legal advice." Stored in `apps/reports/data/playbooks.json`; idempotent `seed_playbooks` command; hotlines merge from `apps/reports/data/hotlines.json` when present | Phase 4 approval, `docs/03-backend-build-plan.md` | Approved |
+| **D78** | Report response includes playbook: `{title, steps:[{title, detail}], hotlines:[]}` per D66. Bank transfer with loss > 0 contains bank-freeze step (tested by step marker) | Phase 4 approval, `docs/03-backend-build-plan.md` | Approved |
+| **D79** | Anonymous status checks: `POST /reports/track/` uniform 404 for wrong key vs unknown reference. 10 failures per `ip_hash` per 15m then 429 with `Retry-After` | Phase 4 approval, `docs/02-project-architecture.md` §16 | Approved |
+| **D80** | `GET /reports/mine/` returns fields per D65, newest first, paginated (D34); anonymous reports never appear in anyone's list | Phase 4 approval, `docs/03-backend-build-plan.md` | Approved |
+| **D81** | Multipart handling: repeatable `evidence` file field, plain form fields, `indicators` JSON string field; validation errors use D26; documented max lengths; OpenAPI schemas reference `ErrorResponse` | Phase 4 approval, `docs/contracts.md` | Approved |
+| **D82** | Orphan cleanup job (`run_jobs`, advisory lock): deletes only `evidence/` keys >24h old with no row in `reports_reportevidence`; re-checks DB before delete; max 500 keys/run; logs counts only; ignores other prefixes | Phase 4 approval, `docs/02-project-architecture.md` §14 | Approved |
+| **D83** | Public tracking response privacy: `POST /api/v1/reports/track/` response body contains only `{reference_code, status, category, created_at, playbook}`; `financial_loss`, `currency`, and `platform` are omitted to protect victim financial privacy; failed tracking audit logs record `{"reason": "invalid_reference_or_key"}` with no raw/untrusted reference_code | Phase 4 remediation (M-1, M-2) | Approved |
 
 ## Phase 3 Verification (Proven Items)
 - **TO BE PROVEN #1 (UUID user ID in JWT):** PROVEN. SimpleJWT encodes and decodes UUID user IDs without string-cast issues across access/refresh tokens.
 - **TO BE PROVEN #2 (Third-party table duplicate-index check):** PROVEN. Schema inventory asserts exactly 27 public tables with 0 duplicate indexes across both project and SimpleJWT tables.
 - **TO BE PROVEN #3 (Multi-session token revocation):** PROVEN. OutstandingToken iteration on password change blacklists all active refresh tokens for the user.
 - **TO BE PROVEN #4 (Postgres advisory lock concurrency):** PROVEN. `run_jobs` acquires `pg_try_advisory_lock`; concurrent worker holding lock causes `run_jobs` to skip cleanly with no race conditions.
+
+## Phase 4 Verification (Proven Items)
+- **TO BE PROVEN #5 (Offline tldextract):** PROVEN. `tldextract` extracts registrable domains completely offline without network DNS/PSL lookups using bundled snapshot.
+- **TO BE PROVEN #6 (S3 atomic upload rollback):** PROVEN. Simulated DB transaction failure after S3 PUT successfully deletes uploaded S3 keys.
+- **TO BE PROVEN #7 (Image decompression bomb resistance):** PROVEN. Pillow limits image MAX_IMAGE_PIXELS and re-encoding strips all EXIF metadata.
+- **TO BE PROVEN #8 (Idempotency replay without access key leak):** PROVEN. Replaying an anonymous report with existing Idempotency-Key returns 200 with original reference and playbook, but never regenerates or exposes the access key.
 
 ## Standing rules for model tasks
 - Index names max 30 characters; check every name.
@@ -113,6 +155,8 @@ Phase 3 — Accounts, authentication, RBAC (done, merge pending)
 - Proof list: ruff, plain pytest -q, makemigrations --check --dry-run, showmigrations, FULL sqlmigrate for each new migration, git status --short. Never commit without my OK.
 
 ## Deferred
+- **Verified hotline numbers & playbook wording (D66, D76, Phase 4):** Seeded playbooks have empty hotlines; owner will provide verified Malaysian/Nepali emergency hotlines in `backend/apps/reports/data/hotlines.json` and review guidance text before production deployment.
+- **Evidence presigned attachment disposition (D73, Phase 6):** Phase 6 analyst pre-signing must set `ResponseContentDisposition='attachment'`.
 - **Audit log append-only trigger (Phase 11):** Must allow an UPDATE that only sets `actor_id` to NULL (Django SET_NULL on user delete), allow DELETE only in the retention purge, and ideally use a separate DB role.
 - **Default heuristic rules command (Phase 5):** Management command `seed_default_rules` requiring an existing admin user to author the initial ruleset (cannot run in data migration without an admin user).
 - **Frontend build plan:** Blocked until the frontend requirements and UI design specification document is drafted.

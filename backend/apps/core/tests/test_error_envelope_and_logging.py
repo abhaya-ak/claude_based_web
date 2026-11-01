@@ -9,9 +9,9 @@ from rest_framework import exceptions as drf_exceptions
 from rest_framework import status
 from rest_framework.request import Request
 
-from apps.core.exceptions import custom_exception_handler
+from apps.core.exceptions import PayloadTooLarge, custom_exception_handler
 from apps.core.logging import FORBIDDEN_PII_KEYS, PiiScrubberFilter, get_correlation_id
-from apps.core.middleware import AccessLogMiddleware, CorrelationIdMiddleware
+from apps.core.middleware import AccessLogMiddleware, CorrelationIdMiddleware, RequestSizeLimitMiddleware
 from apps.core.pagination import StandardPagination
 
 
@@ -160,6 +160,19 @@ class TestDrfCustomExceptionHandler:
         assert data["error"]["details"] is None
         assert data["error"]["request_id"] == "req-throttle-429"
 
+    def test_payload_too_large_envelope(self, rf: RequestFactory):
+        request = Request(rf.post("/api/test"))
+        request.correlation_id = "req-413-large"
+        exc = PayloadTooLarge("Payload exceeds limit.")
+
+        response = custom_exception_handler(exc, {"request": request})
+        assert response is not None
+        assert response.status_code == status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
+        data = response.data
+        assert data["error"]["code"] == "PAYLOAD_TOO_LARGE"
+        assert data["error"]["message"] == "Payload exceeds limit."
+        assert data["error"]["request_id"] == "req-413-large"
+
     def test_unhandled_500_exception_never_leaks_details(self, rf: RequestFactory):
         request = Request(rf.get("/api/test"))
         request.correlation_id = "req-crash-500"
@@ -294,6 +307,8 @@ class TestAccessLogMiddleware:
         assert hasattr(record, "user_id")
         assert getattr(record, "user_id", None) is None
 
+
+
     def test_access_log_includes_user_id_for_authenticated_user(
         self, rf: RequestFactory, caplog: pytest.LogCaptureFixture
     ):
@@ -338,3 +353,31 @@ class TestAccessLogMiddleware:
         record = caplog.records[-1]
         assert hasattr(record, "user_id")
         assert getattr(record, "user_id", None) is None
+
+
+class TestRequestSizeLimitMiddleware:
+    """Verify Content-Length exceeding 16 MB is rejected with 413 per D71."""
+
+    def test_oversized_content_length_rejected_with_413(self, rf: RequestFactory):
+        oversized = str(16 * 1024 * 1024 + 1)
+        request = rf.post("/api/v1/reports/", CONTENT_LENGTH=oversized)
+        request.correlation_id = "req-large-413"
+
+        middleware = RequestSizeLimitMiddleware(lambda r: HttpResponse("OK"))
+        response = middleware(request)
+
+        assert response.status_code == 413
+        assert response["X-Request-ID"] == "req-large-413"
+        data = json.loads(response.content)
+        assert data["error"]["code"] == "payload_too_large"
+        assert data["error"]["request_id"] == "req-large-413"
+
+    def test_acceptable_content_length_allowed(self, rf: RequestFactory):
+        normal_size = str(5 * 1024 * 1024)
+        request = rf.post("/api/v1/reports/", CONTENT_LENGTH=normal_size)
+        request.correlation_id = "req-normal-200"
+
+        middleware = RequestSizeLimitMiddleware(lambda r: HttpResponse("OK"))
+        response = middleware(request)
+
+        assert response.status_code == 200
