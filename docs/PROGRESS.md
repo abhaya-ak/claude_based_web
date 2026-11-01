@@ -1,7 +1,7 @@
 # PROGRESS (the agent reads this at session start and updates it at the end of every task)
 
 ## Current phase
-Phase 5 — Heuristic scanner, F4.1 (planning)
+Phase 5 — Heuristic scanner, F4.1 (done, merge pending)
 
 ## Status
 | Phase | Owner | Status | Commit/PR | Notes |
@@ -33,13 +33,13 @@ Phase 5 — Heuristic scanner, F4.1 (planning)
 | ├─ 4.4 Playbooks & options | S1 | done | d656360 | RecoveryPlaybook selector, seed_playbooks command, options data (7 tests) |
 | ├─ 4.5 Endpoints & serialization | S1 | done | effb868 | /reports/options/, POST /reports/, /reports/track/, /reports/mine/, OpenAPI, RBAC matrix (15 tests) |
 | └─ 4.6 Orphan cleanup, smoke & gate | S1 | done | | Orphan S3 cleanup job, smoke_reports.ps1, smoke_auth.ps1 fixes, Phase 4 closing gate (6 tests) |
-| 5 Scanner | S4 | todo | | Phase 5 Heuristic Scanner (F4.1) |
-| ├─ 5.1 Rule CRUD & config admin APIs | S4 | done | | Rule CRUD, config endpoint, atomic version bump, seed_default_rules (14 tests) |
-| ├─ 5.2 Lambda heuristic scoring logic | S4 | done | | Pure scoring.py, Lambda handler.py, HMAC signing, zero DB/VPC (12 tests) |
-| ├─ 5.3 Scanner dispatch service | S4 | done | | dispatch_scan payload builder, prior pending counts, async Lambda invoke (6 tests) |
-| ├─ 5.4 Internal callback & staff alerts | S4 | done | | POST /internal/scan-results/, HMAC auth, ScanResult save, staff SNS alert (12 tests) |
-| ├─ 5.5 Re-dispatch job & error handling | S4 | done | | run_jobs re-dispatch for pending scans >5m, max 5 attempts -> FAILED (5 tests) |
-| └─ 5.6 Route walk, queries & closing gate | S4 | todo | | Route-walk, OpenAPI, num_queries tests, CI check --deploy |
+| 5 Scanner | S4 | done, merge pending | | Phase 5 Heuristic Scanner (F4.1 complete, 611 tests green) |
+| ├─ 5.1 Rule CRUD & config admin APIs | S4 | done | 97d49b4 | Rule CRUD, config endpoint, atomic version bump, seed_default_rules (14 tests) |
+| ├─ 5.2 Lambda heuristic scoring logic | S4 | done | 21f7447 | Pure scoring.py, Lambda handler.py, HMAC signing, zero DB/VPC (12 tests) |
+| ├─ 5.3 Scanner dispatch service | S4 | done | ffebef1 | dispatch_scan payload builder, prior pending counts, async Lambda invoke (6 tests) |
+| ├─ 5.4 Internal callback & staff alerts | S4 | done | f9ed053 | POST /internal/scan-results/, HMAC auth, ScanResult save, staff SNS alert (12 tests) |
+| ├─ 5.5 Re-dispatch job & error handling | S4 | done | 6ee2e94 | run_jobs re-dispatch for pending scans >5m, max 5 attempts -> FAILED (5 tests) |
+| └─ 5.6 Route walk, queries & closing gate | S4 | done | | Route-walk, OpenAPI, num_queries tests, CI check --deploy |
 | 6 Triage | S2 | todo | | |
 | 7 Lookup + alerts | S1 | todo | | |
 | 8 Analytics + broadcast | S2 | todo | | |
@@ -159,6 +159,11 @@ Phase 5 — Heuristic scanner, F4.1 (planning)
 - **TO BE PROVEN #6 (S3 atomic upload rollback):** PROVEN. Simulated DB transaction failure after S3 PUT successfully deletes uploaded S3 keys.
 - **TO BE PROVEN #7 (Image decompression bomb resistance):** PROVEN. Pillow limits image MAX_IMAGE_PIXELS and re-encoding strips all EXIF metadata.
 - **TO BE PROVEN #8 (Idempotency replay without access key leak):** PROVEN. Replaying an anonymous report with existing Idempotency-Key returns 200 with original reference and playbook, but never regenerates or exposes the access key.
+
+## Phase 5 Verification (Proven Items)
+- **TO BE PROVEN #9 (End-to-End Lambda -> Django HMAC Handshake):** PROVEN. Exact Lambda handler scoring and signing logic (`apps/scanner/tests/test_callback_api.py::TestScannerCallbackAPI::test_to_be_proven_9_lambda_to_django_hmac_handshake`) generates raw JSON bytes, timestamp, and HMAC-SHA256 signature verified by the Django callback endpoint, persisting ScanResult and updating ScamReport without error.
+- **TO BE PROVEN #10 (Failure-Tolerant Non-Blocking Dispatch):** PROVEN. Simulated Lambda invocation failure (`apps/scanner/tests/test_dispatch_service.py::TestDispatchScanService::test_dispatch_scan_failure_tolerance` and `test_create_report_api_with_failing_scanner_returns_201`) catches ClientError, logs warning, and commits report submission with 201 response.
+- **TO BE PROVEN #11 (Advisory-Locked Retry Convergence):** PROVEN. Background retry job (`apps/scanner/tests/test_jobs.py::TestRedispatchPendingScansJob::test_to_be_proven_11_advisory_locked_retry_convergence`) skips execution cleanly when advisory lock is held on separate connection, and immediately processes stalled reports upon lock release.
 
 ## Standing rules for model tasks
 - Index names max 30 characters; check every name.

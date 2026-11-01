@@ -143,8 +143,8 @@ class TestScanPayloadAssembly:
 
     def test_payload_assembly_lean_queries(self, sample_report, django_assert_num_queries):
         ScannerConfig.objects.get_or_create(id=1, defaults={"ruleset_version": 1})
-        # Payload assembly executes exactly 5 lean queries (report, prefetch indicators, rules, config, prior counts)
-        with django_assert_num_queries(5):
+        # Payload assembly executes exactly 4 lean queries (report with indicators join, rules, config, prior counts)
+        with django_assert_num_queries(4):
             build_scan_payload(sample_report.id)
 
 

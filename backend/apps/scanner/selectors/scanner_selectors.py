@@ -32,11 +32,25 @@ def build_scan_payload(report_id: uuid.UUID) -> dict:
     Builds the payload for Lambda heuristic scanning in <= 4 lean queries.
     Contract 3.5: report text, indicators, rules, config, ruleset_version, prior_pending_counts.
     """
-    # 1. Fetch report and indicators
-    report = ScamReport.objects.prefetch_related("indicators").get(id=report_id)
-    indicators = list(report.indicators.all())
+    # 1. Fetch report and indicators in ONE query via LEFT OUTER JOIN
+    report_rows = list(
+        ScamReport.objects.filter(id=report_id)
+        .values("id", "message_text", "indicators__type", "indicators__normalized_value")
+    )
+    if not report_rows:
+        raise ScamReport.DoesNotExist(f"Report {report_id} not found.")
 
-    # 2. Fetch active heuristic rules
+    message_text = report_rows[0]["message_text"] or ""
+    indicators = []
+    seen = set()
+    for r in report_rows:
+        itype = r["indicators__type"]
+        ival = r["indicators__normalized_value"]
+        if itype and ival is not None and (itype, ival) not in seen:
+            seen.add((itype, ival))
+            indicators.append({"type": itype, "normalized_value": ival})
+
+    # 2. Fetch active heuristic rules (1 query)
     rule_rows = HeuristicRule.objects.filter(is_active=True).values("rule_type", "pattern", "weight")
     grouped_rules = {"KEYWORD": [], "TLD": [], "SHORTENER": []}
     for r in rule_rows:
@@ -44,7 +58,7 @@ def build_scan_payload(report_id: uuid.UUID) -> dict:
         if rtype in grouped_rules:
             grouped_rules[rtype].append({"pattern": r["pattern"], "weight": r["weight"]})
 
-    # 3. Fetch ScannerConfig singleton
+    # 3. Fetch ScannerConfig singleton (1 query)
     config_obj = (
         ScannerConfig.objects.filter(id=1)
         .values(
@@ -65,19 +79,19 @@ def build_scan_payload(report_id: uuid.UUID) -> dict:
             "ruleset_version": 1,
         }
 
-    # 4. Compute prior pending counts for this report's indicators across other PENDING reports
+    # 4. Compute prior pending counts for this report's indicators across other PENDING reports (1 query)
     prior_counts = {}
     if indicators:
         q_filter = Q()
         for ind in indicators:
-            q_filter |= Q(type=ind.type, normalized_value=ind.normalized_value)
+            q_filter |= Q(type=ind["type"], normalized_value=ind["normalized_value"])
 
         counts_qs = (
             ReportIndicator.objects.filter(
                 q_filter,
                 report__status=ReportStatus.PENDING,
             )
-            .exclude(report_id=report.id)
+            .exclude(report_id=report_id)
             .values("normalized_value")
             .annotate(count=Count("report_id", distinct=True))
         )
@@ -85,17 +99,17 @@ def build_scan_payload(report_id: uuid.UUID) -> dict:
 
     formatted_indicators = [
         {
-            "type": ind.type,
-            "normalized_value": ind.normalized_value,
-            "host": extract_host(ind.type, ind.normalized_value),
+            "type": ind["type"],
+            "normalized_value": ind["normalized_value"],
+            "host": extract_host(ind["type"], ind["normalized_value"]),
         }
         for ind in indicators
     ]
 
     return {
-        "report_id": str(report.id),
+        "report_id": str(report_id),
         "ruleset_version": config_obj["ruleset_version"],
-        "message_text": report.message_text or "",
+        "message_text": message_text,
         "indicators": formatted_indicators,
         "rules": grouped_rules,
         "config": {

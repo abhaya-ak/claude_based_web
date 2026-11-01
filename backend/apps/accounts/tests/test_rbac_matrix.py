@@ -223,3 +223,42 @@ class TestRBACMatrix:
         client = self._client_for(user)
         response = client.get("/api/v1/reports/mine/")
         assert response.status_code == expected_status
+
+
+    # 9. GET /api/v1/admin-portal/rules/ (ADMIN only per D84)
+    @pytest.mark.parametrize(
+        "user_attr,expected_status",
+        [
+            (None, 401),
+            ("citizen", 403),
+            ("analyst_pending", 403),
+            ("analyst_approved", 403),
+            ("educator_approved", 403),
+            ("admin_pending", 403),
+            ("admin_approved", 200),
+        ],
+    )
+    def test_admin_portal_rules_access(self, user_attr, expected_status):
+        user = getattr(self, user_attr) if user_attr else None
+        client = self._client_for(user)
+        response = client.get("/api/v1/admin-portal/rules/")
+        assert response.status_code == expected_status
+
+    # 10. GET /api/v1/admin-portal/scanner-config/ (ADMIN only per D85)
+    @pytest.mark.parametrize(
+        "user_attr,expected_status",
+        [
+            (None, 401),
+            ("citizen", 403),
+            ("analyst_pending", 403),
+            ("analyst_approved", 403),
+            ("educator_approved", 403),
+            ("admin_pending", 403),
+            ("admin_approved", 200),
+        ],
+    )
+    def test_admin_portal_scanner_config_access(self, user_attr, expected_status):
+        user = getattr(self, user_attr) if user_attr else None
+        client = self._client_for(user)
+        response = client.get("/api/v1/admin-portal/scanner-config/")
+        assert response.status_code == expected_status
