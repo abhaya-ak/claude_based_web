@@ -50,6 +50,7 @@ Related: `01-project-overview.md` · `02-project-architecture.md` · `03-backend
 | RuleType | `KEYWORD`, `TLD`, `SHORTENER` |
 | AttemptStatus | `IN_PROGRESS`, `COMPLETED` |
 | AuditSeverity | `INFO`, `WARN`, `ALERT` |
+| AuditEventType | `REPORT_SUBMITTED`, `RATE_LIMIT_BLOCK`, `LOGIN_FAILURE`, `LOGIN_SUCCESS`, `STAFF_REGISTERED`, `ROLE_APPROVED`, `ROLE_REJECTED`, `EVIDENCE_URL_ISSUED`, `INDICATOR_VERIFIED`, `REPORT_REJECTED`, `INDICATOR_REVOKED`, `ADVISORY_PUBLISHED`, `RULE_CHANGED`, `CONFIG_CHANGED`, `SCAN_FAILED`, `USER_REGISTERED`, `ROLE_CHANGED`, `PASSWORD_CHANGED` (18 values per D42) |
 
 ## 3. Entity-relationship diagram
 
@@ -380,8 +381,8 @@ CHECK `jsonb_typeof(breakdown) = 'array'` (`ck_scan_breakdown_is_array`).
 | target_type / target_id | varchar(40) / varchar(64) | null |
 | metadata | jsonb | small, **no PII** |
 | request_id | varchar(64) | null |
-Event types: `REPORT_SUBMITTED`, `RATE_LIMIT_BLOCK`, `LOGIN_FAILURE`, `LOGIN_SUCCESS`, `STAFF_REGISTERED`, `ROLE_APPROVED`, `ROLE_REJECTED`, `EVIDENCE_URL_ISSUED`, `INDICATOR_VERIFIED`, `REPORT_REJECTED`, `INDICATOR_REVOKED`, `ADVISORY_PUBLISHED`, `RULE_CHANGED`, `CONFIG_CHANGED`, `SCAN_FAILED`.
-CHECK `event_type IN ('REPORT_SUBMITTED', 'RATE_LIMIT_BLOCK', 'LOGIN_FAILURE', 'LOGIN_SUCCESS', 'STAFF_REGISTERED', 'ROLE_APPROVED', 'ROLE_REJECTED', 'EVIDENCE_URL_ISSUED', 'INDICATOR_VERIFIED', 'REPORT_REJECTED', 'INDICATOR_REVOKED', 'ADVISORY_PUBLISHED', 'RULE_CHANGED', 'CONFIG_CHANGED', 'SCAN_FAILED')` (`ck_audit_event_type`).
+Event types: `REPORT_SUBMITTED`, `RATE_LIMIT_BLOCK`, `LOGIN_FAILURE`, `LOGIN_SUCCESS`, `STAFF_REGISTERED`, `ROLE_APPROVED`, `ROLE_REJECTED`, `EVIDENCE_URL_ISSUED`, `INDICATOR_VERIFIED`, `REPORT_REJECTED`, `INDICATOR_REVOKED`, `ADVISORY_PUBLISHED`, `RULE_CHANGED`, `CONFIG_CHANGED`, `SCAN_FAILED`, `USER_REGISTERED`, `ROLE_CHANGED`, `PASSWORD_CHANGED`.
+CHECK `event_type IN ('REPORT_SUBMITTED', 'RATE_LIMIT_BLOCK', 'LOGIN_FAILURE', 'LOGIN_SUCCESS', 'STAFF_REGISTERED', 'ROLE_APPROVED', 'ROLE_REJECTED', 'EVIDENCE_URL_ISSUED', 'INDICATOR_VERIFIED', 'REPORT_REJECTED', 'INDICATOR_REVOKED', 'ADVISORY_PUBLISHED', 'RULE_CHANGED', 'CONFIG_CHANGED', 'SCAN_FAILED', 'USER_REGISTERED', 'ROLE_CHANGED', 'PASSWORD_CHANGED')` (`ck_audit_event_type`).
 CHECK `severity IN ('INFO', 'WARN', 'ALERT')` (`ck_audit_severity`).
 CHECK `jsonb_typeof(metadata) = 'object'` (`ck_audit_metadata_is_object`).
 CHECK `(target_type IS NULL AND target_id IS NULL) OR (target_type IS NOT NULL AND target_id IS NOT NULL)` (`ck_audit_target_pair`).
@@ -535,4 +536,6 @@ The following deviations from the original draft were proposed during implementa
 | **D21** | ERD | `docs/erd.md` generated from Django models via `backend/tools/generate_erd.py`. | `backend/tools/generate_erd.py`, `docs/erd.md` |
 | **D22** | Types | Fixed-length `char(n)` columns in 03a are implemented as `varchar(n)` because Django has no fixed-length type. Affected: `currency(3)`, `country_code(2)` on scamreport and recoveryplaybook, `sha256(64)`, `endpoint_hash(64)`, `unsubscribe_token_hash(64)`, `actor_ip_hash(64)`, `language(2)`. Exact lengths enforced by services and validators (Phases 4 and 7); `language` already has an enum CHECK. | `apps/reports/models.py`, `apps/alerts/models.py`, `apps/ops/models.py`, `apps/literacy/models.py` |
 | **D23** | Defaults | `public_note` (`intel_verifiedindicator`) and `alt_text` (`literacy_guideasset`) are `NOT NULL` with empty-string default; the database has no column defaults, because Django applies defaults in Python. | `apps/intel/models.py:public_note`, `apps/literacy/models.py:alt_text`, migrations `intel/0001_initial.py`, `literacy/0001_initial.py` |
+| **D41** | Auth | Added `rest_framework_simplejwt.token_blacklist` to `INSTALLED_APPS`, adding two tables (`token_blacklist_outstandingtoken`, `token_blacklist_blacklistedtoken`) for multi-session token revocation. Schema inventory updated from 25 to 27 tables total. | `backend/config/settings/base.py`, `apps/core/tests/test_schema_inventory.py` |
+| **D42** | Ops | Expanded `ck_audit_event_type` from 15 to 18 values by adding `USER_REGISTERED`, `ROLE_CHANGED`, `PASSWORD_CHANGED` via migration `ops 0002_audit_event_types`. | `apps/ops/migrations/0002_audit_event_types.py`, `apps/ops/models.py:AuditEventType` |
 

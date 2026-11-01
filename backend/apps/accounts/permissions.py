@@ -4,7 +4,7 @@ from apps.accounts.models import ApprovalStatus, Role
 
 
 class HasRole(BasePermission):
-    """Allows access only to users with specific roles."""
+    """Allows access only to users with specific roles and APPROVED status if staff."""
 
     def __init__(self, *allowed_roles):
         self.allowed_roles = set(allowed_roles)
@@ -16,7 +16,11 @@ class HasRole(BasePermission):
     def has_permission(self, request, view):
         if not (request.user and request.user.is_authenticated):
             return False
-        return request.user.role in self.allowed_roles
+        if request.user.role not in self.allowed_roles:
+            return False
+        if request.user.role in {Role.ANALYST, Role.EDUCATOR, Role.ADMIN}:
+            return request.user.approval_status == ApprovalStatus.APPROVED
+        return True
 
 
 class IsApprovedStaff(BasePermission):

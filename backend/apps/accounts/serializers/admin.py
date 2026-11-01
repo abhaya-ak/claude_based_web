@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from apps.accounts.models import Role, User
@@ -24,6 +25,7 @@ class AdminUserSerializer(serializers.ModelSerializer):
         )
         read_only_fields = fields
 
+    @extend_schema_field(serializers.UUIDField(allow_null=True))
     def get_approved_by(self, obj):
         return str(obj.approved_by_id) if obj.approved_by_id else None
 

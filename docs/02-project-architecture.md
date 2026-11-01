@@ -140,7 +140,7 @@ Enforcement: DRF `DEFAULT_PERMISSION_CLASSES = [IsAuthenticated]`; public endpoi
 | Advisories (F2.2) | `GET /advisories/` (public, published); `POST /advisories/`; `PATCH /advisories/{id}/`; `POST /advisories/{id}/publish/` | public / ANALYST |
 | Guides (F3.1) | `GET /guides/`, `/guides/{slug}/` (public); `POST/PATCH/DELETE /studio/guides/…`; `POST /studio/guides/{id}/assets/`; `POST /studio/guides/{id}/publish/` | public / EDUCATOR |
 | Simulator (F3.2) | `POST /simulator/attempts/` (start); `POST /simulator/attempts/{id}/answers/`; `POST /simulator/attempts/{id}/complete/`; `POST/PATCH/DELETE /studio/scenarios/…` | public / EDUCATOR |
-| Admin (F4.1) | `GET /admin-portal/users/?status=pending`; `POST /admin-portal/users/{id}/approve/`, `/reject/`; CRUD `/admin-portal/rules/`; `GET/PUT /admin-portal/scanner-config/` | ADMIN |
+| Admin (F4.1) | `GET /admin-portal/users/?status=pending`; `POST /admin-portal/users/{id}/approve/`, `/reject/`, `/change-role/`; CRUD `/admin-portal/rules/`; `GET/PUT /admin-portal/scanner-config/` | ADMIN |
 | Telemetry (F4.2) | `GET /admin-portal/telemetry/metrics/`; `GET /admin-portal/audit-logs/` | ADMIN |
 | Internal | `POST /internal/scan-results/` | HMAC |
 

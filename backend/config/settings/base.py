@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "rest_framework_simplejwt.token_blacklist",
+    "drf_spectacular",
     "apps.core.apps.CoreConfig",
     "apps.accounts.apps.AccountsConfig",
     "apps.reports.apps.ReportsConfig",
@@ -108,7 +109,18 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",
     ),
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "EXCEPTION_HANDLER": "apps.core.errors.custom_exception_handler",
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "ScamShield API",
+    "DESCRIPTION": "ScamShield Cloud Platform REST API (University Cloud Project CT071-3-3-DDAC)",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "ENUM_NAME_OVERRIDES": {
+        "StaffRegistrationRoleEnum": ["ANALYST", "EDUCATOR"],
+    },
 }
 
 ROOT_URLCONF = "config.urls"

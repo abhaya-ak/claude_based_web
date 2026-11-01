@@ -1,0 +1,488 @@
+openapi: 3.0.3
+info:
+  title: ScamShield API
+  version: 1.0.0
+  description: ScamShield Cloud Platform REST API (University Cloud Project CT071-3-3-DDAC)
+paths:
+  /api/v1/admin-portal/users/:
+    get:
+      operationId: admin_portal_users_list
+      summary: Admin list users with optional status filter
+      tags:
+      - admin-portal
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AdminUser'
+          description: ''
+  /api/v1/admin-portal/users/{id}/approve/:
+    post:
+      operationId: admin_portal_users_approve_create
+      summary: Admin approve pending staff user
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - admin-portal
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUser'
+          description: ''
+  /api/v1/admin-portal/users/{id}/change-role/:
+    post:
+      operationId: admin_portal_users_change_role_create
+      summary: Admin change approved staff user role
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - admin-portal
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeRole'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ChangeRole'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ChangeRole'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUser'
+          description: ''
+  /api/v1/admin-portal/users/{id}/reject/:
+    post:
+      operationId: admin_portal_users_reject_create
+      summary: Admin reject pending staff user
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - admin-portal
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RejectUser'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RejectUser'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RejectUser'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUser'
+          description: ''
+  /api/v1/auth/login/:
+    post:
+      operationId: auth_login_create
+      summary: User login
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Login'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Login'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Login'
+        required: true
+      responses:
+        '200':
+          description: Access token returned and refresh cookie set
+  /api/v1/auth/logout/:
+    post:
+      operationId: auth_logout_create
+      summary: User logout
+      tags:
+      - auth
+      responses:
+        '204':
+          description: No response body
+  /api/v1/auth/me/:
+    get:
+      operationId: auth_me_retrieve
+      summary: Get current user profile
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+  /api/v1/auth/password/change/:
+    post:
+      operationId: auth_password_change_create
+      summary: Change user password and revoke sessions
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordChange'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordChange'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordChange'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/auth/refresh/:
+    post:
+      operationId: auth_refresh_create
+      summary: Refresh access token
+      tags:
+      - auth
+      responses:
+        '200':
+          description: New access token returned and rotated cookie set
+  /api/v1/auth/register/:
+    post:
+      operationId: auth_register_create
+      summary: Citizen registration
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CitizenRegister'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CitizenRegister'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CitizenRegister'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSummary'
+          description: ''
+  /api/v1/auth/register/staff/:
+    post:
+      operationId: auth_register_staff_create
+      summary: Staff registration (pending approval)
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StaffRegister'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StaffRegister'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StaffRegister'
+        required: true
+      responses:
+        '201':
+          description: Staff registration submitted
+components:
+  schemas:
+    AdminUser:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        full_name:
+          type: string
+          readOnly: true
+        role:
+          allOf:
+          - $ref: '#/components/schemas/Role0ddEnum'
+          readOnly: true
+        approval_status:
+          allOf:
+          - $ref: '#/components/schemas/ApprovalStatusEnum'
+          readOnly: true
+        organization:
+          type: string
+          readOnly: true
+          nullable: true
+        credential_note:
+          type: string
+          readOnly: true
+          nullable: true
+        rejection_reason:
+          type: string
+          readOnly: true
+          nullable: true
+        approved_by:
+          type: string
+          format: uuid
+          nullable: true
+          readOnly: true
+        approved_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        is_active:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - approval_status
+      - approved_at
+      - approved_by
+      - created_at
+      - credential_note
+      - email
+      - full_name
+      - id
+      - is_active
+      - organization
+      - rejection_reason
+      - role
+    ApprovalStatusEnum:
+      enum:
+      - APPROVED
+      - PENDING
+      - REJECTED
+      type: string
+      description: |-
+        * `APPROVED` - Approved
+        * `PENDING` - Pending
+        * `REJECTED` - Rejected
+    ChangeRole:
+      type: object
+      properties:
+        role:
+          $ref: '#/components/schemas/Role0ddEnum'
+      required:
+      - role
+    CitizenRegister:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          writeOnly: true
+        full_name:
+          type: string
+          maxLength: 150
+        role:
+          type: string
+          writeOnly: true
+      required:
+      - email
+      - full_name
+      - password
+    Login:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          writeOnly: true
+      required:
+      - email
+      - password
+    PasswordChange:
+      type: object
+      properties:
+        current_password:
+          type: string
+          writeOnly: true
+        new_password:
+          type: string
+          writeOnly: true
+      required:
+      - current_password
+      - new_password
+    RejectUser:
+      type: object
+      properties:
+        reason:
+          type: string
+          maxLength: 300
+      required:
+      - reason
+    Role0ddEnum:
+      enum:
+      - CITIZEN
+      - ANALYST
+      - EDUCATOR
+      - ADMIN
+      type: string
+      description: |-
+        * `CITIZEN` - Citizen
+        * `ANALYST` - Analyst
+        * `EDUCATOR` - Educator
+        * `ADMIN` - Admin
+    StaffRegister:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          writeOnly: true
+        full_name:
+          type: string
+          maxLength: 150
+        role:
+          $ref: '#/components/schemas/StaffRegistrationRoleEnum'
+        organization:
+          type: string
+          maxLength: 200
+        credential_note:
+          type: string
+          maxLength: 1000
+      required:
+      - credential_note
+      - email
+      - full_name
+      - organization
+      - password
+      - role
+    StaffRegistrationRoleEnum:
+      enum:
+      - ANALYST
+      - EDUCATOR
+      type: string
+      description: |-
+        * `ANALYST` - ANALYST
+        * `EDUCATOR` - EDUCATOR
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        full_name:
+          type: string
+          readOnly: true
+        role:
+          allOf:
+          - $ref: '#/components/schemas/Role0ddEnum'
+          readOnly: true
+        approval_status:
+          allOf:
+          - $ref: '#/components/schemas/ApprovalStatusEnum'
+          readOnly: true
+        organization:
+          type: string
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - approval_status
+      - created_at
+      - email
+      - full_name
+      - id
+      - organization
+      - role
+    UserSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        full_name:
+          type: string
+          readOnly: true
+        role:
+          allOf:
+          - $ref: '#/components/schemas/Role0ddEnum'
+          readOnly: true
+        approval_status:
+          allOf:
+          - $ref: '#/components/schemas/ApprovalStatusEnum'
+          readOnly: true
+      required:
+      - approval_status
+      - email
+      - full_name
+      - id
+      - role
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

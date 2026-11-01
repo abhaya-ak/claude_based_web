@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema
 from rest_framework import exceptions, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -21,6 +22,10 @@ from apps.core.ip import client_ip_hash
 class AdminUserListView(APIView):
     permission_classes = [IsAuthenticated, HasRole(Role.ADMIN)]
 
+    @extend_schema(
+        summary="Admin list users with optional status filter",
+        responses={200: AdminUserSerializer(many=True)},
+    )
     def get(self, request):
         status_param = request.query_params.get("status")
         qs = User.objects.select_related("approved_by").order_by("-created_at", "id")
@@ -38,6 +43,11 @@ class AdminUserListView(APIView):
 class AdminUserApproveView(APIView):
     permission_classes = [IsAuthenticated, HasRole(Role.ADMIN)]
 
+    @extend_schema(
+        summary="Admin approve pending staff user",
+        request=None,
+        responses={200: AdminUserSerializer},
+    )
     def post(self, request, pk):
         ip_hash = client_ip_hash(request)
         user = approve_staff_user(admin_user=request.user, target_id=pk, ip_hash=ip_hash)
@@ -47,6 +57,11 @@ class AdminUserApproveView(APIView):
 class AdminUserRejectView(APIView):
     permission_classes = [IsAuthenticated, HasRole(Role.ADMIN)]
 
+    @extend_schema(
+        summary="Admin reject pending staff user",
+        request=RejectUserSerializer,
+        responses={200: AdminUserSerializer},
+    )
     def post(self, request, pk):
         serializer = RejectUserSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -64,6 +79,11 @@ class AdminUserRejectView(APIView):
 class AdminUserChangeRoleView(APIView):
     permission_classes = [IsAuthenticated, HasRole(Role.ADMIN)]
 
+    @extend_schema(
+        summary="Admin change approved staff user role",
+        request=ChangeRoleSerializer,
+        responses={200: AdminUserSerializer},
+    )
     def post(self, request, pk):
         serializer = ChangeRoleSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

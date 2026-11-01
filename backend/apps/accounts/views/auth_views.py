@@ -1,4 +1,5 @@
 from django.conf import settings
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -24,6 +25,12 @@ from apps.core.ip import client_ip_hash
 class CitizenRegisterView(APIView):
     permission_classes = [AllowAny]
 
+    @extend_schema(
+        summary="Citizen registration",
+        request=CitizenRegisterSerializer,
+        responses={201: UserSummarySerializer},
+        auth=[],
+    )
     def post(self, request):
         serializer = CitizenRegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -39,6 +46,12 @@ class CitizenRegisterView(APIView):
 class StaffRegisterView(APIView):
     permission_classes = [AllowAny]
 
+    @extend_schema(
+        summary="Staff registration (pending approval)",
+        request=StaffRegisterSerializer,
+        responses={201: OpenApiResponse(description="Staff registration submitted")},
+        auth=[],
+    )
     def post(self, request):
         serializer = StaffRegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -57,6 +70,12 @@ class StaffRegisterView(APIView):
 class LoginView(APIView):
     permission_classes = [AllowAny]
 
+    @extend_schema(
+        summary="User login",
+        request=LoginSerializer,
+        responses={200: OpenApiResponse(description="Access token returned and refresh cookie set")},
+        auth=[],
+    )
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -82,6 +101,12 @@ class LoginView(APIView):
 class RefreshView(APIView):
     permission_classes = [AllowAny]
 
+    @extend_schema(
+        summary="Refresh access token",
+        request=None,
+        responses={200: OpenApiResponse(description="New access token returned and rotated cookie set")},
+        auth=[],
+    )
     def post(self, request):
         require_csrf_header(request)
         cookie_name = getattr(settings, "REFRESH_COOKIE_NAME", "refresh")
@@ -96,6 +121,12 @@ class RefreshView(APIView):
 class LogoutView(APIView):
     permission_classes = [AllowAny]
 
+    @extend_schema(
+        summary="User logout",
+        request=None,
+        responses={204: None},
+        auth=[],
+    )
     def post(self, request):
         require_csrf_header(request)
         cookie_name = getattr(settings, "REFRESH_COOKIE_NAME", "refresh")
