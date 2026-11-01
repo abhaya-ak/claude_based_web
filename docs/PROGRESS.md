@@ -14,7 +14,7 @@ Phase 3 — Accounts, authentication, RBAC (planning)
 | 3.1 Foundation | S4 | done | | Token blacklist, ops 0002 (18 audit types), JWT/cookie, permissions, throttles |
 | 3.2 Public auth | S4 | done | | register, register/staff, login, refresh, logout |
 | 3.3 Authenticated | S4 | done | | me, password/change, token blacklist |
-| 3.4 Admin portal | S4 | todo | | list, approve, reject, change-role |
+| 3.4 Admin portal | S4 | done | | list, approve, reject, change-role |
 | 3.5 Commands & jobs | S4 | todo | | create_admin, run_jobs (advisory lock) |
 | 3.6 Closing | S4 | todo | | Route-walk, RBAC matrix, OpenAPI, docs, gate |
 | M0 Walking skeleton deployed to AWS | S4 | todo | | |
