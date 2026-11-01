@@ -42,6 +42,7 @@ def check_report_submission_throttle(ip_hash: str, user=None) -> None:
             return
         count = SystemAuditLog.objects.filter(
             event_type=AuditEventType.REPORT_SUBMITTED,
+            actor__isnull=True,
             actor_ip_hash=ip_hash,
             occurred_at__gte=cutoff,
         ).count()

@@ -3,7 +3,8 @@
 # Strictly runs against http://localhost:8000/api/v1 (dev settings with runserver)
 [CmdletBinding()]
 param(
-    [string]$BaseUrl = "http://localhost:8000/api/v1"
+    [string]$BaseUrl = "http://localhost:8000/api/v1",
+    [switch]$OnlyStep12
 )
 
 $ErrorActionPreference = "Continue"
@@ -174,10 +175,11 @@ function Report-Step {
     }
 }
 
-# --- STEP 1: GET /reports/options/ returns 200 ---
-$res1 = Invoke-ApiRaw -Method "GET" -Path "/reports/options/"
-$success1 = ($res1.Status -eq 200) -and ($res1.Body -and $res1.Body.categories)
-Report-Step 1 $success1 $res1.Status "200"
+if (-not $OnlyStep12) {
+    # --- STEP 1: GET /reports/options/ returns 200 ---
+    $res1 = Invoke-ApiRaw -Method "GET" -Path "/reports/options/"
+    $success1 = ($res1.Status -eq 200) -and ($res1.Body -and $res1.Body.categories)
+    Report-Step 1 $success1 $res1.Status "200"
 
 # --- STEP 2: Anonymous report with 2 images: 201, ref starts with SCM-, access_key present ---
 $boundary2 = "----WebKitFormBoundary" + [System.Guid]::NewGuid().ToString("N")
@@ -352,6 +354,7 @@ if ($res11Mine.Body -and $res11Mine.Body.results) {
 }
 $success11 = ($res11.Status -eq 201) -and ($null -ne $ref11) -and (-not $foundAnonInMine)
 Report-Step 11 $success11 $res11.Status "201"
+}
 
 # --- STEP 12: 5 valid anonymous reports return 201, 6th returns 429 with Retry-After ---
 $step12Statuses = @()
@@ -391,46 +394,55 @@ for ($i = 1; $i -le 6; $i++) {
 }
 
 $success12 = $allMatches12 -and $hasRetryAfter12
-$lastStatus12 = if ($step12Statuses.Count -gt 0) { $step12Statuses[-1] } else { 0 }
-Report-Step 12 $success12 $lastStatus12 "429 (5x 201 then 429)"
-
-# --- STEP 13: Check evidence object in local moto bucket (port 5001) if running, else SKIP ---
-$motoRunning = $false
-try {
-    $tcp = New-Object System.Net.Sockets.TcpClient
-    $iar = $tcp.BeginConnect("127.0.0.1", 5001, $null, $null)
-    $wait = $iar.AsyncWaitHandle.WaitOne(1000, $false)
-    if ($wait -and $tcp.Connected) {
-        $tcp.EndConnect($iar)
-        $motoRunning = $true
-    }
-    $tcp.Close()
-} catch {
-    $motoRunning = $false
+$statusSummary12 = ($step12Statuses -join ", ")
+if ($success12) {
+    Write-Host ("STEP 12: PASS (HTTP {0}, expected: 201x5 then 429)" -f $statusSummary12)
+    $script:passedCount++
+} else {
+    Write-Host ("STEP 12: FAIL (HTTP {0}, expected: 201x5 then 429)" -f $statusSummary12)
+    $script:failedCount++
 }
 
-if ($motoRunning) {
+if (-not $OnlyStep12) {
+    # --- STEP 13: Check evidence object in local moto bucket (port 5001) if running, else SKIP ---
+    $motoRunning = $false
     try {
-        $motoResp = Invoke-WebRequest -Uri "http://localhost:5001/scamshield-evidence-dev?list-type=2" -Method GET -UseBasicParsing -TimeoutSec 3
-        if ($motoResp.StatusCode -eq 200) {
-            Report-Step 13 $true 200 "200"
-        } else {
-            Report-Step 13 $false [int]$motoResp.StatusCode "200"
+        $tcp = New-Object System.Net.Sockets.TcpClient
+        $iar = $tcp.BeginConnect("127.0.0.1", 5001, $null, $null)
+        $wait = $iar.AsyncWaitHandle.WaitOne(1000, $false)
+        if ($wait -and $tcp.Connected) {
+            $tcp.EndConnect($iar)
+            $motoRunning = $true
         }
+        $tcp.Close()
     } catch {
-        Report-Step 13 $false 0 "200"
+        $motoRunning = $false
     }
-} else {
-    Report-Step 13 $false 0 "200" $true
+
+    if ($motoRunning) {
+        try {
+            $motoResp = Invoke-WebRequest -Uri "http://localhost:5001/scamshield-evidence-dev?list-type=2" -Method GET -UseBasicParsing -TimeoutSec 3
+            if ($motoResp.StatusCode -eq 200) {
+                Report-Step 13 $true 200 "200"
+            } else {
+                Report-Step 13 $false [int]$motoResp.StatusCode "200"
+            }
+        } catch {
+            Report-Step 13 $false 0 "200"
+        }
+    } else {
+        Report-Step 13 $false 0 "200" $true
+    }
 }
 
 # --- SUMMARY ---
+$totalExpected = if ($OnlyStep12) { 1 } else { 13 }
 Write-Host ""
 Write-Host "================== Summary =================="
-Write-Host ("Passed: {0} / 13" -f $passedCount)
-Write-Host ("Failed: {0} / 13" -f $failedCount)
+Write-Host ("Passed: {0} / {1}" -f $passedCount, $totalExpected)
+Write-Host ("Failed: {0} / {1}" -f $failedCount, $totalExpected)
 if ($skippedCount -gt 0) {
-    Write-Host ("Skipped: {0} / 13" -f $skippedCount)
+    Write-Host ("Skipped: {0} / {1}" -f $skippedCount, $totalExpected)
 }
 
 if ($failedCount -gt 0) {

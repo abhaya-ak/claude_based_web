@@ -109,6 +109,27 @@ class TestReportSubmissionThrottling:
         # Should pass because all events are expired
         check_report_submission_throttle(ip_hash=ip_hash, user=None)
 
+    def test_authenticated_reports_do_not_count_toward_anonymous_throttle(self):
+        user = User.objects.create_user(
+            email="auth_ip_overlap@example.com",
+            password="StrongPassword123!",
+            role=Role.CITIZEN,
+        )
+        ip_hash = "shared_ip_hash_112233"
+
+        # User submits 5 reports from this IP
+        for _ in range(5):
+            audit.log_event(
+                event_type=AuditEventType.REPORT_SUBMITTED,
+                actor=user,
+                ip_hash=ip_hash,
+                metadata={"category": "PHISHING", "file_count": 0},
+            )
+
+        # Anonymous submission from same IP must NOT be throttled by user's reports
+        check_report_submission_throttle(ip_hash=ip_hash, user=None)
+
+
 
 @pytest.mark.django_db
 class TestReportTrackingThrottling:

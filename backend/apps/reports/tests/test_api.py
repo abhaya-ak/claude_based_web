@@ -1,11 +1,15 @@
+import hashlib
+import hmac
 import io
 import json
 import uuid
+from datetime import timedelta
 
 import pytest
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
+from django.utils import timezone
 from moto import mock_aws
 from PIL import Image
 from rest_framework.test import APIClient
@@ -452,6 +456,176 @@ class TestReportCreateAPI:
         )
         assert res_overflow.status_code == 429
         assert "Retry-After" in res_overflow.headers
+
+    def test_smoke_sequence_rate_limit_accounting(self, api_client, auth_citizen):
+        client_ip = "192.0.2.77"
+        salt = getattr(settings, "HMAC_IP_SALT", "").encode("utf-8")
+        ip_hash = hmac.new(salt, client_ip.encode("utf-8"), hashlib.sha256).hexdigest()
+
+        def get_anon_counter():
+            cutoff = timezone.now() - timedelta(hours=1)
+            return SystemAuditLog.objects.filter(
+                event_type=AuditEventType.REPORT_SUBMITTED,
+                actor__isnull=True,
+                actor_ip_hash=ip_hash,
+                occurred_at__gte=cutoff,
+            ).count()
+
+        k = str(uuid.uuid4())
+
+        # (a) anonymous report with Idempotency-Key K, 201
+        res_a = api_client.post(
+            "/api/v1/reports/",
+            data={
+                "category": ScamCategory.PHISHING,
+                "platform": Platform.SMS,
+                "message_text": "Smoke sequence test report A",
+                "country_code": "MY",
+                "currency": "MYR",
+                "indicators": json.dumps([{"type": IndicatorType.PHONE, "value": "+60123456781"}]),
+            },
+            format="multipart",
+            HTTP_IDEMPOTENCY_KEY=k,
+            REMOTE_ADDR=client_ip,
+        )
+        assert res_a.status_code == 201
+        ref_a = res_a.json()["reference_code"]
+        assert SystemAuditLog.objects.filter(event_type=AuditEventType.REPORT_SUBMITTED).count() == 1
+        assert ScamReport.objects.count() == 1
+        assert get_anon_counter() == 1
+
+        # (b) invalid payload, 400
+        res_b = api_client.post(
+            "/api/v1/reports/",
+            data={
+                "category": ScamCategory.PHISHING,
+                "platform": Platform.SMS,
+                "message_text": "Invalid payload test",
+                "country_code": "MY",
+                "currency": "MYR",
+                "indicators": json.dumps([{"type": IndicatorType.PHONE, "value": "invalid-phone"}]),
+            },
+            format="multipart",
+            REMOTE_ADDR=client_ip,
+        )
+        assert res_b.status_code == 400
+        assert SystemAuditLog.objects.filter(event_type=AuditEventType.REPORT_SUBMITTED).count() == 1
+        assert ScamReport.objects.count() == 1
+        assert get_anon_counter() == 1
+
+        # (c) replay K, 200
+        res_c = api_client.post(
+            "/api/v1/reports/",
+            data={
+                "category": ScamCategory.PHISHING,
+                "platform": Platform.SMS,
+                "message_text": "Smoke sequence test report A",
+                "country_code": "MY",
+                "currency": "MYR",
+                "indicators": json.dumps([{"type": IndicatorType.PHONE, "value": "+60123456781"}]),
+            },
+            format="multipart",
+            HTTP_IDEMPOTENCY_KEY=k,
+            REMOTE_ADDR=client_ip,
+        )
+        assert res_c.status_code == 200
+        assert res_c.json()["reference_code"] == ref_a
+        assert SystemAuditLog.objects.filter(event_type=AuditEventType.REPORT_SUBMITTED).count() == 1
+        assert ScamReport.objects.count() == 1
+        assert get_anon_counter() == 1
+
+        # (d) track with a wrong key, 404
+        res_d = api_client.post(
+            "/api/v1/reports/track/",
+            data={
+                "reference_code": ref_a,
+                "access_key": "wrong_key_12345678901234567890",
+            },
+            format="json",
+            REMOTE_ADDR=client_ip,
+        )
+        assert res_d.status_code == 404
+        assert SystemAuditLog.objects.filter(event_type=AuditEventType.REPORT_SUBMITTED).count() == 1
+        assert ScamReport.objects.count() == 1
+        assert get_anon_counter() == 1
+
+        # (e) logged-in citizen report, 201
+        api_client.force_authenticate(user=auth_citizen)
+        res_e = api_client.post(
+            "/api/v1/reports/",
+            data={
+                "category": ScamCategory.IMPERSONATION,
+                "platform": Platform.WHATSAPP,
+                "message_text": "Logged in citizen report",
+                "country_code": "MY",
+                "currency": "MYR",
+                "indicators": json.dumps([{"type": IndicatorType.PHONE, "value": "+60123456782"}]),
+            },
+            format="multipart",
+            REMOTE_ADDR=client_ip,
+        )
+        assert res_e.status_code == 201
+        assert SystemAuditLog.objects.filter(event_type=AuditEventType.REPORT_SUBMITTED).count() == 2
+        assert ScamReport.objects.count() == 2
+        # Citizen non-anonymous report must not count toward the IP limit
+        assert get_anon_counter() == 1
+
+        # (f) same citizen with anonymous=true, 201
+        res_f = api_client.post(
+            "/api/v1/reports/",
+            data={
+                "category": ScamCategory.IMPERSONATION,
+                "platform": Platform.TELEGRAM,
+                "message_text": "Logged in citizen anonymous report",
+                "country_code": "MY",
+                "currency": "MYR",
+                "indicators": json.dumps([{"type": IndicatorType.URL, "value": "https://anon-invest.test"}]),
+                "anonymous": True,
+            },
+            format="multipart",
+            REMOTE_ADDR=client_ip,
+        )
+        assert res_f.status_code == 201
+        assert SystemAuditLog.objects.filter(event_type=AuditEventType.REPORT_SUBMITTED).count() == 3
+        assert ScamReport.objects.count() == 3
+        # Anonymous counter equals the number of anonymous reports (a and f = 2)
+        assert get_anon_counter() == 2
+
+    def test_clean_state_5_anonymous_reports_then_429(self, api_client):
+        clean_ip = "192.0.2.88"
+        for i in range(1, 6):
+            res = api_client.post(
+                "/api/v1/reports/",
+                data={
+                    "category": ScamCategory.PHISHING,
+                    "platform": Platform.SMS,
+                    "message_text": f"Clean state report {i}",
+                    "country_code": "MY",
+                    "currency": "MYR",
+                    "indicators": json.dumps([{"type": IndicatorType.PHONE, "value": f"+6012345678{i}"}]),
+                },
+                format="multipart",
+                REMOTE_ADDR=clean_ip,
+            )
+            assert res.status_code == 201
+
+        # 6th must return 429
+        res_6 = api_client.post(
+            "/api/v1/reports/",
+            data={
+                "category": ScamCategory.PHISHING,
+                "platform": Platform.SMS,
+                "message_text": "Clean state report 6 overflow",
+                "country_code": "MY",
+                "currency": "MYR",
+                "indicators": json.dumps([{"type": IndicatorType.PHONE, "value": "+60123456789"}]),
+            },
+            format="multipart",
+            REMOTE_ADDR=clean_ip,
+        )
+        assert res_6.status_code == 429
+        assert "Retry-After" in res_6.headers
+
 
 
 @mock_aws
