@@ -4,6 +4,192 @@ info:
   version: 1.0.0
   description: Scam reporting, lookup, and literacy platform REST API.
 paths:
+  /api/v1/admin-portal/rules/:
+    get:
+      operationId: admin_portal_rules_list
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      tags:
+      - admin-portal
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedHeuristicRuleList'
+          description: ''
+    post:
+      operationId: admin_portal_rules_create
+      tags:
+      - admin-portal
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HeuristicRuleRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/HeuristicRuleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HeuristicRuleRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HeuristicRule'
+          description: ''
+  /api/v1/admin-portal/rules/{id}/:
+    get:
+      operationId: admin_portal_rules_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - admin-portal
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HeuristicRule'
+          description: ''
+    put:
+      operationId: admin_portal_rules_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - admin-portal
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HeuristicRuleRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/HeuristicRuleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HeuristicRuleRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HeuristicRule'
+          description: ''
+    patch:
+      operationId: admin_portal_rules_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - admin-portal
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedHeuristicRuleRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedHeuristicRuleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedHeuristicRuleRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HeuristicRule'
+          description: ''
+    delete:
+      operationId: admin_portal_rules_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - admin-portal
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/admin-portal/scanner-config/:
+    get:
+      operationId: admin_portal_scanner_config_retrieve
+      tags:
+      - admin-portal
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScannerConfig'
+          description: ''
+    patch:
+      operationId: admin_portal_scanner_config_partial_update
+      tags:
+      - admin-portal
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedScannerConfigRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedScannerConfigRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedScannerConfigRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScannerConfig'
+          description: ''
   /api/v1/admin-portal/users/:
     get:
       operationId: admin_portal_users_list
@@ -274,6 +460,37 @@ paths:
               schema:
                 $ref: '#/components/schemas/UnavailableResponse'
           description: ''
+  /api/v1/internal/scan-results/:
+    post:
+      operationId: internal_scan_results_create
+      description: Receives scoring results from heuristic scanner Lambda, verified
+        via HMAC-SHA256.
+      summary: Internal scanner callback
+      tags:
+      - internal
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScanResultCallbackRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ScanResultCallbackRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ScanResultCallbackRequest'
+        required: true
+      responses:
+        '200':
+          description: Scan result processed and saved successfully.
+        '400':
+          description: Validation error in result payload.
+        '403':
+          description: Invalid signature, bad timestamp, or clock skew.
+        '404':
+          description: Report not found.
+        '429':
+          description: Throttled.
   /api/v1/reports/:
     post:
       operationId: reports_create
@@ -402,6 +619,279 @@ paths:
           description: Report not found
         '429':
           description: Too many failed tracking attempts
+  /api/v1/triage/indicators/:
+    get:
+      operationId: triage_indicators_list
+      description: Returns verified indicators with filtering by type, threat_level,
+        status, and search.
+      summary: List verified indicators
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      tags:
+      - triage
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedVerifiedIndicatorList'
+          description: ''
+  /api/v1/triage/indicators/{id}/:
+    get:
+      operationId: triage_indicators_retrieve
+      description: Returns full VerifiedIndicator details. Accessible to ANALYST and
+        ADMIN.
+      summary: Retrieve verified indicator detail
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - triage
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifiedIndicator'
+          description: ''
+    patch:
+      operationId: triage_indicators_partial_update
+      description: Updates public_note on a verified indicator. Restricted to ANALYST.
+      summary: Curate verified indicator public note
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - triage
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCurateIndicatorRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCurateIndicatorRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCurateIndicatorRequestRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifiedIndicator'
+          description: ''
+  /api/v1/triage/indicators/{id}/revoke/:
+    post:
+      operationId: triage_indicators_revoke_create
+      description: Revokes an active verified indicator with a required reason. Restricted
+        to ANALYST.
+      summary: Revoke verified indicator
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - triage
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RevokeIndicatorRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RevokeIndicatorRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RevokeIndicatorRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifiedIndicator'
+          description: ''
+  /api/v1/triage/queue/:
+    get:
+      operationId: triage_queue_list
+      description: Returns pending scam reports annotated with cluster_size.
+      summary: List triage queue
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      tags:
+      - triage
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedQueueReportList'
+          description: ''
+  /api/v1/triage/reports/{id}/:
+    get:
+      operationId: triage_reports_retrieve
+      description: Returns full analyst detail for a scam report.
+      summary: Get triage report detail
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - triage
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportDetail'
+          description: ''
+  /api/v1/triage/reports/{id}/evidence/:
+    get:
+      operationId: triage_reports_evidence_list
+      description: Returns temporary S3 pre-signed get_object URLs (ExpiresIn=900,
+        attachment) for clean evidence files.
+      summary: Get evidence presigned URLs
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - triage
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EvidencePresignedResponse'
+          description: ''
+  /api/v1/triage/reports/{id}/reject/:
+    post:
+      operationId: triage_reports_reject_create
+      description: Rejects a pending report with a mandatory non-blank reason (max
+        500 chars).
+      summary: Reject report
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - triage
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RejectReportRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RejectReportRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RejectReportRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RejectReportResponse'
+          description: ''
+  /api/v1/triage/reports/{id}/verify/:
+    post:
+      operationId: triage_reports_verify_create
+      description: Verifies a cluster of pending reports sharing an indicator, promotes
+        to VerifiedIndicator, and resolves all reports in the cluster.
+      summary: Verify report indicator cluster
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - triage
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyReportRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/VerifyReportRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/VerifyReportRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyReportResponse'
+          description: ''
 components:
   schemas:
     AdminUser:
@@ -478,20 +968,6 @@ components:
         * `APPROVED` - Approved
         * `PENDING` - Pending
         * `REJECTED` - Rejected
-    CategoryEnum:
-      enum:
-      - PHISHING
-      - FAKE_JOB
-      - ECOMMERCE_FRAUD
-      - IMPERSONATION
-      - OTHER
-      type: string
-      description: |-
-        * `PHISHING` - Phishing
-        * `FAKE_JOB` - Fake Job
-        * `ECOMMERCE_FRAUD` - E-commerce Fraud
-        * `IMPERSONATION` - Impersonation
-        * `OTHER` - Other
     ChangeRoleRequest:
       type: object
       properties:
@@ -563,6 +1039,156 @@ components:
           - request_id
       required:
       - error
+    EvidenceMetadata:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        content_type:
+          type: string
+          readOnly: true
+        size_bytes:
+          type: integer
+          readOnly: true
+        sha256:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - content_type
+      - created_at
+      - id
+      - sha256
+      - size_bytes
+    EvidencePresignedResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        mime_type:
+          type: string
+        content_type:
+          type: string
+        size_bytes:
+          type: integer
+        download_url:
+          type: string
+        expires_in:
+          type: integer
+          default: 900
+      required:
+      - content_type
+      - download_url
+      - id
+      - mime_type
+      - size_bytes
+    HeuristicRule:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        rule_type:
+          $ref: '#/components/schemas/RuleTypeEnum'
+        pattern:
+          type: string
+          maxLength: 100
+        weight:
+          type: integer
+          maximum: 50
+          minimum: 1
+        is_active:
+          type: boolean
+          default: true
+        created_by:
+          type: string
+          format: uuid
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - created_by
+      - id
+      - pattern
+      - rule_type
+      - updated_at
+      - weight
+    HeuristicRuleRequest:
+      type: object
+      properties:
+        rule_type:
+          $ref: '#/components/schemas/RuleTypeEnum'
+        pattern:
+          type: string
+          minLength: 1
+          maxLength: 100
+        weight:
+          type: integer
+          maximum: 50
+          minimum: 1
+        is_active:
+          type: boolean
+          default: true
+      required:
+      - pattern
+      - rule_type
+      - weight
+    IndicatorDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        type:
+          allOf:
+          - $ref: '#/components/schemas/TypeEnum'
+          readOnly: true
+        raw_value:
+          type: string
+          readOnly: true
+        normalized_value:
+          type: string
+          readOnly: true
+        display_value:
+          type: string
+          readOnly: true
+        verified_indicator:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - display_value
+      - id
+      - normalized_value
+      - raw_value
+      - type
+      - verified_indicator
+    IndicatorStatusEnum:
+      enum:
+      - ACTIVE
+      - REVOKED
+      type: string
+      description: |-
+        * `ACTIVE` - Active
+        * `REVOKED` - Revoked
     LivenessResponse:
       type: object
       properties:
@@ -591,11 +1217,11 @@ components:
           type: string
           maxLength: 24
         category:
-          $ref: '#/components/schemas/CategoryEnum'
+          $ref: '#/components/schemas/PrimaryCategoryEnum'
         platform:
           $ref: '#/components/schemas/PlatformEnum'
         status:
-          $ref: '#/components/schemas/StatusEnum'
+          $ref: '#/components/schemas/ReportStatusEnum'
         financial_loss:
           type: string
           format: decimal
@@ -613,6 +1239,29 @@ components:
       - currency
       - platform
       - reference_code
+    PaginatedHeuristicRuleList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/HeuristicRule'
     PaginatedMyReportItemList:
       type: object
       required:
@@ -636,6 +1285,52 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/MyReportItem'
+    PaginatedQueueReportList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/QueueReport'
+    PaginatedVerifiedIndicatorList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/VerifiedIndicator'
     PasswordChangeRequest:
       type: object
       properties:
@@ -650,6 +1345,48 @@ components:
       required:
       - current_password
       - new_password
+    PatchedCurateIndicatorRequestRequest:
+      type: object
+      properties:
+        public_note:
+          type: string
+          default: ''
+          maxLength: 500
+    PatchedHeuristicRuleRequest:
+      type: object
+      properties:
+        rule_type:
+          $ref: '#/components/schemas/RuleTypeEnum'
+        pattern:
+          type: string
+          minLength: 1
+          maxLength: 100
+        weight:
+          type: integer
+          maximum: 50
+          minimum: 1
+        is_active:
+          type: boolean
+          default: true
+    PatchedScannerConfigRequest:
+      type: object
+      properties:
+        keyword_cap_points:
+          type: integer
+          maximum: 100
+          minimum: 0
+        ip_url_points:
+          type: integer
+          maximum: 100
+          minimum: 0
+        prior_pending_points:
+          type: integer
+          maximum: 100
+          minimum: 0
+        high_priority_threshold:
+          type: integer
+          maximum: 100
+          minimum: 1
     PaymentMethodEnum:
       enum:
       - NONE
@@ -704,6 +1441,87 @@ components:
       required:
       - steps
       - title
+    PrimaryCategoryEnum:
+      enum:
+      - PHISHING
+      - FAKE_JOB
+      - ECOMMERCE_FRAUD
+      - IMPERSONATION
+      - OTHER
+      type: string
+      description: |-
+        * `PHISHING` - Phishing
+        * `FAKE_JOB` - Fake Job
+        * `ECOMMERCE_FRAUD` - E-commerce Fraud
+        * `IMPERSONATION` - Impersonation
+        * `OTHER` - Other
+    QueueReport:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        reference_code:
+          type: string
+          readOnly: true
+        category:
+          allOf:
+          - $ref: '#/components/schemas/PrimaryCategoryEnum'
+          readOnly: true
+        platform:
+          allOf:
+          - $ref: '#/components/schemas/PlatformEnum'
+          readOnly: true
+        financial_loss:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        currency:
+          type: string
+          readOnly: true
+        incident_date:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/ReportStatusEnum'
+          readOnly: true
+        risk_score:
+          type: integer
+          readOnly: true
+          nullable: true
+        is_high_priority:
+          type: boolean
+          readOnly: true
+        scan_status:
+          allOf:
+          - $ref: '#/components/schemas/ScanStatusEnum'
+          readOnly: true
+        cluster_size:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - category
+      - cluster_size
+      - created_at
+      - currency
+      - financial_loss
+      - id
+      - incident_date
+      - is_high_priority
+      - platform
+      - reference_code
+      - risk_score
+      - scan_status
+      - status
     ReadinessResponse:
       type: object
       properties:
@@ -713,6 +1531,29 @@ components:
           type: string
       required:
       - database
+      - status
+    RejectReportRequestRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 500
+      required:
+      - reason
+    RejectReportResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+        reference_code:
+          type: string
+      required:
+      - id
+      - reference_code
       - status
     RejectUserRequest:
       type: object
@@ -727,7 +1568,7 @@ components:
       type: object
       properties:
         category:
-          $ref: '#/components/schemas/CategoryEnum'
+          $ref: '#/components/schemas/PrimaryCategoryEnum'
         platform:
           $ref: '#/components/schemas/PlatformEnum'
         message_text:
@@ -789,6 +1630,129 @@ components:
       - playbook
       - reference_code
       - status
+    ReportDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        reference_code:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/ReportStatusEnum'
+          readOnly: true
+        category:
+          allOf:
+          - $ref: '#/components/schemas/PrimaryCategoryEnum'
+          readOnly: true
+        platform:
+          allOf:
+          - $ref: '#/components/schemas/PlatformEnum'
+          readOnly: true
+        financial_loss:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        currency:
+          type: string
+          readOnly: true
+        payment_method:
+          allOf:
+          - $ref: '#/components/schemas/PaymentMethodEnum'
+          readOnly: true
+        country_code:
+          type: string
+          readOnly: true
+        admin_area:
+          type: string
+          readOnly: true
+          nullable: true
+        incident_date:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        message_text:
+          type: string
+          readOnly: true
+        risk_score:
+          type: integer
+          readOnly: true
+          nullable: true
+        is_high_priority:
+          type: boolean
+          readOnly: true
+        scan_status:
+          allOf:
+          - $ref: '#/components/schemas/ScanStatusEnum'
+          readOnly: true
+        cluster_size:
+          type: integer
+          readOnly: true
+        indicators:
+          type: array
+          items:
+            $ref: '#/components/schemas/IndicatorDetail'
+          readOnly: true
+        evidence_files:
+          type: array
+          items:
+            $ref: '#/components/schemas/EvidenceMetadata'
+          readOnly: true
+        scan_result:
+          allOf:
+          - $ref: '#/components/schemas/ScanResultDetail'
+          readOnly: true
+        reviewed_by:
+          type: string
+          format: email
+          readOnly: true
+        reviewed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        review_note:
+          type: string
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - admin_area
+      - category
+      - cluster_size
+      - country_code
+      - created_at
+      - currency
+      - evidence_files
+      - financial_loss
+      - id
+      - incident_date
+      - indicators
+      - is_high_priority
+      - message_text
+      - payment_method
+      - platform
+      - reference_code
+      - review_note
+      - reviewed_at
+      - reviewed_by
+      - risk_score
+      - scan_result
+      - scan_status
+      - status
+      - updated_at
     ReportOptionsResponse:
       type: object
       properties:
@@ -835,6 +1799,16 @@ components:
       - indicator_types
       - payment_methods
       - platforms
+    ReportStatusEnum:
+      enum:
+      - PENDING
+      - VERIFIED
+      - REJECTED
+      type: string
+      description: |-
+        * `PENDING` - Pending
+        * `VERIFIED` - Verified
+        * `REJECTED` - Rejected
     ReportTrackRequestRequest:
       type: object
       properties:
@@ -871,6 +1845,122 @@ components:
       - playbook
       - reference_code
       - status
+    RevokeIndicatorRequestRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 300
+      required:
+      - reason
+    RuleTypeEnum:
+      enum:
+      - KEYWORD
+      - TLD
+      - SHORTENER
+      type: string
+      description: |-
+        * `KEYWORD` - Keyword
+        * `TLD` - TLD
+        * `SHORTENER` - URL Shortener
+    ScanResultCallbackRequest:
+      type: object
+      properties:
+        report_id:
+          type: string
+          format: uuid
+        ruleset_version:
+          type: integer
+          minimum: 1
+        risk_score:
+          type: integer
+          maximum: 100
+          minimum: 0
+        is_high_priority:
+          type: boolean
+        breakdown:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        lambda_request_id:
+          type: string
+          nullable: true
+          maxLength: 64
+      required:
+      - breakdown
+      - is_high_priority
+      - report_id
+      - risk_score
+      - ruleset_version
+    ScanResultDetail:
+      type: object
+      properties:
+        ruleset_version:
+          type: integer
+          readOnly: true
+        risk_score:
+          type: integer
+          readOnly: true
+        is_high_priority:
+          type: boolean
+          readOnly: true
+        breakdown:
+          readOnly: true
+        scanned_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - breakdown
+      - is_high_priority
+      - risk_score
+      - ruleset_version
+      - scanned_at
+    ScanStatusEnum:
+      enum:
+      - PENDING
+      - DONE
+      - FAILED
+      type: string
+      description: |-
+        * `PENDING` - Pending
+        * `DONE` - Done
+        * `FAILED` - Failed
+    ScannerConfig:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        keyword_cap_points:
+          type: integer
+          maximum: 100
+          minimum: 0
+        ip_url_points:
+          type: integer
+          maximum: 100
+          minimum: 0
+        prior_pending_points:
+          type: integer
+          maximum: 100
+          minimum: 0
+        high_priority_threshold:
+          type: integer
+          maximum: 100
+          minimum: 1
+        ruleset_version:
+          type: integer
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - id
+      - ruleset_version
+      - updated_at
     StaffRegisterRequest:
       type: object
       properties:
@@ -911,16 +2001,6 @@ components:
       description: |-
         * `ANALYST` - ANALYST
         * `EDUCATOR` - EDUCATOR
-    StatusEnum:
-      enum:
-      - PENDING
-      - VERIFIED
-      - REJECTED
-      type: string
-      description: |-
-        * `PENDING` - Pending
-        * `VERIFIED` - Verified
-        * `REJECTED` - Rejected
     Step:
       type: object
       properties:
@@ -935,6 +2015,30 @@ components:
       required:
       - detail
       - title
+    ThreatLevelEnum:
+      enum:
+      - MEDIUM
+      - HIGH
+      - CRITICAL
+      type: string
+      description: |-
+        * `MEDIUM` - Medium
+        * `HIGH` - High
+        * `CRITICAL` - Critical
+    TypeEnum:
+      enum:
+      - PHONE
+      - URL
+      - DOMAIN
+      - EMAIL
+      - BANK_ACCOUNT
+      type: string
+      description: |-
+        * `PHONE` - Phone
+        * `URL` - URL
+        * `DOMAIN` - Domain
+        * `EMAIL` - Email
+        * `BANK_ACCOUNT` - Bank Account
     UnavailableResponse:
       type: object
       properties:
@@ -1023,6 +2127,127 @@ components:
       - full_name
       - id
       - role
+    VerifiedIndicator:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        type:
+          allOf:
+          - $ref: '#/components/schemas/TypeEnum'
+          readOnly: true
+        normalized_value:
+          type: string
+          readOnly: true
+        display_value:
+          type: string
+          readOnly: true
+        primary_category:
+          allOf:
+          - $ref: '#/components/schemas/PrimaryCategoryEnum'
+          readOnly: true
+        threat_level:
+          allOf:
+          - $ref: '#/components/schemas/ThreatLevelEnum'
+          readOnly: true
+        total_report_count:
+          type: integer
+          readOnly: true
+        first_seen_at:
+          type: string
+          format: date-time
+          readOnly: true
+        last_seen_at:
+          type: string
+          format: date-time
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/IndicatorStatusEnum'
+          readOnly: true
+        public_note:
+          type: string
+          readOnly: true
+        verified_by_id:
+          type: string
+          format: uuid
+          readOnly: true
+        verified_at:
+          type: string
+          format: date-time
+          readOnly: true
+        revoked_by_id:
+          type: string
+          format: uuid
+          nullable: true
+          readOnly: true
+        revoked_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        revoke_reason:
+          type: string
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - display_value
+      - first_seen_at
+      - id
+      - last_seen_at
+      - normalized_value
+      - primary_category
+      - public_note
+      - revoke_reason
+      - revoked_at
+      - revoked_by_id
+      - status
+      - threat_level
+      - total_report_count
+      - type
+      - updated_at
+      - verified_at
+      - verified_by_id
+    VerifyReportRequestRequest:
+      type: object
+      properties:
+        report_indicator_id:
+          type: integer
+        public_note:
+          type: string
+          default: ''
+          maxLength: 500
+      required:
+      - report_indicator_id
+    VerifyReportResponse:
+      type: object
+      properties:
+        verified_indicator:
+          $ref: '#/components/schemas/VerifiedIndicator'
+        resolved_report_ids:
+          type: array
+          items:
+            type: string
+        cluster_size:
+          type: integer
+        threat_level:
+          type: string
+      required:
+      - cluster_size
+      - resolved_report_ids
+      - threat_level
+      - verified_indicator
   securitySchemes:
     jwtAuth:
       type: http

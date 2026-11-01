@@ -31,6 +31,7 @@ VALID_PROD_ENV = {
     "AWS_SECRET_ACCESS_KEY": "testing",
     "AWS_EC2_METADATA_DISABLED": "true",
     "EVIDENCE_BUCKET": "scamshield-evidence-prod",
+    "INTERNAL_CALLBACK_HMAC_KEY": "a-secure-callback-hmac-32-chars-long",
 }
 
 

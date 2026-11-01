@@ -14,6 +14,12 @@ ALLOWED_METRIC_NAMES = {
     "ScanFailures",
     "LoginFailures",
     "ScanDispatched",
+    "ScansCompleted",
+    "ScansHighPriority",
+    "ScansFailed",
+    "IndicatorsVerified",
+    "ReportsRejected",
+    "IndicatorsRevoked",
 }
 
 ALLOWED_DIMENSION_NAMES = {
