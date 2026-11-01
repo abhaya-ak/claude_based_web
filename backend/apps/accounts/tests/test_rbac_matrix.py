@@ -185,3 +185,41 @@ class TestRBACMatrix:
             format="json",
         )
         assert response.status_code == expected_status
+
+    # 7. GET /api/v1/reports/options/ (public per D54)
+    @pytest.mark.parametrize(
+        "user_attr",
+        [
+            None,
+            "citizen",
+            "analyst_pending",
+            "analyst_approved",
+            "educator_approved",
+            "admin_pending",
+            "admin_approved",
+        ],
+    )
+    def test_reports_options_access(self, user_attr):
+        user = getattr(self, user_attr) if user_attr else None
+        client = self._client_for(user)
+        response = client.get("/api/v1/reports/options/")
+        assert response.status_code == 200
+
+    # 8. GET /api/v1/reports/mine/ (authenticated only per D54)
+    @pytest.mark.parametrize(
+        "user_attr,expected_status",
+        [
+            (None, 401),
+            ("citizen", 200),
+            ("analyst_pending", 200),
+            ("analyst_approved", 200),
+            ("educator_approved", 200),
+            ("admin_pending", 200),
+            ("admin_approved", 200),
+        ],
+    )
+    def test_reports_mine_access(self, user_attr, expected_status):
+        user = getattr(self, user_attr) if user_attr else None
+        client = self._client_for(user)
+        response = client.get("/api/v1/reports/mine/")
+        assert response.status_code == expected_status

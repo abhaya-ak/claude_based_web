@@ -111,4 +111,5 @@ urlpatterns = [
     path("api/v1/redoc/", ProtectedSpectacularRedocView.as_view(url_name="schema"), name="redoc"),
     path("api/v1/auth/", include("apps.accounts.urls")),
     path("api/v1/admin-portal/users/", include("apps.accounts.urls_admin")),
+    path("api/v1/reports/", include("apps.reports.urls")),
 ]

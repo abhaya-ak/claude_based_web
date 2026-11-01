@@ -274,6 +274,134 @@ paths:
               schema:
                 $ref: '#/components/schemas/UnavailableResponse'
           description: ''
+  /api/v1/reports/:
+    post:
+      operationId: reports_create
+      description: Submits a citizen scam report with 1 to 5 indicators and up to
+        3 evidence files.
+      summary: File a scam report
+      parameters:
+      - in: header
+        name: Idempotency-Key
+        schema:
+          type: string
+          format: uuid
+        description: Optional idempotency key UUID to prevent duplicate submissions.
+      tags:
+      - reports
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReportCreateRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReportCreateRequestRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportCreateRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportCreateResponse'
+          description: ''
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportCreateResponse'
+          description: Idempotent replay of previously submitted report.
+        '400':
+          description: Validation error
+        '413':
+          description: Payload exceeds 16 MB limit
+        '429':
+          description: Rate limit exceeded
+  /api/v1/reports/mine/:
+    get:
+      operationId: reports_mine_list
+      description: Authenticated list of non-anonymous reports submitted by the caller.
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      tags:
+      - reports
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMyReportItemList'
+          description: ''
+  /api/v1/reports/options/:
+    get:
+      operationId: reports_options_retrieve
+      description: Public endpoint returning enums and country-specific allow-lists.
+      summary: Retrieve report submission options and allow-lists
+      tags:
+      - reports
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportOptionsResponse'
+          description: ''
+  /api/v1/reports/track/:
+    post:
+      operationId: reports_track_create
+      description: Public tracking endpoint. Returns uniform 404 for unknown references
+        and invalid keys.
+      summary: Track status of a filed report
+      tags:
+      - reports
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportTrackRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReportTrackRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReportTrackRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportTrackResponse'
+          description: ''
+        '404':
+          description: Report not found
+        '429':
+          description: Too many failed tracking attempts
 components:
   schemas:
     AdminUser:
@@ -350,6 +478,20 @@ components:
         * `APPROVED` - Approved
         * `PENDING` - Pending
         * `REJECTED` - Rejected
+    CategoryEnum:
+      enum:
+      - PHISHING
+      - FAKE_JOB
+      - ECOMMERCE_FRAUD
+      - IMPERSONATION
+      - OTHER
+      type: string
+      description: |-
+        * `PHISHING` - Phishing
+        * `FAKE_JOB` - Fake Job
+        * `ECOMMERCE_FRAUD` - E-commerce Fraud
+        * `IMPERSONATION` - Impersonation
+        * `OTHER` - Other
     ChangeRoleRequest:
       type: object
       properties:
@@ -380,6 +522,26 @@ components:
       - email
       - full_name
       - password
+    CountryCodeEnum:
+      enum:
+      - MY
+      - NP
+      - ZZ
+      type: string
+      description: |-
+        * `MY` - MY
+        * `NP` - NP
+        * `ZZ` - ZZ
+    CurrencyEnum:
+      enum:
+      - MYR
+      - NPR
+      - USD
+      type: string
+      description: |-
+        * `MYR` - MYR
+        * `NPR` - NPR
+        * `USD` - USD
     ErrorResponse:
       type: object
       properties:
@@ -422,6 +584,58 @@ components:
       required:
       - email
       - password
+    MyReportItem:
+      type: object
+      properties:
+        reference_code:
+          type: string
+          maxLength: 24
+        category:
+          $ref: '#/components/schemas/CategoryEnum'
+        platform:
+          $ref: '#/components/schemas/PlatformEnum'
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        financial_loss:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        currency:
+          type: string
+          maxLength: 3
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - category
+      - created_at
+      - currency
+      - platform
+      - reference_code
+    PaginatedMyReportItemList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/MyReportItem'
     PasswordChangeRequest:
       type: object
       properties:
@@ -436,6 +650,60 @@ components:
       required:
       - current_password
       - new_password
+    PaymentMethodEnum:
+      enum:
+      - NONE
+      - BANK_TRANSFER
+      - E_WALLET
+      - CARD
+      - CRYPTO
+      - CASH
+      - OTHER
+      type: string
+      description: |-
+        * `NONE` - None
+        * `BANK_TRANSFER` - Bank Transfer
+        * `E_WALLET` - E-Wallet
+        * `CARD` - Card
+        * `CRYPTO` - Crypto
+        * `CASH` - Cash
+        * `OTHER` - Other
+    PlatformEnum:
+      enum:
+      - WHATSAPP
+      - TELEGRAM
+      - FACEBOOK
+      - EMAIL
+      - SMS
+      - WEBSITE
+      - OTHER
+      type: string
+      description: |-
+        * `WHATSAPP` - WhatsApp
+        * `TELEGRAM` - Telegram
+        * `FACEBOOK` - Facebook
+        * `EMAIL` - Email
+        * `SMS` - SMS
+        * `WEBSITE` - Website
+        * `OTHER` - Other
+    Playbook:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 150
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/Step'
+        hotlines:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+      required:
+      - steps
+      - title
     ReadinessResponse:
       type: object
       properties:
@@ -455,6 +723,165 @@ components:
           maxLength: 300
       required:
       - reason
+    ReportCreateRequestRequest:
+      type: object
+      properties:
+        category:
+          $ref: '#/components/schemas/CategoryEnum'
+        platform:
+          $ref: '#/components/schemas/PlatformEnum'
+        message_text:
+          type: string
+          minLength: 1
+          maxLength: 5000
+        country_code:
+          $ref: '#/components/schemas/CountryCodeEnum'
+        currency:
+          $ref: '#/components/schemas/CurrencyEnum'
+        financial_loss:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          default: '0.00'
+        payment_method:
+          allOf:
+          - $ref: '#/components/schemas/PaymentMethodEnum'
+          default: NONE
+        admin_area:
+          type: string
+          nullable: true
+          maxLength: 100
+        incident_date:
+          type: string
+          format: date
+          nullable: true
+        anonymous:
+          type: boolean
+          default: false
+        indicators:
+          type: string
+          minLength: 1
+          description: 'JSON-encoded array of indicator objects: [{''type'': ''...'',
+            ''value'': ''...''}]'
+      required:
+      - category
+      - country_code
+      - currency
+      - indicators
+      - message_text
+      - platform
+    ReportCreateResponse:
+      type: object
+      properties:
+        reference_code:
+          type: string
+          maxLength: 24
+        status:
+          type: string
+          maxLength: 10
+        access_key:
+          type: string
+          nullable: true
+          maxLength: 64
+        playbook:
+          $ref: '#/components/schemas/Playbook'
+      required:
+      - playbook
+      - reference_code
+      - status
+    ReportOptionsResponse:
+      type: object
+      properties:
+        countries:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        currencies:
+          type: array
+          items:
+            type: string
+        categories:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        platforms:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        payment_methods:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        indicator_types:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        admin_areas:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+      required:
+      - admin_areas
+      - categories
+      - countries
+      - currencies
+      - indicator_types
+      - payment_methods
+      - platforms
+    ReportTrackRequestRequest:
+      type: object
+      properties:
+        reference_code:
+          type: string
+          minLength: 1
+          maxLength: 24
+        access_key:
+          type: string
+          nullable: true
+          maxLength: 64
+      required:
+      - reference_code
+    ReportTrackResponse:
+      type: object
+      properties:
+        reference_code:
+          type: string
+          maxLength: 24
+        status:
+          type: string
+          maxLength: 10
+        category:
+          type: string
+          maxLength: 20
+        platform:
+          type: string
+          maxLength: 12
+        financial_loss:
+          type: string
+        currency:
+          type: string
+          maxLength: 3
+        created_at:
+          type: string
+          format: date-time
+        playbook:
+          $ref: '#/components/schemas/Playbook'
+      required:
+      - category
+      - created_at
+      - currency
+      - financial_loss
+      - platform
+      - playbook
+      - reference_code
+      - status
     StaffRegisterRequest:
       type: object
       properties:
@@ -495,6 +922,30 @@ components:
       description: |-
         * `ANALYST` - ANALYST
         * `EDUCATOR` - EDUCATOR
+    StatusEnum:
+      enum:
+      - PENDING
+      - VERIFIED
+      - REJECTED
+      type: string
+      description: |-
+        * `PENDING` - Pending
+        * `VERIFIED` - Verified
+        * `REJECTED` - Rejected
+    Step:
+      type: object
+      properties:
+        marker:
+          type: string
+          nullable: true
+        title:
+          type: string
+          maxLength: 150
+        detail:
+          type: string
+      required:
+      - detail
+      - title
     UnavailableResponse:
       type: object
       properties:
