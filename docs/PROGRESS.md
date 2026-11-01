@@ -44,7 +44,7 @@ Phase 6 — Triage workbench, F2.1 (tasks 6.1-6.3 complete)
 | ├─ 6.1 Teardown cleanup, Queue & Detail APIs | S2 | done | 0a1e925 | Queue filtering, cluster_size annotation, report detail view, pytest connection cleanup (14 tests) |
 | ├─ 6.2 Evidence vault & Report rejection | S2 | done | d36a77d | Presigned S3 URLs (900s, attachment, analyst only), reject endpoint, audit & metrics (10 tests) |
 | ├─ 6.3 Multi-report cluster verification | S2 | done | 0e43645 | verify_indicator, monotonic locking, threat levels, TO BE PROVEN #12 concurrency (12 tests) |
-| ├─ 6.4 Indicators API & Contract §3.6 | S2 | todo | | Indicators list/detail, public_note patch, revoke, find_active_indicators, count_pending_by_indicator |
+| ├─ 6.4 Indicators API & Contract §3.6 | S2 | done | 25cf6ce | Indicators list/detail, public_note patch, revoke, find_active_indicators, count_pending_by_indicator (24 tests) |
 | └─ 6.5 Route walk, queries & closing gate | S2 | todo | | Route-walk, RBAC matrix, query counts, OpenAPI regeneration, CI deploy check |
 | 7 Lookup + alerts | S1 | todo | | |
 | 8 Analytics + broadcast | S2 | todo | | |

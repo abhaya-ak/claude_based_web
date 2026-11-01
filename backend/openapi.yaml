@@ -619,6 +619,129 @@ paths:
           description: Report not found
         '429':
           description: Too many failed tracking attempts
+  /api/v1/triage/indicators/:
+    get:
+      operationId: triage_indicators_list
+      description: Returns verified indicators with filtering by type, threat_level,
+        status, and search.
+      summary: List verified indicators
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      tags:
+      - triage
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedVerifiedIndicatorList'
+          description: ''
+  /api/v1/triage/indicators/{id}/:
+    get:
+      operationId: triage_indicators_retrieve
+      description: Returns full VerifiedIndicator details. Accessible to ANALYST and
+        ADMIN.
+      summary: Retrieve verified indicator detail
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - triage
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifiedIndicator'
+          description: ''
+    patch:
+      operationId: triage_indicators_partial_update
+      description: Updates public_note on a verified indicator. Restricted to ANALYST.
+      summary: Curate verified indicator public note
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - triage
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCurateIndicatorRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCurateIndicatorRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCurateIndicatorRequestRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifiedIndicator'
+          description: ''
+  /api/v1/triage/indicators/{id}/revoke/:
+    post:
+      operationId: triage_indicators_revoke_create
+      description: Revokes an active verified indicator with a required reason. Restricted
+        to ANALYST.
+      summary: Revoke verified indicator
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - triage
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RevokeIndicatorRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RevokeIndicatorRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RevokeIndicatorRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifiedIndicator'
+          description: ''
   /api/v1/triage/queue/:
     get:
       operationId: triage_queue_list
@@ -1185,6 +1308,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/QueueReport'
+    PaginatedVerifiedIndicatorList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/VerifiedIndicator'
     PasswordChangeRequest:
       type: object
       properties:
@@ -1199,6 +1345,13 @@ components:
       required:
       - current_password
       - new_password
+    PatchedCurateIndicatorRequestRequest:
+      type: object
+      properties:
+        public_note:
+          type: string
+          default: ''
+          maxLength: 500
     PatchedHeuristicRuleRequest:
       type: object
       properties:
@@ -1692,6 +1845,15 @@ components:
       - playbook
       - reference_code
       - status
+    RevokeIndicatorRequestRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 300
+      required:
+      - reason
     RuleTypeEnum:
       enum:
       - KEYWORD

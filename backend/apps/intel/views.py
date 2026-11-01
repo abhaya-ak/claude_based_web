@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics, serializers
@@ -9,18 +10,27 @@ from apps.accounts.models import Role
 from apps.accounts.permissions import HasRole
 from apps.core.ip import client_ip_hash
 from apps.core.pagination import StandardPagination
+from apps.intel.models import IndicatorStatus, IndicatorType, ThreatLevel, VerifiedIndicator
 from apps.intel.selectors.triage_selectors import get_report_detail, get_triage_queue_queryset
 from apps.intel.serializers import (
+    CurateIndicatorRequestSerializer,
     EvidencePresignedResponseSerializer,
     QueueReportSerializer,
     RejectReportRequestSerializer,
     RejectReportResponseSerializer,
     ReportDetailSerializer,
+    RevokeIndicatorRequestSerializer,
+    VerifiedIndicatorSerializer,
     VerifyReportRequestSerializer,
     VerifyReportResponseSerializer,
 )
 from apps.intel.services.evidence_service import issue_evidence_presigned_urls
-from apps.intel.services.triage_service import reject_report, verify_indicator
+from apps.intel.services.triage_service import (
+    curate_indicator,
+    reject_report,
+    revoke_indicator,
+    verify_indicator,
+)
 from apps.reports.models import Platform, ScamCategory, ScamReport
 
 
@@ -195,3 +205,138 @@ class TriageVerifyReportView(APIView):
         )
         response_serializer = VerifyReportResponseSerializer(result)
         return Response(response_serializer.data, status=200)
+
+
+class TriageIndicatorsListView(generics.ListAPIView):
+    """
+    GET /api/v1/triage/indicators/
+    Returns verified indicators with filtering and search.
+    Accessible to ANALYST and ADMIN.
+    """
+
+    permission_classes = [IsAuthenticated, HasRole(Role.ANALYST, Role.ADMIN)]
+    serializer_class = VerifiedIndicatorSerializer
+    pagination_class = StandardPagination
+
+    @extend_schema(
+        summary="List verified indicators",
+        description="Returns verified indicators with filtering by type, threat_level, status, and search.",
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+    def get_queryset(self):
+        qs = (
+            VerifiedIndicator.objects.select_related("verified_by", "revoked_by")
+            .order_by("-last_seen_at", "-total_report_count", "id")
+        )
+        params = self.request.query_params
+
+        # Filter: type
+        itype = params.get("type")
+        if itype:
+            if itype not in IndicatorType.values:
+                raise serializers.ValidationError(
+                    {"type": [f"Invalid indicator type '{itype}'."]},
+                    code="validation_error",
+                )
+            qs = qs.filter(type=itype)
+
+        # Filter: threat_level
+        threat_level = params.get("threat_level")
+        if threat_level:
+            if threat_level not in ThreatLevel.values:
+                raise serializers.ValidationError(
+                    {"threat_level": [f"Invalid threat level '{threat_level}'."]},
+                    code="validation_error",
+                )
+            qs = qs.filter(threat_level=threat_level)
+
+        # Filter: status
+        status = params.get("status")
+        if status:
+            if status not in IndicatorStatus.values:
+                raise serializers.ValidationError(
+                    {"status": [f"Invalid status '{status}'."]},
+                    code="validation_error",
+                )
+            qs = qs.filter(status=status)
+
+        # Filter: search
+        search = params.get("search")
+        if search:
+            search = search.strip()
+            if search:
+                qs = qs.filter(
+                    Q(normalized_value__icontains=search)
+                    | Q(public_note__icontains=search)
+                )
+
+        return qs
+
+
+class TriageIndicatorDetailView(APIView):
+    """
+    GET /api/v1/triage/indicators/{id}/
+    PATCH /api/v1/triage/indicators/{id}/
+    Detail view (ANALYST, ADMIN) and curation endpoint (ANALYST only).
+    """
+
+    def get_permissions(self):
+        if self.request.method == "PATCH":
+            return [IsAuthenticated(), HasRole(Role.ANALYST)()]
+        return [IsAuthenticated(), HasRole(Role.ANALYST, Role.ADMIN)()]
+
+    @extend_schema(
+        summary="Retrieve verified indicator detail",
+        description="Returns full VerifiedIndicator details. Accessible to ANALYST and ADMIN.",
+        responses={200: VerifiedIndicatorSerializer},
+    )
+    def get(self, request, id, *args, **kwargs):
+        indicator = get_object_or_404(
+            VerifiedIndicator.objects.select_related("verified_by", "revoked_by"),
+            id=id,
+        )
+        return Response(VerifiedIndicatorSerializer(indicator).data)
+
+    @extend_schema(
+        summary="Curate verified indicator public note",
+        description="Updates public_note on a verified indicator. Restricted to ANALYST.",
+        request=CurateIndicatorRequestSerializer,
+        responses={200: VerifiedIndicatorSerializer},
+    )
+    def patch(self, request, id, *args, **kwargs):
+        indicator = get_object_or_404(VerifiedIndicator, id=id)
+        serializer = CurateIndicatorRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        new_note = serializer.validated_data.get("public_note", indicator.public_note)
+        updated = curate_indicator(indicator_id=indicator.id, public_note=new_note)
+        return Response(VerifiedIndicatorSerializer(updated).data, status=200)
+
+
+class TriageIndicatorRevokeView(APIView):
+    """
+    POST /api/v1/triage/indicators/{id}/revoke/
+    Revokes an active indicator. Restricted to ANALYST.
+    """
+
+    permission_classes = [IsAuthenticated, HasRole(Role.ANALYST)]
+
+    @extend_schema(
+        summary="Revoke verified indicator",
+        description="Revokes an active verified indicator with a required reason. Restricted to ANALYST.",
+        request=RevokeIndicatorRequestSerializer,
+        responses={200: VerifiedIndicatorSerializer},
+    )
+    def post(self, request, id, *args, **kwargs):
+        serializer = RevokeIndicatorRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        reason = serializer.validated_data["reason"]
+        ip_hash = client_ip_hash(request)
+        indicator = revoke_indicator(
+            indicator_id=id,
+            analyst=request.user,
+            reason=reason,
+            ip_hash=ip_hash,
+        )
+        return Response(VerifiedIndicatorSerializer(indicator).data, status=200)

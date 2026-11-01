@@ -179,3 +179,36 @@ class VerifyReportResponseSerializer(serializers.Serializer):
     resolved_report_ids = serializers.ListField(child=serializers.CharField())
     cluster_size = serializers.IntegerField()
     threat_level = serializers.CharField()
+
+
+class CurateIndicatorRequestSerializer(serializers.Serializer):
+    public_note = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        max_length=500,
+        default="",
+    )
+
+    def validate(self, attrs):
+        unknown_fields = set(self.initial_data.keys()) - {"public_note"}
+        if unknown_fields:
+            raise serializers.ValidationError(
+                {field: ["This field is read-only."] for field in unknown_fields}
+            )
+        return attrs
+
+
+class RevokeIndicatorRequestSerializer(serializers.Serializer):
+    reason = serializers.CharField(
+        required=True,
+        allow_blank=False,
+        trim_whitespace=True,
+        min_length=1,
+        max_length=300,
+    )
+
+    def validate_reason(self, value):
+        val = value.strip()
+        if not val:
+            raise serializers.ValidationError("Reason cannot be blank.")
+        return val

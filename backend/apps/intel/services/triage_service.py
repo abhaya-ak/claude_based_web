@@ -227,3 +227,62 @@ def verify_indicator(
         "cluster_size": n,
         "threat_level": vi.threat_level,
     }
+
+
+def curate_indicator(*, indicator_id, public_note: str) -> VerifiedIndicator:
+    """Updates the public_note on a VerifiedIndicator."""
+    try:
+        indicator = VerifiedIndicator.objects.get(id=indicator_id)
+    except VerifiedIndicator.DoesNotExist:
+        raise Http404("Indicator not found.") from None
+
+    indicator.public_note = public_note
+    indicator.save(update_fields=["public_note", "updated_at"])
+    return indicator
+
+
+@transaction.atomic
+def revoke_indicator(*, indicator_id, analyst, reason: str, ip_hash: str = "") -> VerifiedIndicator:
+    """Revokes an active VerifiedIndicator, records audit INDICATOR_REVOKED,
+    and emits IndicatorsRevoked metric on commit.
+    Raises ConflictError if indicator is already revoked.
+    """
+    try:
+        indicator = VerifiedIndicator.objects.select_for_update().get(id=indicator_id)
+    except VerifiedIndicator.DoesNotExist:
+        raise Http404("Indicator not found.") from None
+
+    if indicator.status == IndicatorStatus.REVOKED:
+        raise ConflictError(
+            detail="Indicator is already revoked.",
+            code="indicator_already_revoked",
+        )
+
+    now = timezone.now()
+    indicator.status = IndicatorStatus.REVOKED
+    indicator.revoked_by = analyst
+    indicator.revoked_at = now
+    indicator.revoke_reason = reason
+    indicator.save(
+        update_fields=[
+            "status",
+            "revoked_by",
+            "revoked_at",
+            "revoke_reason",
+            "updated_at",
+        ]
+    )
+
+    audit.log_event(
+        "INDICATOR_REVOKED",
+        actor=analyst,
+        target=("INDICATOR", indicator.id),
+        ip_hash=ip_hash,
+        metadata={
+            "indicator_type": indicator.type,
+            "threat_level": indicator.threat_level,
+        },
+    )
+
+    transaction.on_commit(lambda: metrics.emit("IndicatorsRevoked"))
+    return indicator
