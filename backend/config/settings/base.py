@@ -239,6 +239,13 @@ REFRESH_COOKIE_HTTPONLY = True
 REFRESH_COOKIE_MAX_AGE = 7 * 24 * 3600
 REFRESH_COOKIE_SECURE = env.bool("REFRESH_COOKIE_SECURE", default=False)
 
+# Upload limits (D57, D58, D71)
+FILE_UPLOAD_MAX_MEMORY_SIZE = 2621440  # 2.5 MB (spool larger files to disk)
+DATA_UPLOAD_MAX_MEMORY_SIZE = 16 * 1024 * 1024  # 16 MB request cap
+
+# AWS S3 Evidence Bucket (D58, D60, D75)
+EVIDENCE_BUCKET = env("EVIDENCE_BUCKET", default="scamshield-evidence-dev")
+
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
 USE_I18N = True

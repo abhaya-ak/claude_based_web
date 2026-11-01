@@ -30,6 +30,7 @@ VALID_PROD_ENV = {
     "AWS_ACCESS_KEY_ID": "testing",
     "AWS_SECRET_ACCESS_KEY": "testing",
     "AWS_EC2_METADATA_DISABLED": "true",
+    "EVIDENCE_BUCKET": "scamshield-evidence-prod",
 }
 
 
@@ -118,6 +119,11 @@ class TestProdSettingsFailFast:
         res = run_prod_subprocess(self.BOOT_CODE, {"INDICATOR_HMAC_KEY": "short-key"})
         assert res.returncode != 0
         assert "32" in res.stderr or "INDICATOR_HMAC_KEY" in res.stderr
+
+    def test_prod_fails_missing_evidence_bucket(self):
+        res = run_prod_subprocess(self.BOOT_CODE, {"EVIDENCE_BUCKET": None})
+        assert res.returncode != 0
+        assert "EVIDENCE_BUCKET" in res.stderr
 
     def test_prod_fails_missing_allowed_hosts(self):
         res = run_prod_subprocess(self.BOOT_CODE, {"ALLOWED_HOSTS": ""})

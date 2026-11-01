@@ -48,6 +48,12 @@ if len(indicator_key) < 32:
     raise ImproperlyConfigured("INDICATOR_HMAC_KEY must be at least 32 characters in production.")
 INDICATOR_HMAC_KEY = indicator_key
 
+# Validate EVIDENCE_BUCKET
+evidence_bucket = os.environ.get("EVIDENCE_BUCKET")
+if not evidence_bucket:
+    raise ImproperlyConfigured("EVIDENCE_BUCKET must be set in production.")
+EVIDENCE_BUCKET = evidence_bucket
+
 # Validate ALLOWED_HOSTS
 raw_hosts = os.environ.get("ALLOWED_HOSTS", "")
 valid_hosts = [h.strip() for h in raw_hosts.split(",") if h.strip()]
