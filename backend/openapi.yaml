@@ -733,6 +733,42 @@ paths:
               schema:
                 $ref: '#/components/schemas/RejectReportResponse'
           description: ''
+  /api/v1/triage/reports/{id}/verify/:
+    post:
+      operationId: triage_reports_verify_create
+      description: Verifies a cluster of pending reports sharing an indicator, promotes
+        to VerifiedIndicator, and resolves all reports in the cluster.
+      summary: Verify report indicator cluster
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - triage
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyReportRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/VerifyReportRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/VerifyReportRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyReportResponse'
+          description: ''
 components:
   schemas:
     AdminUser:
@@ -809,20 +845,6 @@ components:
         * `APPROVED` - Approved
         * `PENDING` - Pending
         * `REJECTED` - Rejected
-    CategoryEnum:
-      enum:
-      - PHISHING
-      - FAKE_JOB
-      - ECOMMERCE_FRAUD
-      - IMPERSONATION
-      - OTHER
-      type: string
-      description: |-
-        * `PHISHING` - Phishing
-        * `FAKE_JOB` - Fake Job
-        * `ECOMMERCE_FRAUD` - E-commerce Fraud
-        * `IMPERSONATION` - Impersonation
-        * `OTHER` - Other
     ChangeRoleRequest:
       type: object
       properties:
@@ -1036,6 +1058,14 @@ components:
       - raw_value
       - type
       - verified_indicator
+    IndicatorStatusEnum:
+      enum:
+      - ACTIVE
+      - REVOKED
+      type: string
+      description: |-
+        * `ACTIVE` - Active
+        * `REVOKED` - Revoked
     LivenessResponse:
       type: object
       properties:
@@ -1064,11 +1094,11 @@ components:
           type: string
           maxLength: 24
         category:
-          $ref: '#/components/schemas/CategoryEnum'
+          $ref: '#/components/schemas/PrimaryCategoryEnum'
         platform:
           $ref: '#/components/schemas/PlatformEnum'
         status:
-          $ref: '#/components/schemas/StatusEnum'
+          $ref: '#/components/schemas/ReportStatusEnum'
         financial_loss:
           type: string
           format: decimal
@@ -1258,6 +1288,20 @@ components:
       required:
       - steps
       - title
+    PrimaryCategoryEnum:
+      enum:
+      - PHISHING
+      - FAKE_JOB
+      - ECOMMERCE_FRAUD
+      - IMPERSONATION
+      - OTHER
+      type: string
+      description: |-
+        * `PHISHING` - Phishing
+        * `FAKE_JOB` - Fake Job
+        * `ECOMMERCE_FRAUD` - E-commerce Fraud
+        * `IMPERSONATION` - Impersonation
+        * `OTHER` - Other
     QueueReport:
       type: object
       properties:
@@ -1270,7 +1314,7 @@ components:
           readOnly: true
         category:
           allOf:
-          - $ref: '#/components/schemas/CategoryEnum'
+          - $ref: '#/components/schemas/PrimaryCategoryEnum'
           readOnly: true
         platform:
           allOf:
@@ -1291,7 +1335,7 @@ components:
           nullable: true
         status:
           allOf:
-          - $ref: '#/components/schemas/StatusEnum'
+          - $ref: '#/components/schemas/ReportStatusEnum'
           readOnly: true
         risk_score:
           type: integer
@@ -1371,7 +1415,7 @@ components:
       type: object
       properties:
         category:
-          $ref: '#/components/schemas/CategoryEnum'
+          $ref: '#/components/schemas/PrimaryCategoryEnum'
         platform:
           $ref: '#/components/schemas/PlatformEnum'
         message_text:
@@ -1445,11 +1489,11 @@ components:
           readOnly: true
         status:
           allOf:
-          - $ref: '#/components/schemas/StatusEnum'
+          - $ref: '#/components/schemas/ReportStatusEnum'
           readOnly: true
         category:
           allOf:
-          - $ref: '#/components/schemas/CategoryEnum'
+          - $ref: '#/components/schemas/PrimaryCategoryEnum'
           readOnly: true
         platform:
           allOf:
@@ -1602,6 +1646,16 @@ components:
       - indicator_types
       - payment_methods
       - platforms
+    ReportStatusEnum:
+      enum:
+      - PENDING
+      - VERIFIED
+      - REJECTED
+      type: string
+      description: |-
+        * `PENDING` - Pending
+        * `VERIFIED` - Verified
+        * `REJECTED` - Rejected
     ReportTrackRequestRequest:
       type: object
       properties:
@@ -1785,16 +1839,6 @@ components:
       description: |-
         * `ANALYST` - ANALYST
         * `EDUCATOR` - EDUCATOR
-    StatusEnum:
-      enum:
-      - PENDING
-      - VERIFIED
-      - REJECTED
-      type: string
-      description: |-
-        * `PENDING` - Pending
-        * `VERIFIED` - Verified
-        * `REJECTED` - Rejected
     Step:
       type: object
       properties:
@@ -1809,6 +1853,16 @@ components:
       required:
       - detail
       - title
+    ThreatLevelEnum:
+      enum:
+      - MEDIUM
+      - HIGH
+      - CRITICAL
+      type: string
+      description: |-
+        * `MEDIUM` - Medium
+        * `HIGH` - High
+        * `CRITICAL` - Critical
     TypeEnum:
       enum:
       - PHONE
@@ -1911,6 +1965,127 @@ components:
       - full_name
       - id
       - role
+    VerifiedIndicator:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        type:
+          allOf:
+          - $ref: '#/components/schemas/TypeEnum'
+          readOnly: true
+        normalized_value:
+          type: string
+          readOnly: true
+        display_value:
+          type: string
+          readOnly: true
+        primary_category:
+          allOf:
+          - $ref: '#/components/schemas/PrimaryCategoryEnum'
+          readOnly: true
+        threat_level:
+          allOf:
+          - $ref: '#/components/schemas/ThreatLevelEnum'
+          readOnly: true
+        total_report_count:
+          type: integer
+          readOnly: true
+        first_seen_at:
+          type: string
+          format: date-time
+          readOnly: true
+        last_seen_at:
+          type: string
+          format: date-time
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/IndicatorStatusEnum'
+          readOnly: true
+        public_note:
+          type: string
+          readOnly: true
+        verified_by_id:
+          type: string
+          format: uuid
+          readOnly: true
+        verified_at:
+          type: string
+          format: date-time
+          readOnly: true
+        revoked_by_id:
+          type: string
+          format: uuid
+          nullable: true
+          readOnly: true
+        revoked_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        revoke_reason:
+          type: string
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - display_value
+      - first_seen_at
+      - id
+      - last_seen_at
+      - normalized_value
+      - primary_category
+      - public_note
+      - revoke_reason
+      - revoked_at
+      - revoked_by_id
+      - status
+      - threat_level
+      - total_report_count
+      - type
+      - updated_at
+      - verified_at
+      - verified_by_id
+    VerifyReportRequestRequest:
+      type: object
+      properties:
+        report_indicator_id:
+          type: integer
+        public_note:
+          type: string
+          default: ''
+          maxLength: 500
+      required:
+      - report_indicator_id
+    VerifyReportResponse:
+      type: object
+      properties:
+        verified_indicator:
+          $ref: '#/components/schemas/VerifiedIndicator'
+        resolved_report_ids:
+          type: array
+          items:
+            type: string
+        cluster_size:
+          type: integer
+        threat_level:
+          type: string
+      required:
+      - cluster_size
+      - resolved_report_ids
+      - threat_level
+      - verified_indicator
   securitySchemes:
     jwtAuth:
       type: http

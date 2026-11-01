@@ -1,7 +1,7 @@
 # PROGRESS (the agent reads this at session start and updates it at the end of every task)
 
 ## Current phase
-Phase 6 — Triage workbench, F2.1 (planning)
+Phase 6 — Triage workbench, F2.1 (tasks 6.1-6.3 complete)
 
 ## Status
 | Phase | Owner | Status | Commit/PR | Notes |
@@ -40,10 +40,10 @@ Phase 6 — Triage workbench, F2.1 (planning)
 | ├─ 5.4 Internal callback & staff alerts | S4 | done | f9ed053 | POST /internal/scan-results/, HMAC auth, ScanResult save, staff SNS alert (12 tests) |
 | ├─ 5.5 Re-dispatch job & error handling | S4 | done | 6ee2e94 | run_jobs re-dispatch for pending scans >5m, max 5 attempts -> FAILED (5 tests) |
 | └─ 5.6 Route walk, queries & closing gate | S4 | done | | Route-walk, OpenAPI, num_queries tests, CI check --deploy |
-| 6 Triage | S2 | todo | | Phase 6 Triage Workbench (F2.1) |
-| ├─ 6.1 Teardown cleanup, Queue & Detail APIs | S2 | done | | Queue filtering, cluster_size annotation, report detail view, pytest connection cleanup (14 tests) |
-| ├─ 6.2 Evidence vault & Report rejection | S2 | done | | Presigned S3 URLs (900s, attachment, analyst only), reject endpoint, audit & metrics (10 tests) |
-| ├─ 6.3 Multi-report cluster verification | S2 | todo | | verify_indicator, monotonic locking, threat levels, TO BE PROVEN #12 concurrency |
+| 6 Triage | S2 | todo | | Phase 6 Triage Workbench (F2.1, tasks 6.1-6.3 complete, 36 tests) |
+| ├─ 6.1 Teardown cleanup, Queue & Detail APIs | S2 | done | 0a1e925 | Queue filtering, cluster_size annotation, report detail view, pytest connection cleanup (14 tests) |
+| ├─ 6.2 Evidence vault & Report rejection | S2 | done | d36a77d | Presigned S3 URLs (900s, attachment, analyst only), reject endpoint, audit & metrics (10 tests) |
+| ├─ 6.3 Multi-report cluster verification | S2 | done | 0e43645 | verify_indicator, monotonic locking, threat levels, TO BE PROVEN #12 concurrency (12 tests) |
 | ├─ 6.4 Indicators API & Contract §3.6 | S2 | todo | | Indicators list/detail, public_note patch, revoke, find_active_indicators, count_pending_by_indicator |
 | └─ 6.5 Route walk, queries & closing gate | S2 | todo | | Route-walk, RBAC matrix, query counts, OpenAPI regeneration, CI deploy check |
 | 7 Lookup + alerts | S1 | todo | | |
@@ -176,6 +176,9 @@ Phase 6 — Triage workbench, F2.1 (planning)
 - **TO BE PROVEN #9 (End-to-End Lambda -> Django HMAC Handshake):** PROVEN. Exact Lambda handler scoring and signing logic (`apps/scanner/tests/test_callback_api.py::TestScannerCallbackAPI::test_to_be_proven_9_lambda_to_django_hmac_handshake`) generates raw JSON bytes, timestamp, and HMAC-SHA256 signature verified by the Django callback endpoint, persisting ScanResult and updating ScamReport without error.
 - **TO BE PROVEN #10 (Failure-Tolerant Non-Blocking Dispatch):** PROVEN. Simulated Lambda invocation failure (`apps/scanner/tests/test_dispatch_service.py::TestDispatchScanService::test_dispatch_scan_failure_tolerance` and `test_create_report_api_with_failing_scanner_returns_201`) catches ClientError, logs warning, and commits report submission with 201 response.
 - **TO BE PROVEN #11 (Advisory-Locked Retry Convergence):** PROVEN. Background retry job (`apps/scanner/tests/test_jobs.py::TestRedispatchPendingScansJob::test_to_be_proven_11_advisory_locked_retry_convergence`) skips execution cleanly when advisory lock is held on separate connection, and immediately processes stalled reports upon lock release.
+
+## Phase 6 Verification (Proven Items)
+- **TO BE PROVEN #12 (Concurrent Multi-Report Cluster Verification Deadlock Freedom & Conflict Detection):** PROVEN. Running concurrent verification threads (`apps/intel/tests/test_verify_concurrency.py::TestVerifyConcurrency::test_to_be_proven_12_concurrent_cluster_verification_deadlock_freedom`) with reports clustered in reverse and mixed order locks rows in strict monotonic ascending `id` order, eliminating deadlock, allowing one worker to resolve the cluster cleanly while the concurrent transaction raises 409 `conflict` (`report_already_resolved`).
 
 ## Standing rules for model tasks
 - Index names max 30 characters; check every name.

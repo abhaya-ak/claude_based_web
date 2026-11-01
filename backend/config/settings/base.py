@@ -128,6 +128,9 @@ SPECTACULAR_SETTINGS = {
             ("EDUCATOR", "Educator"),
         ],
         "UserRoleEnum": "apps.accounts.models.Role",
+        "IndicatorStatusEnum": "apps.intel.models.IndicatorStatus",
+        "ReportStatusEnum": "apps.reports.models.ReportStatus",
+        "PrimaryCategoryEnum": "apps.reports.models.ScamCategory",
     },
     "APPEND_COMPONENTS": {
         "schemas": {

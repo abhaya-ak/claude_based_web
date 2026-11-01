@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from apps.intel.models import VerifiedIndicator
 from apps.reports.models import ReportEvidence, ReportIndicator, ScamReport
 from apps.scanner.models import ScanResult
 
@@ -135,3 +136,46 @@ class RejectReportResponseSerializer(serializers.Serializer):
     id = serializers.UUIDField()
     status = serializers.CharField()
     reference_code = serializers.CharField()
+
+
+class VerifiedIndicatorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VerifiedIndicator
+        fields = [
+            "id",
+            "type",
+            "normalized_value",
+            "display_value",
+            "primary_category",
+            "threat_level",
+            "total_report_count",
+            "first_seen_at",
+            "last_seen_at",
+            "status",
+            "public_note",
+            "verified_by_id",
+            "verified_at",
+            "revoked_by_id",
+            "revoked_at",
+            "revoke_reason",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = fields
+
+
+class VerifyReportRequestSerializer(serializers.Serializer):
+    report_indicator_id = serializers.IntegerField(required=True)
+    public_note = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        max_length=500,
+        default="",
+    )
+
+
+class VerifyReportResponseSerializer(serializers.Serializer):
+    verified_indicator = VerifiedIndicatorSerializer()
+    resolved_report_ids = serializers.ListField(child=serializers.CharField())
+    cluster_size = serializers.IntegerField()
+    threat_level = serializers.CharField()

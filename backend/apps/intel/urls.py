@@ -5,6 +5,7 @@ from apps.intel.views import (
     TriageQueueView,
     TriageRejectReportView,
     TriageReportDetailView,
+    TriageVerifyReportView,
 )
 
 urlpatterns = [
@@ -12,4 +13,5 @@ urlpatterns = [
     path("reports/<uuid:id>/", TriageReportDetailView.as_view(), name="triage-report-detail"),
     path("reports/<uuid:id>/evidence/", TriageEvidenceView.as_view(), name="triage-evidence"),
     path("reports/<uuid:id>/reject/", TriageRejectReportView.as_view(), name="triage-reject-report"),
+    path("reports/<uuid:id>/verify/", TriageVerifyReportView.as_view(), name="triage-verify-report"),
 ]

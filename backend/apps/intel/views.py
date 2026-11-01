@@ -16,9 +16,11 @@ from apps.intel.serializers import (
     RejectReportRequestSerializer,
     RejectReportResponseSerializer,
     ReportDetailSerializer,
+    VerifyReportRequestSerializer,
+    VerifyReportResponseSerializer,
 )
 from apps.intel.services.evidence_service import issue_evidence_presigned_urls
-from apps.intel.services.triage_service import reject_report
+from apps.intel.services.triage_service import reject_report, verify_indicator
 from apps.reports.models import Platform, ScamCategory, ScamReport
 
 
@@ -161,3 +163,35 @@ class TriageRejectReportView(APIView):
             },
             status=200,
         )
+
+
+class TriageVerifyReportView(APIView):
+    """
+    POST /api/v1/triage/reports/{id}/verify/
+    Verifies a cluster of pending scam reports sharing the target indicator.
+    Strictly restricted to approved analysts.
+    """
+
+    permission_classes = [IsAuthenticated, HasRole(Role.ANALYST)]
+
+    @extend_schema(
+        summary="Verify report indicator cluster",
+        description="Verifies a cluster of pending reports sharing an indicator, promotes to VerifiedIndicator, and resolves all reports in the cluster.",
+        request=VerifyReportRequestSerializer,
+        responses={200: VerifyReportResponseSerializer},
+    )
+    def post(self, request, id, *args, **kwargs):
+        serializer = VerifyReportRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        report_indicator_id = serializer.validated_data["report_indicator_id"]
+        public_note = serializer.validated_data.get("public_note", "")
+        ip_hash = client_ip_hash(request)
+        result = verify_indicator(
+            analyst=request.user,
+            report_id=id,
+            report_indicator_id=report_indicator_id,
+            public_note=public_note,
+            ip_hash=ip_hash,
+        )
+        response_serializer = VerifyReportResponseSerializer(result)
+        return Response(response_serializer.data, status=200)
