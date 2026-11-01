@@ -54,6 +54,15 @@ if not evidence_bucket:
     raise ImproperlyConfigured("EVIDENCE_BUCKET must be set in production.")
 EVIDENCE_BUCKET = evidence_bucket
 
+# Validate SCANNER_CALLBACK_SECRET / INTERNAL_CALLBACK_HMAC_KEY (D90)
+callback_secret = os.environ.get("SCANNER_CALLBACK_SECRET") or os.environ.get("INTERNAL_CALLBACK_HMAC_KEY")
+if not callback_secret:
+    raise ImproperlyConfigured("SCANNER_CALLBACK_SECRET or INTERNAL_CALLBACK_HMAC_KEY must be set in production.")
+if len(callback_secret) < 32:
+    raise ImproperlyConfigured("SCANNER_CALLBACK_SECRET must be at least 32 characters in production.")
+SCANNER_CALLBACK_SECRET = callback_secret
+INTERNAL_CALLBACK_HMAC_KEY = callback_secret
+
 # Validate ALLOWED_HOSTS
 raw_hosts = os.environ.get("ALLOWED_HOSTS", "")
 valid_hosts = [h.strip() for h in raw_hosts.split(",") if h.strip()]
