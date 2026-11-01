@@ -1,7 +1,7 @@
 # PROGRESS (the agent reads this at session start and updates it at the end of every task)
 
 ## Current phase
-Phase 4 — Reports and evidence vault, F1.1 (planning)
+Phase 4 — Reports and evidence vault, F1.1 (complete, merge pending)
 
 ## Status
 | Phase | Owner | Status | Commit/PR | Notes |
@@ -26,13 +26,13 @@ Phase 4 — Reports and evidence vault, F1.1 (planning)
 | ├─ 3.6 Closing | S4 | done | 6b40cfa | Route-walk, RBAC matrix, OpenAPI, docs, gate |
 | └─ 3.7 Smoke & logging | S4 | done | 50537f4 | PowerShell 5.1 auth smoke script (15 steps) and user_id in AccessLogMiddleware |
 | M0 Walking skeleton deployed to AWS | S4 | todo | | |
-| 4 Reports & Evidence | S1 | todo | | Phase 4 reports and evidence vault (F1.1) |
+| 4 Reports & Evidence | S1 | done, merge pending | | Phase 4 complete, 533 tests green |
 | ├─ 4.1 Normalisers & validators | S1 | done | 6fb18c4 | Pure normalisers (phone, URL, domain, email, bank), allow-lists (country, currency, admin_area) |
 | ├─ 4.2 Evidence vault | S1 | done | 553a4a7 | Magic-byte sniffing, Pillow re-encode, SHA-256, S3 storage, moto[server], ensure_evidence_bucket |
 | ├─ 4.3 Report service & ops migration | S1 | done | e6eff1a | create_report, Crockford base32, access key, idempotency, rate limits, ops 0003 REPORT_TRACK_FAILED |
-| ├─ 4.4 Playbooks & options | S1 | todo | | RecoveryPlaybook selector, seed_playbooks command, options data |
-| ├─ 4.5 Endpoints & serialization | S1 | todo | | /reports/options/, POST /reports/, /reports/track/, /reports/mine/, OpenAPI, RBAC matrix |
-| └─ 4.6 Orphan cleanup, smoke & gate | S1 | todo | | Orphan S3 cleanup job, smoke_reports.ps1, smoke_auth.ps1 fixes, Phase 4 closing gate |
+| ├─ 4.4 Playbooks & options | S1 | done | d656360 | RecoveryPlaybook selector, seed_playbooks command, options data (7 tests) |
+| ├─ 4.5 Endpoints & serialization | S1 | done | effb868 | /reports/options/, POST /reports/, /reports/track/, /reports/mine/, OpenAPI, RBAC matrix (15 tests) |
+| └─ 4.6 Orphan cleanup, smoke & gate | S1 | done | | Orphan S3 cleanup job, smoke_reports.ps1, smoke_auth.ps1 fixes, Phase 4 closing gate (6 tests) |
 | 5 Scanner | S4 | todo | | |
 | 6 Triage | S2 | todo | | |
 | 7 Lookup + alerts | S1 | todo | | |

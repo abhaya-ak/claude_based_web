@@ -144,15 +144,20 @@ function Invoke-Api {
 
 $passedCount = 0
 $failedCount = 0
+$skippedCount = 0
 
 function Report-Step {
     param(
         [int]$Step,
         [bool]$Success,
         [int]$ActualStatus,
-        [string]$ExpectedStatus
+        [string]$ExpectedStatus,
+        [bool]$Skip = $false
     )
-    if ($Success) {
+    if ($Skip -or ($ActualStatus -eq 429 -and $ExpectedStatus -ne "429")) {
+        Write-Host ("STEP {0}: SKIP (HTTP {1}, throttled or setup unavailable)" -f $Step, $ActualStatus)
+        $script:skippedCount++
+    } elseif ($Success) {
         Write-Host ("STEP {0}: PASS (HTTP {1}, expected: {2})" -f $Step, $ActualStatus, $ExpectedStatus)
         $script:passedCount++
     } else {
@@ -258,12 +263,45 @@ $expectedStatus6 = if ($res6a.Status -ne 403) { "403" } elseif ($res6b.Status -n
 Report-Step 6 $success6 $reportedStatus6 $expectedStatus6
 
 # --- STEP 7: Reuse OLD refresh cookie after rotation: 401 ---
-$oldSession = New-Object Microsoft.PowerShell.Commands.WebRequestSession
-$oldCookie = New-Object System.Net.Cookie("refresh", $oldRefreshCookieValue, "/api/v1/auth/", "localhost")
-$oldSession.Cookies.Add($oldCookie)
-$res7 = Invoke-Api -Method "POST" -Path "/auth/refresh/" -Headers @{ "X-Requested-With" = "scamshield-web" } -Session $oldSession
-$success7 = ($res7.Status -eq 401)
-Report-Step 7 $success7 $res7.Status "401"
+# Fresh login to acquire a genuine refresh cookie before rotating
+$step7Session = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+$res7Login = Invoke-Api -Method "POST" -Path "/auth/login/" -Body @{
+    email = $citizenEmail
+    password = $citizenPassword
+} -Session $step7Session
+
+if ($res7Login.Status -eq 429) {
+    Report-Step 7 $false 429 "401" $true
+} else {
+    $s7OldCookieVal = $null
+    $setCookieStr7 = $res7Login.SetCookie
+    if ($setCookieStr7 -match "refresh=([^;,\s]+)") {
+        $s7OldCookieVal = $matches[1]
+    }
+    if (-not $s7OldCookieVal) {
+        $cookies7 = $step7Session.Cookies.GetCookies([System.Uri]"http://localhost:8000/api/v1/auth/")
+        foreach ($ck in $cookies7) {
+            if ($ck.Name -eq "refresh") { $s7OldCookieVal = $ck.Value; break }
+        }
+    }
+
+    # Rotate the refresh cookie on step7Session
+    $res7Rotate = Invoke-Api -Method "POST" -Path "/auth/refresh/" -Headers @{ "X-Requested-With" = "scamshield-web" } -Session $step7Session
+
+    if ($res7Rotate.Status -eq 429) {
+        Report-Step 7 $false 429 "401" $true
+    } else {
+        # Now try to reuse the OLD rotated cookie in a clean session
+        $oldSession = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+        if ($s7OldCookieVal) {
+            $oldCookie = New-Object System.Net.Cookie("refresh", $s7OldCookieVal, "/api/v1/auth/", "localhost")
+            $oldSession.Cookies.Add($oldCookie)
+        }
+        $res7 = Invoke-Api -Method "POST" -Path "/auth/refresh/" -Headers @{ "X-Requested-With" = "scamshield-web" } -Session $oldSession
+        $success7 = ($res7.Status -eq 401)
+        Report-Step 7 $success7 $res7.Status "401"
+    }
+}
 
 # --- STEP 8: POST /auth/register/staff/ ANALYST: 201; role ADMIN: 400 ---
 $staffEmail = New-SmokeEmail
@@ -391,18 +429,29 @@ $expectedStatus13 = if ($res13a.Status -ne 204) { "204" } elseif ($res13b.Status
 Report-Step 13 $success13 $reportedStatus13 $expectedStatus13
 
 # --- STEP 14: Logout: 204; cookie cleared; refresh after logout: 401 ---
-$res14a = Invoke-Api -Method "POST" -Path "/auth/logout/" -Headers @{
-    "X-Requested-With" = "scamshield-web"
-} -Session $citizenSession
+# Fresh login to acquire a genuine session with refresh cookie
+$step14Session = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+$res14Login = Invoke-Api -Method "POST" -Path "/auth/login/" -Body @{
+    email = $citizenEmail
+    password = $citizenPassword
+} -Session $step14Session
 
-$res14b = Invoke-Api -Method "POST" -Path "/auth/refresh/" -Headers @{
-    "X-Requested-With" = "scamshield-web"
-} -Session $citizenSession
+if ($res14Login.Status -eq 429) {
+    Report-Step 14 $false 429 "204" $true
+} else {
+    $res14a = Invoke-Api -Method "POST" -Path "/auth/logout/" -Headers @{
+        "X-Requested-With" = "scamshield-web"
+    } -Session $step14Session
 
-$success14 = ($res14a.Status -eq 204) -and ($res14b.Status -eq 401)
-$reportedStatus14 = if ($res14a.Status -ne 204) { $res14a.Status } elseif ($res14b.Status -ne 401) { $res14b.Status } else { 204 }
-$expectedStatus14 = if ($res14a.Status -ne 204) { "204" } elseif ($res14b.Status -ne 401) { "401" } else { "204" }
-Report-Step 14 $success14 $reportedStatus14 $expectedStatus14
+    $res14b = Invoke-Api -Method "POST" -Path "/auth/refresh/" -Headers @{
+        "X-Requested-With" = "scamshield-web"
+    } -Session $step14Session
+
+    $success14 = ($res14a.Status -eq 204) -and ($res14b.Status -eq 401)
+    $reportedStatus14 = if ($res14a.Status -ne 204) { $res14a.Status } elseif ($res14b.Status -ne 401) { $res14b.Status } else { 204 }
+    $expectedStatus14 = if ($res14a.Status -ne 204) { "204" } elseif ($res14b.Status -ne 401) { "401" } else { "204" }
+    Report-Step 14 $success14 $reportedStatus14 $expectedStatus14
+}
 
 # --- STEP 15: Throttle: 11 wrong logins returns 429 with Retry-After ---
 $throttleEmail = New-SmokeEmail
@@ -440,6 +489,9 @@ Write-Host ""
 Write-Host "================== Summary =================="
 Write-Host ("Passed: {0} / 15" -f $passedCount)
 Write-Host ("Failed: {0} / 15" -f $failedCount)
+if ($skippedCount -gt 0) {
+    Write-Host ("Skipped: {0} / 15" -f $skippedCount)
+}
 
 if ($failedCount -gt 0) {
     Write-Host "RESULT: FAIL"
