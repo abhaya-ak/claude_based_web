@@ -91,7 +91,7 @@ DONE — Backend Build Complete & Production Ready (Phases 0–13 Complete)
 | └─ 13.7 Phase 13 & Backend Global Definition of Done closing gate | S4 | done | | Full 1,131 test suite green (0 warnings), OpenAPI freeze, check --deploy, container health proof, Global DoD signoff |
 | F Frontend phases | all | in_progress | | Frontend SPA development |
 | ├─ F0 Architecture blueprint | all | done | cbb71e8 | Complete frontend specifications: docs/frontend/ (1.project_flow, 2.ui_design_system, 3.api_contract_map, 4.state_management, 5.testing_security) |
-| └─ F1 Foundational scaffold & layouts | all | done | f80ee21 | React 18, Vite, TypeScript strict, Tailwind, Axios client & silent refresh, AuthProvider, AccessibilityProvider (TTS & high contrast), Modal, router |
+| └─ F1 Foundational scaffold & layouts | all | done | | React 18, Vite, TypeScript strict, Tailwind, Axios client & silent refresh, AuthProvider, AccessibilityProvider (TTS & seniors preset), Select, FileDrop, Modal, features structure, router |
 
 ## Decisions made (consolidated catalogue)
 

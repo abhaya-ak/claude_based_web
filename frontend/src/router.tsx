@@ -3,21 +3,22 @@ import { PublicLayout } from './layout/PublicLayout';
 import { StaffLayout } from './layout/StaffLayout';
 import { RequireRole } from './auth/RequireRole';
 
-// Public Pages
+// Feature Pages
+import { LoginPage } from './features/auth/LoginPage';
+import { RegisterPage } from './features/auth/RegisterPage';
+import { PendingApprovalPage } from './features/auth/PendingApprovalPage';
+import { LookupPage } from './features/lookup/LookupPage';
+import { ReportPage } from './features/report/ReportPage';
+import { TrackReportPage } from './features/report/TrackReportPage';
+import { LiteracyHubPage } from './features/hub/LiteracyHubPage';
+import { SimulatorGamePage } from './features/simulator/SimulatorGamePage';
+import { TriagePage } from './features/triage/TriagePage';
+import { AdminDashboardPage } from './features/admin/AdminDashboardPage';
+
+// Simple Landing Home & Error Handlers
 import { HomePage } from './pages/HomePage';
-import { LookupPage } from './pages/LookupPage';
-import { ReportPage } from './pages/ReportPage';
-import { LiteracyPage } from './pages/LiteracyPage';
-import { SimulatorPage } from './pages/SimulatorPage';
-import { LoginPage } from './pages/LoginPage';
-import { RegisterPage } from './pages/RegisterPage';
 import { UnauthorizedPage } from './pages/UnauthorizedPage';
 import { NotFoundPage } from './pages/NotFoundPage';
-
-// Staff Pages
-import { TriagePage } from './pages/staff/TriagePage';
-import { StudioPage } from './pages/staff/StudioPage';
-import { AdminPage } from './pages/staff/AdminPage';
 
 export const router = createBrowserRouter([
   // Public Portal Shell
@@ -28,10 +29,13 @@ export const router = createBrowserRouter([
       { index: true, element: <HomePage /> },
       { path: 'lookup', element: <LookupPage /> },
       { path: 'report', element: <ReportPage /> },
-      { path: 'literacy', element: <LiteracyPage /> },
-      { path: 'simulator', element: <SimulatorPage /> },
+      { path: 'report/track', element: <TrackReportPage /> },
+      { path: 'literacy', element: <LiteracyHubPage /> },
+      { path: 'simulator', element: <SimulatorGamePage /> },
       { path: 'login', element: <LoginPage /> },
       { path: 'register', element: <RegisterPage /> },
+      { path: 'register/staff', element: <RegisterPage /> },
+      { path: 'pending-approval', element: <PendingApprovalPage /> },
       { path: 'unauthorized', element: <UnauthorizedPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],
@@ -54,7 +58,7 @@ export const router = createBrowserRouter([
         path: 'studio',
         element: (
           <RequireRole allowedRoles={['EDUCATOR', 'ADMIN']}>
-            <StudioPage />
+            <LiteracyHubPage />
           </RequireRole>
         ),
       },
@@ -62,7 +66,7 @@ export const router = createBrowserRouter([
         path: 'admin',
         element: (
           <RequireRole allowedRoles={['ADMIN']}>
-            <AdminPage />
+            <AdminDashboardPage />
           </RequireRole>
         ),
       },

@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { useAuth } from '../auth/AuthProvider';
-import { COPY } from '../lib/copy';
-import { Input } from '../components/Input';
-import { Button } from '../components/Button';
-import { Alert } from '../components/Alert';
-import { parseApiError } from '../api/errors';
+import { useAuth } from '../../auth/AuthProvider';
+import { COPY } from '../../lib/copy';
+import { Input } from '../../components/Input';
+import { Button } from '../../components/Button';
+import { Alert } from '../../components/Alert';
+import { parseApiError } from '../../api/errors';
 import { Shield } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
@@ -27,6 +27,11 @@ export const LoginPage: React.FC = () => {
 
     try {
       const user = await login(email, password);
+      if (user.approval_status === 'PENDING') {
+        navigate('/pending-approval', { replace: true });
+        return;
+      }
+
       if (['ANALYST', 'EDUCATOR', 'ADMIN'].includes(user.role)) {
         if (from !== '/') {
           navigate(from, { replace: true });
@@ -57,7 +62,7 @@ export const LoginPage: React.FC = () => {
   return (
     <div className="min-h-[80vh] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center space-y-2">
-        <div className="inline-flex p-3 bg-gov-blue text-white rounded-xl shadow-md mb-2">
+        <div className="inline-flex p-3 bg-slate-900 text-white rounded-xl shadow-md mb-2">
           <Shield className="w-8 h-8" />
         </div>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">
@@ -110,8 +115,13 @@ export const LoginPage: React.FC = () => {
           <div className="border-t border-slate-100 pt-4 text-center text-xs text-slate-600 space-y-2">
             <div>
               Don&apos;t have an account?{' '}
-              <Link to="/register" className="font-semibold text-gov-blue hover:underline">
+              <Link to="/register" className="font-semibold text-slate-900 hover:underline">
                 {COPY.nav.register}
+              </Link>
+            </div>
+            <div>
+              <Link to="/register/staff" className="text-slate-500 hover:text-slate-700">
+                {COPY.auth.staffRegisterLink}
               </Link>
             </div>
           </div>

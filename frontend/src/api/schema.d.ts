@@ -152,6 +152,32 @@ export interface TrackReportResponse {
 // 4. Intelligence & Lookups
 // ==========================================
 
+export interface VerifiedIndicator {
+  id: string;
+  indicator_type: IndicatorType;
+  normalized_value: string;
+  display_value: string;
+  threat_level: 'HIGH' | 'MEDIUM' | 'LOW';
+  confidence_score: number;
+  report_count: number;
+  public_note: string;
+  is_active: boolean;
+  first_confirmed_at: string;
+  last_confirmed_at: string;
+}
+
+export interface AuditLogItem {
+  id: string;
+  event_type: string;
+  severity: string;
+  actor_id: string | null;
+  actor_email?: string | null;
+  target_type: string;
+  target_id: string;
+  metadata: Record<string, unknown>;
+  created_at: string;
+}
+
 export type VerdictLevel = 'RED' | 'YELLOW' | 'GREEN' | 'UNKNOWN';
 
 export interface LookupMatch {
