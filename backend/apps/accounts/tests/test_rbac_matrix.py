@@ -507,3 +507,55 @@ class TestRBACMatrix:
             format="json",
         )
         assert response.status_code == expected_status
+
+    # 20. POST /api/v1/lookups/ (Public endpoint, accessible to all)
+    @pytest.mark.parametrize(
+        "user_attr,expected_status",
+        [
+            (None, 200),
+            ("citizen", 200),
+            ("analyst_pending", 200),
+            ("analyst_approved", 200),
+            ("educator_approved", 200),
+            ("admin_pending", 200),
+            ("admin_approved", 200),
+        ],
+    )
+    def test_lookup_access_all_roles(self, user_attr, expected_status):
+        user = getattr(self, user_attr) if user_attr else None
+        client = self._client_for(user)
+        response = client.post(
+            "/api/v1/lookups/",
+            data={"query": "innocent-site.org"},
+            format="json",
+        )
+        assert response.status_code == expected_status
+
+    # 21. POST /api/v1/alerts/subscriptions/ (Public endpoint, accessible to all)
+    @pytest.mark.parametrize(
+        "user_attr,expected_status",
+        [
+            (None, 201),
+            ("citizen", 201),
+            ("analyst_pending", 201),
+            ("analyst_approved", 201),
+            ("educator_approved", 201),
+            ("admin_pending", 201),
+            ("admin_approved", 201),
+        ],
+    )
+    def test_alert_subscription_access_all_roles(self, user_attr, expected_status):
+        user = getattr(self, user_attr) if user_attr else None
+        client = self._client_for(user)
+        suffix = user_attr or "anon"
+        response = client.post(
+            "/api/v1/alerts/subscriptions/",
+            data={
+                "channel": "EMAIL",
+                "endpoint": f"user_{suffix}@subscriber-test.com",
+                "audience": "GENERAL",
+            },
+            format="json",
+        )
+        assert response.status_code == expected_status
+

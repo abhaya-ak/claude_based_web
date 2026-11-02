@@ -297,6 +297,96 @@ paths:
               schema:
                 $ref: '#/components/schemas/AdminUser'
           description: ''
+  /api/v1/alerts/subscriptions/:
+    post:
+      operationId: alerts_subscriptions_create
+      description: Subscribe to threat alert broadcasts via email or SMS.
+      tags:
+      - alerts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubscriptionCreateRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SubscriptionCreateRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SubscriptionCreateRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionResponse'
+          description: ''
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionResponse'
+          description: ''
+  /api/v1/alerts/subscriptions/confirm/:
+    post:
+      operationId: alerts_subscriptions_confirm_create
+      description: Confirm an alert subscription with secure token.
+      tags:
+      - alerts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubscriptionTokenRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SubscriptionTokenRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SubscriptionTokenRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionActionResponse'
+          description: ''
+  /api/v1/alerts/subscriptions/unsubscribe/:
+    post:
+      operationId: alerts_subscriptions_unsubscribe_create
+      description: Unsubscribe from threat alerts with secure token.
+      tags:
+      - alerts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubscriptionTokenRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SubscriptionTokenRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SubscriptionTokenRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionActionResponse'
+          description: ''
   /api/v1/auth/login/:
     post:
       operationId: auth_login_create
@@ -491,6 +581,35 @@ paths:
           description: Report not found.
         '429':
           description: Throttled.
+  /api/v1/lookups/:
+    post:
+      operationId: lookups_create
+      description: Lookup phone numbers, URLs, domains, emails, or bank accounts against
+        known threat intel.
+      tags:
+      - lookups
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LookupRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LookupRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LookupRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LookupResponse'
+          description: ''
   /api/v1/reports/:
     post:
       operationId: reports_create
@@ -968,6 +1087,18 @@ components:
         * `APPROVED` - Approved
         * `PENDING` - Pending
         * `REJECTED` - Rejected
+    AudienceEnum:
+      enum:
+      - GENERAL
+      - ELDERLY
+      - TEENAGER
+      - NON_TECH
+      type: string
+      description: |-
+        * `GENERAL` - General Public
+        * `ELDERLY` - Seniors & family
+        * `TEENAGER` - Teenagers & Students
+        * `NON_TECH` - Non-Technical Users
     ChangeRoleRequest:
       type: object
       properties:
@@ -975,6 +1106,14 @@ components:
           $ref: '#/components/schemas/UserRoleEnum'
       required:
       - role
+    ChannelEnum:
+      enum:
+      - EMAIL
+      - SMS
+      type: string
+      description: |-
+        * `EMAIL` - Email
+        * `SMS` - SMS
     CitizenRegisterRequest:
       type: object
       properties:
@@ -1210,6 +1349,45 @@ components:
       required:
       - email
       - password
+    LookupRequestRequest:
+      type: object
+      properties:
+        query:
+          type: string
+          minLength: 1
+          maxLength: 255
+      required:
+      - query
+    LookupResponse:
+      type: object
+      properties:
+        verdict:
+          $ref: '#/components/schemas/VerdictEnum'
+        threat_level:
+          type: string
+          nullable: true
+        category:
+          type: string
+          nullable: true
+        report_count:
+          type: integer
+        first_seen_at:
+          type: string
+          format: date-time
+          nullable: true
+        last_seen_at:
+          type: string
+          format: date-time
+          nullable: true
+        public_note:
+          type: string
+          nullable: true
+        message:
+          type: string
+      required:
+      - message
+      - report_count
+      - verdict
     MyReportItem:
       type: object
       properties:
@@ -2015,6 +2193,72 @@ components:
       required:
       - detail
       - title
+    SubscriptionActionResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        message:
+          type: string
+      required:
+      - message
+      - status
+    SubscriptionCreateRequestRequest:
+      type: object
+      properties:
+        channel:
+          $ref: '#/components/schemas/ChannelEnum'
+        endpoint:
+          type: string
+          minLength: 1
+          maxLength: 254
+        audience:
+          $ref: '#/components/schemas/AudienceEnum'
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/PrimaryCategoryEnum'
+      required:
+      - audience
+      - channel
+      - endpoint
+    SubscriptionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        channel:
+          type: string
+        audience:
+          type: string
+        categories:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+        message:
+          type: string
+        token:
+          type: string
+          nullable: true
+      required:
+      - audience
+      - categories
+      - channel
+      - id
+      - message
+      - status
+    SubscriptionTokenRequestRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          minLength: 1
+          maxLength: 256
+      required:
+      - token
     ThreatLevelEnum:
       enum:
       - MEDIUM
@@ -2127,6 +2371,16 @@ components:
       - full_name
       - id
       - role
+    VerdictEnum:
+      enum:
+      - RED
+      - YELLOW
+      - GREEN
+      type: string
+      description: |-
+        * `RED` - RED
+        * `YELLOW` - YELLOW
+        * `GREEN` - GREEN
     VerifiedIndicator:
       type: object
       properties:

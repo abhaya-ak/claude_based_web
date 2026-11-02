@@ -205,3 +205,23 @@ class MyReportItemSerializer(serializers.ModelSerializer):
             "currency",
             "created_at",
         ]
+
+class LookupRequestSerializer(serializers.Serializer):
+    query = serializers.CharField(
+        max_length=255,
+        required=True,
+        allow_blank=False,
+        trim_whitespace=True,
+    )
+
+
+class LookupResponseSerializer(serializers.Serializer):
+    verdict = serializers.ChoiceField(choices=['RED', 'YELLOW', 'GREEN'])
+    threat_level = serializers.CharField(required=False, allow_null=True)
+    category = serializers.CharField(required=False, allow_null=True)
+    report_count = serializers.IntegerField()
+    first_seen_at = serializers.DateTimeField(required=False, allow_null=True)
+    last_seen_at = serializers.DateTimeField(required=False, allow_null=True)
+    public_note = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    message = serializers.CharField()
+
