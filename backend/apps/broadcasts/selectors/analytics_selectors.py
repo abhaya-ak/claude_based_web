@@ -128,8 +128,6 @@ def get_volume_analytics(start_date: date, end_date: date) -> dict:
         created_at__date__lte=end_date,
     )
 
-    total_reports = qs.count()
-
     by_day = [
         {"date": str(row["date"]), "count": row["count"]}
         for row in qs.annotate(date=TruncDate("created_at"))
@@ -137,6 +135,8 @@ def get_volume_analytics(start_date: date, end_date: date) -> dict:
         .annotate(count=Count("id"))
         .order_by("date")
     ]
+
+    total_reports = sum(row["count"] for row in by_day)
 
     by_platform = [
         {"platform": row["platform"], "count": row["count"]}

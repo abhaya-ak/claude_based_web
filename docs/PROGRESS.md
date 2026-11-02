@@ -1,7 +1,7 @@
 # PROGRESS (the agent reads this at session start and updates it at the end of every task)
 
 ## Current phase
-Phase 7 — Public lookup and alert subscriptions, F1.2 (in progress)
+Phase 8 — Trend analytics and emergency broadcast, F2.2 (done, merge pending)
 
 ## Status
 | Phase | Owner | Status | Commit/PR | Notes |
@@ -51,12 +51,12 @@ Phase 7 — Public lookup and alert subscriptions, F1.2 (in progress)
 | ├─ 7.2 Verdict service, public API & rate limiting | S1 | done | 46442e6 | Red/Yellow/Green verdict, Contract §3.6 integration, no PII leak, 30/min throttle (D102, D103) |
 | ├─ 7.3 Alert subscriptions & SNS integration | S1 | done | 13b9516 | POST /alerts/subscriptions/, confirm, unsubscribe, SNS filter policy, SMS flag (D104, D105) |
 | └─ 7.4 Phase 7 Closing Gate | S1 | done | e4708cd | Route-walk, RBAC matrix, query counts, OpenAPI regeneration, CI deploy check |
-| 8 Analytics + broadcast | S2 | todo | | Phase 8 Trend Analytics and Threat Broadcast (F2.2) |
-| ├─ 8.1 Analytics selectors & spike math | S2 | done | | Pure ORM aggregations (volume, losses, tactics), spike algorithm (+300%, min 5) (D106, D107) |
-| ├─ 8.2 Analytics API, date bounds & caching | S2 | done | | GET /analytics/volume/, /losses/, /tactics/, /spikes/, 90d max range, 60s cache, RBAC (D108) |
-| ├─ 8.3 Threat advisory CRUD & draft-only edit | S2 | done | | GET/POST /advisories/, GET/PATCH /advisories/{id}/, draft-only rules, public published list (D109) |
-| ├─ 8.4 Advisory publishing & SNS fan-out | S2 | done | | POST /advisories/{id}/publish/, atomic status, SNS MessageAttributes, idempotency, TO BE PROVEN #15, #16 (D110) |
-| └─ 8.5 Phase 8 closing gate | S2 | todo | | Route-walk, RBAC matrix, query counts, OpenAPI regeneration, CI deploy check |
+| 8 Analytics + broadcast | S2 | done, merge pending | | Phase 8 Trend Analytics and Threat Broadcast (F2.2, 884 tests green) |
+| ├─ 8.1 Analytics selectors & spike math | S2 | done | 06d24ce | Pure ORM aggregations (volume, losses, tactics), spike algorithm (+300%, min 5) (D106, D107) |
+| ├─ 8.2 Analytics API, date bounds & caching | S2 | done | cc8bb11 | GET /analytics/volume/, /losses/, /tactics/, /spikes/, 90d max range, 60s cache, RBAC (D108) |
+| ├─ 8.3 Threat advisory CRUD & draft-only edit | S2 | done | a38e357 | GET/POST /advisories/, GET/PATCH /advisories/{id}/, draft-only rules, public published list (D109) |
+| ├─ 8.4 Advisory publishing & SNS fan-out | S2 | done | 5492042 | POST /advisories/{id}/publish/, atomic status, SNS MessageAttributes, idempotency, TO BE PROVEN #15, #16 (D110) |
+| └─ 8.5 Phase 8 closing gate | S2 | done | | Route-walk, RBAC matrix, query counts, OpenAPI regeneration, CI deploy check |
 | 9 Literacy CMS | S3 | todo | | |
 | 10 Simulator | S3 | todo | | |
 | 11 Ops/telemetry | S4 | todo | | |

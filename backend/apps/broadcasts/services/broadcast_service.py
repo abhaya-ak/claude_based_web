@@ -7,10 +7,9 @@ from django.utils import timezone
 from rest_framework import exceptions, status
 
 from apps.broadcasts.models import AdvisoryStatus, ThreatAdvisory
-from apps.core.audit import log_event
+from apps.core import audit, metrics
 from apps.core.aws import client
 from apps.core.exceptions import ConflictError
-from apps.core.metrics import emit
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +23,7 @@ class SNSBroadcastFailed(exceptions.APIException):
 def _post_publish_audit_and_metrics(advisory: ThreatAdvisory, user) -> None:
     """Non-blocking post-commit audit logging and CloudWatch metric emission."""
     try:
-        log_event(
+        audit.log_event(
             "ADVISORY_PUBLISHED",
             actor=user,
             target=("ADVISORY", str(advisory.id)),
@@ -37,7 +36,7 @@ def _post_publish_audit_and_metrics(advisory: ThreatAdvisory, user) -> None:
         logger.warning("Failed to audit ADVISORY_PUBLISHED for advisory %s: %s", advisory.id, exc)
 
     try:
-        emit("AlertsPublished", 1, dims={"Environment": getattr(settings, "ENVIRONMENT", "test")})
+        metrics.emit("AlertsPublished", 1, dims={"Environment": getattr(settings, "ENVIRONMENT", "test")})
     except Exception as exc:
         logger.warning("Failed to emit AlertsPublished metric for advisory %s: %s", advisory.id, exc)
 
