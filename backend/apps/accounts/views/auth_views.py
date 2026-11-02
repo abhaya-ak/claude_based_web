@@ -24,6 +24,7 @@ from apps.core.ip import client_ip_hash
 
 class CitizenRegisterView(APIView):
     permission_classes = [AllowAny]
+    throttle_scope = "anon_auth"
 
     @extend_schema(
         summary="Citizen registration",
@@ -45,6 +46,7 @@ class CitizenRegisterView(APIView):
 
 class StaffRegisterView(APIView):
     permission_classes = [AllowAny]
+    throttle_scope = "anon_auth"
 
     @extend_schema(
         summary="Staff registration (pending approval)",
@@ -69,6 +71,7 @@ class StaffRegisterView(APIView):
 
 class LoginView(APIView):
     permission_classes = [AllowAny]
+    throttle_scope = "anon_auth"
 
     @extend_schema(
         summary="User login",
@@ -100,6 +103,7 @@ class LoginView(APIView):
 
 class RefreshView(APIView):
     permission_classes = [AllowAny]
+    throttle_scope = "anon_auth"
 
     @extend_schema(
         summary="Refresh access token",
@@ -120,6 +124,7 @@ class RefreshView(APIView):
 
 class LogoutView(APIView):
     permission_classes = [AllowAny]
+    throttle_scope = "anon_auth"
 
     @extend_schema(
         summary="User logout",

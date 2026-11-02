@@ -1,3 +1,4 @@
+import os
 from decimal import Decimal
 
 from django.core.management.base import BaseCommand
@@ -213,7 +214,7 @@ class Command(BaseCommand):
         if not author:
             author = User.objects.create_user(
                 email="system_educator@scamshield.test",
-                password="SystemPassword123!",
+                password=os.environ.get("SEED_DEMO_PASSWORD", "SystemPassword123!"),  # noqa: S106
                 role=Role.EDUCATOR,
                 approval_status=ApprovalStatus.APPROVED,
             )

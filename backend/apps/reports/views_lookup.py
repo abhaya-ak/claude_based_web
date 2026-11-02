@@ -18,6 +18,7 @@ class LookupView(APIView):
 
     permission_classes = [permissions.AllowAny]
     throttle_classes = [LookupRateThrottle]
+    throttle_scope = "lookups"
 
     @extend_schema(
         request=LookupRequestSerializer,

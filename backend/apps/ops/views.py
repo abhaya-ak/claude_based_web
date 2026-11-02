@@ -62,7 +62,7 @@ def _generate_audit_log_csv(queryset):
             _sanitize_csv_cell(item.severity),
             _sanitize_csv_cell(item.actor_id),
             _sanitize_csv_cell(actor_role),
-            _sanitize_csv_cell(item.actor_ip_hash),
+            _sanitize_csv_cell(item.actor_ip_hash[:16] if item.actor_ip_hash else ""),
             _sanitize_csv_cell(item.target_type),
             _sanitize_csv_cell(item.target_id),
             _sanitize_csv_cell(item.request_id),

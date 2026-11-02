@@ -64,6 +64,7 @@ class SimulatorAttemptInitView(APIView):
     """
 
     permission_classes = [AllowAny]
+    throttle_scope = "simulator"
     serializer_class = SimulatorAttemptInitResponseSerializer
 
     @extend_schema(
@@ -94,6 +95,7 @@ class SimulatorAttemptAnswerView(APIView):
     """Submits and grades an answer for one scenario in the attempt."""
 
     permission_classes = [AllowAny]
+    throttle_scope = "simulator"
     serializer_class = SimulatorAnswerFeedbackSerializer
 
     @extend_schema(
@@ -136,6 +138,7 @@ class SimulatorAttemptCompleteView(APIView):
     """Completes the attempt, calculates score, profile, blind spots, and remediation guides."""
 
     permission_classes = [AllowAny]
+    throttle_scope = "simulator"
     serializer_class = SimulatorAttemptCompletionResponseSerializer
 
     @extend_schema(
@@ -170,6 +173,7 @@ class SimulatorAttemptDetailView(generics.RetrieveAPIView):
     """Retrieve attempt detail by ID."""
 
     permission_classes = [AllowAny]
+    throttle_scope = "simulator"
     serializer_class = SimulatorAttemptDetailSerializer
 
     def get_object(self):

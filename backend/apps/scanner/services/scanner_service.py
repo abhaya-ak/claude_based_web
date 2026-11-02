@@ -42,5 +42,5 @@ def dispatch_scan(report_id: uuid.UUID) -> None:
             ScamReport.objects.filter(id=report_id).update(
                 scan_attempts=F("scan_attempts") + 1,
             )
-        except Exception:
-            pass
+        except Exception as update_exc:
+            logger.debug("Failed to increment scan_attempts on report %s: %s", report_id, update_exc)

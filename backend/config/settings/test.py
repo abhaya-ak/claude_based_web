@@ -1,6 +1,7 @@
 from .base import *  # noqa: F403
 
 DEBUG = False
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "testserver"]
 
 PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.MD5PasswordHasher",
@@ -15,3 +16,8 @@ INDICATOR_HMAC_KEY = "test-indicator-hmac-key-32-char-!"
 EVIDENCE_BUCKET = "scamshield-evidence-test"
 MEDIA_BUCKET = "scamshield-media-test"
 PUBLIC_BASE_URL = "http://testserver"
+
+REST_FRAMEWORK = {
+    **REST_FRAMEWORK,  # noqa: F405
+    "DEFAULT_THROTTLE_CLASSES": [],
+}

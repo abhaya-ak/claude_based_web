@@ -1,3 +1,5 @@
+import logging
+
 from django.contrib.auth.hashers import check_password, make_password
 from django.db import IntegrityError, transaction
 from django.utils import timezone
@@ -12,6 +14,7 @@ from apps.ops.models import AuditEventType, AuditSeverity
 
 # Pre-computed Argon2 hash to ensure identical timing on unknown email lookup
 DUMMY_PASSWORD_HASH = make_password("scamshield-dummy-password-for-timing-equalization")
+logger = logging.getLogger(__name__)
 
 
 def register_citizen(data: dict, ip_hash: str) -> User:
@@ -172,8 +175,8 @@ def refresh_token(raw_refresh_token: str) -> tuple[str, str]:
     if user.role != Role.CITIZEN and user.approval_status != ApprovalStatus.APPROVED:
         try:
             old_token.blacklist()
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("Failed to blacklist old token for unapproved user: %s", exc)
         raise AccountNotApproved()
 
     # Blacklist old token and rotate
@@ -198,5 +201,5 @@ def logout_user(raw_refresh_token: str | None) -> None:
     try:
         token = RefreshToken(raw_refresh_token)
         token.blacklist()
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("Failed to blacklist refresh token on logout: %s", exc)

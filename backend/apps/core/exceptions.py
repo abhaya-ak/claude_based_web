@@ -40,7 +40,7 @@ try:
     yaml.add_representer(DualCode, lambda dumper, data: dumper.represent_str(str(data)))
     yaml.representer.Representer.add_representer(DualCode, lambda dumper, data: dumper.represent_str(str(data)))
     yaml.representer.SafeRepresenter.add_representer(DualCode, lambda dumper, data: dumper.represent_str(str(data)))
-except Exception:
+except Exception:  # noqa: S110
     pass
 
 

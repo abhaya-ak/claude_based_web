@@ -32,6 +32,7 @@ class ReportOptionsView(APIView):
     """
 
     permission_classes = [AllowAny]
+    throttle_scope = "public_read"
 
     @extend_schema(
         summary="Retrieve report submission options and allow-lists",
@@ -49,6 +50,7 @@ class ReportCreateView(APIView):
     """
 
     permission_classes = [AllowAny]
+    throttle_scope = "reports"
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     @extend_schema(
@@ -141,6 +143,7 @@ class ReportTrackView(APIView):
     """
 
     permission_classes = [AllowAny]
+    throttle_scope = "reports"
 
     @extend_schema(
         summary="Track status of a filed report",
