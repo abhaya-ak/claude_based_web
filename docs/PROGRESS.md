@@ -79,7 +79,7 @@ Phase 12 — Hardening and performance (planning)
 | ├─ 12.2 Security suite & static analysis | all | done | 57e9872 | OWASP, IDOR, forbidden-key walker, throttle scope, ruff -S, secrets scan (D128, D142) |
 | ├─ 12.3 DB performance & EXPLAIN index plan verification | all | done | cedb04b | EXPLAIN JSON index scans, django_assert_max_num_queries (D137, D138, D144) |
 | ├─ 12.4 Concurrency & multi-threaded race condition suite | all | done | 9ad417f | Threaded verify, exact advisory-lock rate limit test (D139) |
-| ├─ 12.5 Cloud resilience & graceful fault degradation | all | todo | | Outage & timeout simulations (S3 503, Lambda 201, SNS, CW), zero 500s (D140) |
+| ├─ 12.5 Cloud resilience & graceful fault degradation | all | done | | S3 503 storage_unavailable, Lambda fail-open 201 PENDING, SNS 502, CW degraded 200 (D140) |
 | └─ 12.6 Load testing suite, CLO2 performance evidence & closing gate | all | todo | | stdlib Python thread runner, raw JSON to md report, route walk, closing gate (D141, D145) |
 | 13 Containerise + deploy | S4 | todo | | |
 | F Frontend phases | all | blocked until frontend doc exists | | |
