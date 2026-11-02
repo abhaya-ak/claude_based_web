@@ -53,6 +53,7 @@ evidence_bucket = os.environ.get("EVIDENCE_BUCKET")
 if not evidence_bucket:
     raise ImproperlyConfigured("EVIDENCE_BUCKET must be set in production.")
 EVIDENCE_BUCKET = evidence_bucket
+MEDIA_BUCKET = os.environ.get("MEDIA_BUCKET", "scamshield-media-prod")
 
 # Validate SCANNER_CALLBACK_SECRET / INTERNAL_CALLBACK_HMAC_KEY (D90)
 callback_secret = os.environ.get("SCANNER_CALLBACK_SECRET") or os.environ.get("INTERNAL_CALLBACK_HMAC_KEY")

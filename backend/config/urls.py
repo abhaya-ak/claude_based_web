@@ -119,4 +119,8 @@ urlpatterns = [
     path("api/v1/advisories/", include("apps.broadcasts.urls_advisories")),
     path("api/v1/internal/", include("apps.scanner.urls_internal")),
     path("api/v1/triage/", include("apps.intel.urls")),
+    path("api/v1/studio/guides/", include("apps.literacy.urls_studio")),
+    path("api/v1/studio/scenarios/", include("apps.literacy.urls_scenarios_studio")),
+    path("api/v1/guides/", include("apps.literacy.urls_guides")),
+    path("api/v1/simulator/", include("apps.literacy.urls_simulator")),
 ]
