@@ -264,3 +264,5 @@ SCANNER_CALLBACK_SECRET = env("SCANNER_CALLBACK_SECRET", default=env("INTERNAL_C
 INTERNAL_CALLBACK_HMAC_KEY = SCANNER_CALLBACK_SECRET
 SCANNER_CALLBACK_URL = env("SCANNER_CALLBACK_URL", default="http://localhost:8000/api/v1/internal/scan-results/")
 STAFF_TOPIC_ARN = env("STAFF_TOPIC_ARN", default="arn:aws:sns:ap-southeast-1:123456789012:scamshield-staff-alerts")
+ALERTS_TOPIC_ARN = env("ALERTS_TOPIC_ARN", default="arn:aws:sns:ap-southeast-1:123456789012:scamshield-alerts")
+ENABLE_SMS_ALERTS = env.bool("ENABLE_SMS_ALERTS", default=False)

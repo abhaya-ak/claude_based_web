@@ -1,7 +1,7 @@
 # PROGRESS (the agent reads this at session start and updates it at the end of every task)
 
 ## Current phase
-Phase 6 — Triage workbench, F2.1 (done, merge pending)
+Phase 7 — Public lookup and alert subscriptions, F1.2 (in progress)
 
 ## Status
 | Phase | Owner | Status | Commit/PR | Notes |
@@ -46,7 +46,11 @@ Phase 6 — Triage workbench, F2.1 (done, merge pending)
 | ├─ 6.3 Multi-report cluster verification | S2 | done | 3527867 | verify_indicator, monotonic locking, threat levels, TO BE PROVEN #12 concurrency (12 tests) |
 | ├─ 6.4 Indicators API & Contract §3.6 | S2 | done | b40eeca | Indicators list/detail, public_note patch, revoke, find_active_indicators, count_pending_by_indicator (24 tests) |
 | └─ 6.5 Route walk, queries & closing gate | S2 | done | d4b0012 | Route-walk, RBAC matrix, query counts, OpenAPI regeneration, CI deploy check |
-| 7 Lookup + alerts | S1 | todo | | |
+| 7 Lookup + alerts | S1 | done, merge pending | | Phase 7 Public Lookup and Alert Subscriptions (F1.2 complete, 787 tests green) |
+| ├─ 7.1 Lookup input auto-detection & normalisation | S1 | done | 639bb14 | Detect candidate types, normalise phone/URL/domain/email/bank, pure lookup_detector (D101) |
+| ├─ 7.2 Verdict service, public API & rate limiting | S1 | done | 46442e6 | Red/Yellow/Green verdict, Contract §3.6 integration, no PII leak, 30/min throttle (D102, D103) |
+| ├─ 7.3 Alert subscriptions & SNS integration | S1 | done | 13b9516 | POST /alerts/subscriptions/, confirm, unsubscribe, SNS filter policy, SMS flag (D104, D105) |
+| └─ 7.4 Phase 7 Closing Gate | S1 | done | | Route-walk, RBAC matrix, query counts, OpenAPI regeneration, CI deploy check |
 | 8 Analytics + broadcast | S2 | todo | | |
 | 9 Literacy CMS | S3 | todo | | |
 | 10 Simulator | S3 | todo | | |
@@ -159,6 +163,11 @@ Phase 6 — Triage workbench, F2.1 (done, merge pending)
 | **D98** | Indicator Revocation, Reactivation & Curation (`GET/PATCH/POST /triage/indicators/`): Indicator list and detail accessible to `ANALYST` and `ADMIN`. List filters: `type`, `threat_level`, `status`, `search`. Curate public note (`PATCH /triage/indicators/{id}/`) restricted to `ANALYST`, max 500 chars. Revocation (`POST /triage/indicators/{id}/revoke/`) restricted to `ANALYST`, requires `reason` (1..300 chars); sets `status="REVOKED"`, `revoked_by`, `revoked_at`, `revoke_reason`, audits `INDICATOR_REVOKED`, emits `IndicatorsRevoked` metric. Subsequent verification of a cluster for a revoked indicator automatically reactivates it to `status="ACTIVE"` | Phase 6 plan, `docs/03-backend-build-plan.md` Phase 6 | Approved |
 | **D99** | Cross-Student Selectors Contract (§3.6): Export from `apps/intel/selectors/intel_selectors.py`: `find_active_indicators(pairs)` (returns QuerySet of active `VerifiedIndicator`) and `count_pending_by_indicator(pairs)` (returns `{ (type, normalized_value): count }` of distinct pending reports via single aggregated query) | `docs/contracts.md` §3.6 | Approved |
 | **D100** | Pytest DB Teardown Connection Cleanup: In `backend/conftest.py`, register a session-scoped cleanup hook/fixture calling `django.db.connections.close_all()` on session finish, eliminating `PytestWarning` regarding active sessions during test database teardown (0 warnings) | Test suite hygiene & zero-warning gate | Approved |
+| **D101** | Candidate Indicator Auto-Detection & Multi-Type Normalization: Pure detector `apps/reports/services/lookup_detector.py` accepts query, tries normalizers (`email`, `url` extracting canonical URL + registrable domain, `domain`, `phone` with MY default / ZZ `+`, `bank_account` with `INDICATOR_HMAC_KEY`). Returns deduplicated list of `(type, normalized_value)` candidate pairs. Empty list on unrecognized strings | Phase 7 plan, `docs/03-backend-build-plan.md` | Approved |
+| **D102** | Three-Tier Public Verdict Hierarchy & Strict PII Isolation (R-C5, R-C8): `lookup_service.determine_verdict(query)` queries candidate pairs via Contract §3.6 `find_active_indicators` (RED, highest threat level wins), else `count_pending_by_indicator` (YELLOW if pending reports >= 1 or high-priority scan), else GREEN. Public response never contains victim text, raw values, report IDs, or evidence keys; raw query never logged | Phase 7 plan, `docs/03-backend-build-plan.md` | Approved |
+| **D103** | Public Lookup Rate Limiting (~30/min per IP): `POST /api/v1/lookups/` throttled to max 30 requests/minute per `client_ip_hash(request)` via dedicated DRF rate throttle. Exceeding limit returns 429 `throttled` with `Retry-After`, writes `RATE_LIMIT_BLOCK` audit row, emits `RateLimitBlocks` metric | Phase 7 plan, `docs/02-project-architecture.md` §16 R-A10 | Approved |
+| **D104** | Alert Subscription Creation, Filter Policy & Deduplication: `POST /api/v1/alerts/subscriptions/` validates channel (`EMAIL`, `SMS`), audience (`AudienceGroup`), categories (`ScamCategory`). SMS enforced via `ENABLE_SMS_ALERTS` flag (default False). Computes `endpoint_hash = sha256(endpoint)`. Duplicate subscription returns existing status without leaking prior existence. Generates 32-byte urlsafe token (`unsubscribe_token_hash = sha256(token)`). Subscribes to `ALERTS_TOPIC_ARN` via `sns.subscribe` with filter policy `{"audience": ["ALL", audience]}` plus `"category": [categories]` if non-empty (omitted if all) | Phase 7 plan, `docs/03-backend-build-plan.md` | Approved |
+| **D105** | Token-Hashed Subscription Confirmation & Unsubscription: `POST /api/v1/alerts/subscriptions/confirm/` and `/unsubscribe/` look up subscription by `unsubscribe_token_hash = sha256(token)`. Confirm sets `status="ACTIVE"`, `confirmed_at`. Unsubscribe sets `status="UNSUBSCRIBED"`, `unsubscribed_at`, and calls `sns.unsubscribe` failure-tolerantly on commit | Phase 7 plan, `docs/03-backend-build-plan.md` | Approved |
 
 ## Phase 3 Verification (Proven Items)
 - **TO BE PROVEN #1 (UUID user ID in JWT):** PROVEN. SimpleJWT encodes and decodes UUID user IDs without string-cast issues across access/refresh tokens.
@@ -179,6 +188,11 @@ Phase 6 — Triage workbench, F2.1 (done, merge pending)
 
 ## Phase 6 Verification (Proven Items)
 - **TO BE PROVEN #12 (Concurrent Multi-Report Cluster Verification Deadlock Freedom & Conflict Detection):** PROVEN. Running concurrent verification threads (`apps/intel/tests/test_verify_concurrency.py::TestVerifyConcurrency::test_to_be_proven_12_concurrent_cluster_verification_deadlock_freedom`) with reports clustered in reverse and mixed order locks rows in strict monotonic ascending `id` order, eliminating deadlock, allowing one worker to resolve the cluster cleanly while the concurrent transaction raises 409 `conflict` (`report_already_resolved`).
+
+## Phase 7 Verification (Proven Items)
+- **TO BE PROVEN #13 (Domain Blacklist Inheritance):** PROVEN. Verifying a domain indicator (e.g. ad-actor-bank.com as ACTIVE VerifiedIndicator) causes lookups on deep URLs on that domain (https://bad-actor-bank.com/malicious/portal.html?token=abc) to inherit the RED verdict immediately via multi-type candidate detection without requiring explicit subpath verification (pps/reports/tests/test_lookup_service.py::TestLookupService::test_domain_blacklist_inheritance_returns_red).
+
+- **TO BE PROVEN #14 (Moto SNS Subscription & Filter Policy):** PROVEN. Subscribing via POST /api/v1/alerts/subscriptions/ under Moto creates a real SNS subscription on ALERTS_TOPIC_ARN with the expected FilterPolicy attributes (udience containing ALL and the target group, and category list when filtered, omitted when all), duplicate submission safely returns the existing record without token leak, confirmation updates status to ACTIVE, and unsubscription successfully calls sns.unsubscribe (pps/alerts/tests/test_subscriptions_api.py::TestAlertSubscriptionsAPI::test_moto_sns_subscription_creation_and_filter_policy).
 
 ## Standing rules for model tasks
 - Index names max 30 characters; check every name.
