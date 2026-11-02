@@ -17,6 +17,7 @@ import { MyReportsPage } from './features/report/MyReportsPage';
 import { LiteracyHubPage } from './features/hub/LiteracyHubPage';
 import { GuideDetailPage } from './features/hub/GuideDetailPage';
 import { EducatorStudioPage } from './features/hub/EducatorStudioPage';
+import { ScenarioStudioPage } from './features/simulator/ScenarioStudioPage';
 import { SimulatorGamePage } from './features/simulator/SimulatorGamePage';
 import { TriagePage } from './features/triage/TriagePage';
 import { TrendAnalyticsPage } from './features/triage/TrendAnalyticsPage';
@@ -129,6 +130,14 @@ export const router = createBrowserRouter([
         element: (
           <RequireRole allowedRoles={['EDUCATOR', 'ADMIN']}>
             <EducatorStudioPage />
+          </RequireRole>
+        ),
+      },
+      {
+        path: 'studio/scenarios',
+        element: (
+          <RequireRole allowedRoles={['EDUCATOR', 'ADMIN']}>
+            <ScenarioStudioPage />
           </RequireRole>
         ),
       },

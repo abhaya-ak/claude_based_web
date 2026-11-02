@@ -2,9 +2,10 @@ import { apiClient } from './client';
 import type {
   LiteracyGuide,
   PaginatedResponse,
-  SimulatorAttempt,
-  AttemptAnswer,
-  CompletionResult,
+  SimulatorAttemptInitResponse,
+  AnswerFeedbackResponse,
+  SimulatorAttemptCompletionResponse,
+  StudioScenario,
   GuideAsset,
 } from './schema';
 
@@ -24,6 +25,22 @@ export interface CreateGuidePayload {
   audience_groups: string[];
   tactics: string[];
   reading_time_minutes: number;
+}
+
+export interface SubmitAnswerPayload {
+  scenario_id: string;
+  answered_is_scam: boolean;
+  selected_flag_code?: string;
+  session_key?: string;
+}
+
+export interface CreateRedFlagPayload {
+  flag_code: string;
+  x_pct: number;
+  y_pct: number;
+  w_pct: number;
+  h_pct: number;
+  explanation: string;
 }
 
 export const literacyApi = {
@@ -70,23 +87,48 @@ export const literacyApi = {
   },
 
   // Spot-the-Scam Simulator
-  startAttempt: async (): Promise<SimulatorAttempt> => {
-    const res = await apiClient.post<SimulatorAttempt>('/simulator/attempts/');
+  startAttempt: async (): Promise<SimulatorAttemptInitResponse> => {
+    const res = await apiClient.post<SimulatorAttemptInitResponse>('/simulator/attempts/');
     return res.data;
   },
 
-  submitAnswer: async (attemptId: string, answer: AttemptAnswer): Promise<{ status: string }> => {
-    const res = await apiClient.post<{ status: string }>(
+  submitAnswer: async (attemptId: string, payload: SubmitAnswerPayload): Promise<AnswerFeedbackResponse> => {
+    const res = await apiClient.post<AnswerFeedbackResponse>(
       `/simulator/attempts/${attemptId}/answers/`,
-      answer
+      payload
     );
     return res.data;
   },
 
-  completeAttempt: async (attemptId: string): Promise<CompletionResult> => {
-    const res = await apiClient.post<CompletionResult>(
-      `/simulator/attempts/${attemptId}/complete/`
+  completeAttempt: async (attemptId: string, sessionKey?: string): Promise<SimulatorAttemptCompletionResponse> => {
+    const res = await apiClient.post<SimulatorAttemptCompletionResponse>(
+      `/simulator/attempts/${attemptId}/complete/`,
+      sessionKey ? { session_key: sessionKey } : {}
     );
     return res.data;
+  },
+
+  // Scenario Studio (Educators)
+  getStudioScenarios: async (offset = 0, limit = 20): Promise<PaginatedResponse<StudioScenario>> => {
+    const res = await apiClient.get<PaginatedResponse<StudioScenario>>('/studio/scenarios/', {
+      params: { offset, limit },
+    });
+    return res.data;
+  },
+
+  createStudioScenario: async (formData: FormData): Promise<StudioScenario> => {
+    const res = await apiClient.post<StudioScenario>('/studio/scenarios/', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data;
+  },
+
+  publishStudioScenario: async (id: string): Promise<{ status: string }> => {
+    const res = await apiClient.post<{ status: string }>(`/studio/scenarios/${id}/publish/`);
+    return res.data;
+  },
+
+  addScenarioRedFlag: async (scenarioId: string, payload: CreateRedFlagPayload): Promise<void> => {
+    await apiClient.post(`/studio/scenarios/${scenarioId}/flags/`, payload);
   },
 };

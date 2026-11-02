@@ -95,7 +95,7 @@ DONE — Backend Build Complete & Production Ready (Phases 0–13 Complete)
 | ├─ F3 Citizen Threat Lookup & Scam Reporting Portal | S1 | done | 90dbb42 | Threat Lookup widget, Multi-step Report wizard, Access key receipt, Track & My Reports, Alert Subscriptions, Vitest suite (11 tests) |
 | ├─ F4 Analyst Triage Workbench & Evidence Vault | S2 | done | 58b8ee8 | Triage Queue, Split screen detail, Presigned S3 Evidence Vault (15-min TTL), Verify/Reject Modals, Trend Analytics, Advisory Studio, Threat Vault (15 tests) |
 | ├─ F5 Literacy Hub CMS & Educator Studio | S3 | done | c93e5d5 | Public Learning Hub, Safe MarkdownViewer, Guide Detail with TTS read aloud, Educator Studio CRUD & Asset Vault (18 tests) |
-| ├─ F6 Interactive "Spot-the-Scam" Simulator & Quizzes | S3 | todo | | Scenario Studio, Hotspot bounding boxes, Anti-cheat session, Grading & Remediation link |
+| ├─ F6 Interactive "Spot-the-Scam" Simulator & Quizzes | S3 | done | | Anti-cheat card masking, Simulation round flow, immediate feedback, blind spots & remediation guides, Scenario Studio (20 tests) |
 | └─ F7 Admin Portal, Telemetry & Audit Log Viewer | S4 | todo | | User approvals & role management, Tamper-evident Audit logs, CSV export, CloudWatch telemetry |
 
 ## Decisions made (consolidated catalogue)

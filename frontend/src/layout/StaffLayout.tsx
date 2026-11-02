@@ -14,6 +14,7 @@ import {
   TrendingUp,
   ShieldCheck,
   Radio,
+  Layers,
 } from 'lucide-react';
 
 export const StaffLayout: React.FC = () => {
@@ -51,6 +52,11 @@ export const StaffLayout: React.FC = () => {
         to: '/studio',
         label: COPY.nav.studio,
         icon: <BookOpen className="w-4 h-4" />,
+      });
+      items.push({
+        to: '/studio/scenarios',
+        label: 'Scenario Studio',
+        icon: <Layers className="w-4 h-4" />,
       });
     }
 

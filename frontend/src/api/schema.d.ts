@@ -263,44 +263,69 @@ export type ScenarioTactic =
   | 'NONE';
 
 export interface ScenarioRedFlag {
-  id: string;
-  x_pct: number;
-  y_pct: number;
-  w_pct: number;
-  h_pct: number;
+  id?: string;
+  flag_code?: string;
+  x_pct: number | string;
+  y_pct: number | string;
+  w_pct?: number | string;
+  h_pct?: number | string;
   explanation: string;
 }
 
 export interface SimulatorScenario {
   id: string;
   title: string;
-  context_prompt: string;
+  channel?: string;
+  context_prompt?: string;
   image_url: string;
-  // Note: During active attempts, is_scam, tactic, and red_flags are masked server-side
+  image_alt?: string;
+  difficulty?: number;
+  // Masked during active attempt
   is_scam?: boolean;
   tactic?: ScenarioTactic;
   explanation?: string;
   red_flags?: ScenarioRedFlag[];
 }
 
-export interface SimulatorAttempt {
-  id: string;
-  session_key: string;
+export interface SimulatorAttemptInitResponse {
+  attempt_id: string;
+  session_key?: string;
+  scenario_count: number;
   scenarios: SimulatorScenario[];
-  started_at: string;
-  is_completed: boolean;
 }
 
-export interface AttemptAnswer {
+export interface AnswerFeedbackResponse {
   scenario_id: string;
-  user_marked_scam: boolean;
-  user_selected_tactic?: ScenarioTactic;
+  is_correct: boolean;
+  explanation: string;
+  red_flags: ScenarioRedFlag[];
 }
 
-export interface CompletionResult {
+export interface SimulatorAttemptCompletionResponse {
+  attempt_id: string;
+  status: string;
   score_pct: number;
-  correct_count: number;
-  total_count: number;
-  blind_spots: string[];
+  completed_at: string;
+  profile: {
+    total_scenarios: number;
+    correct_scenarios: number;
+    blind_spots: string[];
+    missed_tactics?: Record<string, number>;
+  };
   remediation_guides: LiteracyGuide[];
+}
+
+export interface StudioScenario {
+  id: string;
+  title: string;
+  channel: string;
+  is_scam: boolean;
+  tactic: ScenarioTactic;
+  difficulty: number;
+  image_url: string;
+  image_alt: string;
+  explanation: string;
+  status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
+  red_flags: ScenarioRedFlag[];
+  created_at: string;
 }
