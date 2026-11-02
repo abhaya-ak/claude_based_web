@@ -23,9 +23,11 @@ class PublicGuideListView(generics.ListAPIView):
     serializer_class = EducationalGuidePublicListSerializer
 
     def get_queryset(self):
-        qs = EducationalGuide.objects.filter(
-            status=ContentStatus.PUBLISHED.value
-        ).order_by("-published_at")
+        qs = (
+            EducationalGuide.objects.filter(status=ContentStatus.PUBLISHED.value)
+            .prefetch_related("assets")
+            .order_by("-published_at")
+        )
 
         group = self.request.query_params.get("group")
         if group:

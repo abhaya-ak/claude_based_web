@@ -57,12 +57,12 @@ Phase 9 — Literacy CMS, F3.1 (in progress)
 | ├─ 8.3 Threat advisory CRUD & draft-only edit | S2 | done | a38e357 | GET/POST /advisories/, GET/PATCH /advisories/{id}/, draft-only rules, public published list (D109) |
 | ├─ 8.4 Advisory publishing & SNS fan-out | S2 | done | 5492042 | POST /advisories/{id}/publish/, atomic status, SNS MessageAttributes, idempotency, TO BE PROVEN #15, #16 (D110) |
 | └─ 8.5 Phase 8 closing gate | S2 | done | | Route-walk, RBAC matrix, query counts, OpenAPI regeneration, CI deploy check |
-| 9 Literacy CMS | S3 | in progress | | Phase 9 Literacy CMS (F3.1) |
+| 9 Literacy CMS | S3 | done, merge pending | | Phase 9 Literacy CMS (F3.1) |
 | ├─ 9.1 Sanitizer, serializers & Contract §3.8 selector | S3 | done | | nh3 body sanitizer, Guide/Asset serializers, Contract §3.8 guides_for_tactics (D111, D113, D116) |
 | ├─ 9.2 Studio guide CRUD & lifecycle service | S3 | done | | /studio/guides/, unique slug, publish/unpublish/archive, educator ownership (D112, D114) |
 | ├─ 9.3 Guide asset vault & S3 media storage | S3 | done | | /studio/guides/{id}/assets/, magic bytes (PDF/Audio/Image), S3 storage, /media/ CloudFront paths (D115) |
 | ├─ 9.4 Public literacy hub API & seed command | S3 | done | | /guides/, /guides/{slug}/, GIN array filters (group, language, tactic), ui_hints, seed_guides (D116) |
-| └─ 9.5 Phase 9 closing gate | S3 | todo | | Route-walk, RBAC matrix, query bounds (<=3), OpenAPI regeneration, CI deploy check |
+| └─ 9.5 Phase 9 closing gate | S3 | done | | Route-walk, RBAC matrix, query bounds (<=3), OpenAPI regeneration, CI deploy check |
 | 10 Simulator | S3 | todo | | |
 | 11 Ops/telemetry | S4 | todo | | |
 | 12 Hardening | all | todo | | |
@@ -218,6 +218,9 @@ Phase 9 — Literacy CMS, F3.1 (in progress)
 ## Phase 8 Verification (Proven Items)
 - **TO BE PROVEN #15 (Advisory Broadcast End-to-End Fan-out & Filter Policy Match):** PROVEN. Publishing a threat advisory with target audience GENERAL and category IMPERSONATION publishes to AWS SNS topic ALERTS_TOPIC_ARN with typed MessageAttributes matching confirmed subscribers whose FilterPolicy specifies audience containing ALL and the target group, and matching category (apps/broadcasts/tests/test_advisory_publish_api.py::TestAdvisoryPublishAPI::test_to_be_proven_15_advisory_broadcast_reaches_filtered_subscriber).
 - **TO BE PROVEN #16 (Advisory Double-Click Idempotency & SNS Single-Publish Guarantee):** PROVEN. A second concurrent or sequential request to POST /api/v1/advisories/{id}/publish/ encounters row-level lock select_for_update(), detects status == "PUBLISHED", and raises 409 conflict (advisory_already_published) without issuing duplicate SNS messages (apps/broadcasts/tests/test_advisory_publish_api.py::TestAdvisoryPublishAPI::test_to_be_proven_16_double_click_publish_idempotency).
+- **TO BE PROVEN #17 (Markdown output sanitization via `nh3`):** PROVEN. Guide body markdown is stored verbatim in the database at write time. On serialization for output (both public and studio serializers), `nh3.clean` strips dangerous script tags, `onerror` event handlers, `javascript:` pseudo-protocols, and inline CSS styles while preserving legitimate markdown formatting (`apps/literacy/tests/test_sanitizer.py`).
+- **TO BE PROVEN #18 (Guide media asset vault & S3 media storage):** PROVEN. Guide media asset uploads enforce magic-byte sniffing (rejecting spoofed file types), strict size limits (PDF <=10MB, Audio <=20MB, Image <=5MB), mandatory `alt_text` for images, positive audio durations, S3 private object storage with SSE-S3 AES256, and format URLs exclusively as CloudFront relative paths (`/media/{s3_key}`) (`apps/literacy/tests/test_guide_assets_api.py`).
+- **TO BE PROVEN #19 (Educator ownership & Studio guide lifecycle):** PROVEN. Educators can only view, update, delete, or transition guides they authored; accessing another educator's guide returns 403 `permission_denied`. Only DRAFT guides can be deleted (deleting PUBLISHED/ARCHIVED returns 409 `guide_not_draft`). Publishing sets `published_at` strictly once, which remains invariant across subsequent unpublish/republish cycles (`apps/literacy/tests/test_studio_guides_api.py`, `apps/literacy/tests/test_guide_lifecycle.py`).
 
 ## Standing rules for model tasks
 - Index names max 30 characters; check every name.
