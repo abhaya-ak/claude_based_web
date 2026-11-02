@@ -11,7 +11,9 @@ import { PendingApprovalPage } from './features/auth/PendingApprovalPage';
 import { ProfilePage } from './features/auth/ProfilePage';
 import { LookupPage } from './features/lookup/LookupPage';
 import { ReportPage } from './features/report/ReportPage';
+import { ReportSuccessPage } from './features/report/ReportSuccessPage';
 import { TrackReportPage } from './features/report/TrackReportPage';
+import { MyReportsPage } from './features/report/MyReportsPage';
 import { LiteracyHubPage } from './features/hub/LiteracyHubPage';
 import { SimulatorGamePage } from './features/simulator/SimulatorGamePage';
 import { TriagePage } from './features/triage/TriagePage';
@@ -31,7 +33,17 @@ export const router = createBrowserRouter([
       { index: true, element: <HomePage /> },
       { path: 'lookup', element: <LookupPage /> },
       { path: 'report', element: <ReportPage /> },
+      { path: 'report/success', element: <ReportSuccessPage /> },
       { path: 'report/track', element: <TrackReportPage /> },
+      { path: 'track', element: <TrackReportPage /> },
+      {
+        path: 'my-reports',
+        element: (
+          <RequireRole>
+            <MyReportsPage />
+          </RequireRole>
+        ),
+      },
       { path: 'literacy', element: <LiteracyHubPage /> },
       { path: 'simulator', element: <SimulatorGamePage /> },
       { path: 'login', element: <LoginPage /> },

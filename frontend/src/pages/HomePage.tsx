@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { COPY } from '../lib/copy';
 import { ShieldCheck, Search, FileText, BookOpen, Target, ArrowRight } from 'lucide-react';
+import { LookupWidget } from '../features/lookup/LookupWidget';
 
 export const HomePage: React.FC = () => {
   return (
@@ -21,6 +22,10 @@ export const HomePage: React.FC = () => {
           <p className="text-base sm:text-lg text-blue-100 max-w-2xl mx-auto leading-relaxed">
             Verify suspicious phone numbers, links, and accounts against verified threat intelligence, report fraud incidents safely, and build resistance.
           </p>
+
+          <div className="pt-2">
+            <LookupWidget />
+          </div>
 
           <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
             <Link
