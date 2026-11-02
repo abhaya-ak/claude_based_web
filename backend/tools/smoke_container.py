@@ -81,7 +81,7 @@ class ContainerSmokeRunner:
         # 2. Readiness check
         try:
             code, data = self._request("GET", "/api/v1/health/ready/")
-            if code == 200 and data.get("status") == "ok":
+            if code == 200 and data.get("database") == "ok":
                 self.log("2. Database Readiness Probe", "PASS", f"HTTP {code} db={data.get('database')}")
             else:
                 self.log("2. Database Readiness Probe", "FAIL", f"HTTP {code} data={data}")
@@ -126,14 +126,19 @@ class ContainerSmokeRunner:
         # 4. Scam report submission
         try:
             boundary = f"----WebKitFormBoundary{uuid.uuid4().hex}"
+            indicators_json = json.dumps([
+                {"type": "PHONE", "value": "+9779812345678"},
+                {"type": "URL", "value": "https://crypto-doubler.top"},
+            ])
             form_fields = {
-                "category": "INVESTMENT",
+                "category": "PHISHING",
                 "platform": "WHATSAPP",
                 "message_text": "Guaranteed 500% weekly returns on crypto trading bot investment scheme.",
                 "country_code": "NP",
                 "currency": "NPR",
-                "financial_loss": "50000.00",
-                "indicators": '["+9779812345678", "https://crypto-doubler.top"]',
+                "financial_loss": "0.00",
+                "payment_method": "NONE",
+                "indicators": indicators_json,
             }
             body_parts = []
             for k, v in form_fields.items():
@@ -179,9 +184,7 @@ class ContainerSmokeRunner:
 
         # 6. Simulator attempt creation
         try:
-            sim_code, sim_data = self._request("POST", "/api/v1/simulator/attempts/", {
-                "difficulty": "BEGINNER"
-            })
+            sim_code, sim_data = self._request("POST", "/api/v1/simulator/attempts/", {})
             if sim_code == 201 or sim_code == 200:
                 self.log("6. Simulator Attempt Init", "PASS", f"HTTP {sim_code}")
             else:
@@ -200,7 +203,20 @@ class ContainerSmokeRunner:
 
 
 if __name__ == "__main__":
-    url = sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:8000"
-    runner = ContainerSmokeRunner(url)
+    target_url = "http://127.0.0.1:8000"
+    args = sys.argv[1:]
+    i = 0
+    while i < len(args):
+        arg = args[i]
+        if arg in ("--base-url", "-u", "-BaseUrl") and i + 1 < len(args):
+            target_url = args[i + 1]
+            i += 2
+        elif not arg.startswith("-"):
+            target_url = arg
+            i += 1
+        else:
+            i += 1
+
+    runner = ContainerSmokeRunner(target_url)
     ok = runner.run_all()
     sys.exit(0 if ok else 1)
