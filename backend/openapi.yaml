@@ -491,6 +491,35 @@ paths:
           description: Report not found.
         '429':
           description: Throttled.
+  /api/v1/lookups/:
+    post:
+      operationId: lookups_create
+      description: Lookup phone numbers, URLs, domains, emails, or bank accounts against
+        known threat intel.
+      tags:
+      - lookups
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LookupRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LookupRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LookupRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LookupResponse'
+          description: ''
   /api/v1/reports/:
     post:
       operationId: reports_create
@@ -1210,6 +1239,45 @@ components:
       required:
       - email
       - password
+    LookupRequestRequest:
+      type: object
+      properties:
+        query:
+          type: string
+          minLength: 1
+          maxLength: 255
+      required:
+      - query
+    LookupResponse:
+      type: object
+      properties:
+        verdict:
+          $ref: '#/components/schemas/VerdictEnum'
+        threat_level:
+          type: string
+          nullable: true
+        category:
+          type: string
+          nullable: true
+        report_count:
+          type: integer
+        first_seen_at:
+          type: string
+          format: date-time
+          nullable: true
+        last_seen_at:
+          type: string
+          format: date-time
+          nullable: true
+        public_note:
+          type: string
+          nullable: true
+        message:
+          type: string
+      required:
+      - message
+      - report_count
+      - verdict
     MyReportItem:
       type: object
       properties:
@@ -2127,6 +2195,16 @@ components:
       - full_name
       - id
       - role
+    VerdictEnum:
+      enum:
+      - RED
+      - YELLOW
+      - GREEN
+      type: string
+      description: |-
+        * `RED` - RED
+        * `YELLOW` - YELLOW
+        * `GREEN` - GREEN
     VerifiedIndicator:
       type: object
       properties:

@@ -48,7 +48,7 @@ Phase 7 — Public lookup and alert subscriptions, F1.2 (in progress)
 | └─ 6.5 Route walk, queries & closing gate | S2 | done | d4b0012 | Route-walk, RBAC matrix, query counts, OpenAPI regeneration, CI deploy check |
 | 7 Lookup + alerts | S1 | todo | | Phase 7 Public Lookup and Alert Subscriptions (F1.2) |
 | ├─ 7.1 Lookup input auto-detection & normalisation | S1 | done | | Detect candidate types, normalise phone/URL/domain/email/bank, pure lookup_detector (D101) |
-| ├─ 7.2 Verdict service, public API & rate limiting | S1 | todo | | Red/Yellow/Green verdict, Contract §3.6 integration, no PII leak, 30/min throttle (D102, D103) |
+| ├─ 7.2 Verdict service, public API & rate limiting | S1 | done | | Red/Yellow/Green verdict, Contract §3.6 integration, no PII leak, 30/min throttle (D102, D103) |
 | ├─ 7.3 Alert subscriptions & SNS integration | S1 | todo | | POST /alerts/subscriptions/, confirm, unsubscribe, SNS filter policy, SMS flag (D104, D105) |
 | └─ 7.4 Phase 7 Closing Gate | S1 | todo | | Route-walk, RBAC matrix, query counts, OpenAPI regeneration, CI deploy check |
 | 8 Analytics + broadcast | S2 | todo | | |
@@ -188,6 +188,9 @@ Phase 7 — Public lookup and alert subscriptions, F1.2 (in progress)
 
 ## Phase 6 Verification (Proven Items)
 - **TO BE PROVEN #12 (Concurrent Multi-Report Cluster Verification Deadlock Freedom & Conflict Detection):** PROVEN. Running concurrent verification threads (`apps/intel/tests/test_verify_concurrency.py::TestVerifyConcurrency::test_to_be_proven_12_concurrent_cluster_verification_deadlock_freedom`) with reports clustered in reverse and mixed order locks rows in strict monotonic ascending `id` order, eliminating deadlock, allowing one worker to resolve the cluster cleanly while the concurrent transaction raises 409 `conflict` (`report_already_resolved`).
+
+## Phase 7 Verification (Proven Items)
+- **TO BE PROVEN #13 (Domain Blacklist Inheritance):** PROVEN. Verifying a domain indicator (e.g. ad-actor-bank.com as ACTIVE VerifiedIndicator) causes lookups on deep URLs on that domain (https://bad-actor-bank.com/malicious/portal.html?token=abc) to inherit the RED verdict immediately via multi-type candidate detection without requiring explicit subpath verification (pps/reports/tests/test_lookup_service.py::TestLookupService::test_domain_blacklist_inheritance_returns_red).
 
 ## Standing rules for model tasks
 - Index names max 30 characters; check every name.

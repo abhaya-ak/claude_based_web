@@ -19,6 +19,7 @@ PUBLIC_ALLOWLIST = {
     "/api/v1/reports/options/",
     "/api/v1/reports/",
     "/api/v1/reports/track/",
+    "/api/v1/lookups/",
 }
 
 MACHINE_HMAC_ALLOWLIST = {
