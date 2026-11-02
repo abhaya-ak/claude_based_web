@@ -46,11 +46,11 @@ Phase 7 — Public lookup and alert subscriptions, F1.2 (in progress)
 | ├─ 6.3 Multi-report cluster verification | S2 | done | 3527867 | verify_indicator, monotonic locking, threat levels, TO BE PROVEN #12 concurrency (12 tests) |
 | ├─ 6.4 Indicators API & Contract §3.6 | S2 | done | b40eeca | Indicators list/detail, public_note patch, revoke, find_active_indicators, count_pending_by_indicator (24 tests) |
 | └─ 6.5 Route walk, queries & closing gate | S2 | done | d4b0012 | Route-walk, RBAC matrix, query counts, OpenAPI regeneration, CI deploy check |
-| 7 Lookup + alerts | S1 | todo | | Phase 7 Public Lookup and Alert Subscriptions (F1.2) |
-| ├─ 7.1 Lookup input auto-detection & normalisation | S1 | done | | Detect candidate types, normalise phone/URL/domain/email/bank, pure lookup_detector (D101) |
-| ├─ 7.2 Verdict service, public API & rate limiting | S1 | done | | Red/Yellow/Green verdict, Contract §3.6 integration, no PII leak, 30/min throttle (D102, D103) |
-| ├─ 7.3 Alert subscriptions & SNS integration | S1 | done | | POST /alerts/subscriptions/, confirm, unsubscribe, SNS filter policy, SMS flag (D104, D105) |
-| └─ 7.4 Phase 7 Closing Gate | S1 | todo | | Route-walk, RBAC matrix, query counts, OpenAPI regeneration, CI deploy check |
+| 7 Lookup + alerts | S1 | done, merge pending | | Phase 7 Public Lookup and Alert Subscriptions (F1.2 complete, 787 tests green) |
+| ├─ 7.1 Lookup input auto-detection & normalisation | S1 | done | 639bb14 | Detect candidate types, normalise phone/URL/domain/email/bank, pure lookup_detector (D101) |
+| ├─ 7.2 Verdict service, public API & rate limiting | S1 | done | 46442e6 | Red/Yellow/Green verdict, Contract §3.6 integration, no PII leak, 30/min throttle (D102, D103) |
+| ├─ 7.3 Alert subscriptions & SNS integration | S1 | done | 13b9516 | POST /alerts/subscriptions/, confirm, unsubscribe, SNS filter policy, SMS flag (D104, D105) |
+| └─ 7.4 Phase 7 Closing Gate | S1 | done | | Route-walk, RBAC matrix, query counts, OpenAPI regeneration, CI deploy check |
 | 8 Analytics + broadcast | S2 | todo | | |
 | 9 Literacy CMS | S3 | todo | | |
 | 10 Simulator | S3 | todo | | |
