@@ -89,9 +89,14 @@ DONE — Backend Build Complete & Production Ready (Phases 0–13 Complete)
 | ├─ 13.5 CLO3 High Availability & Cost Justification Evidence (D150) | S4 | done | ab471b2 | docs/CLO3_ARCHITECTURE_HA_COST.md, 2-AZ topology, failover mechanics, pricing breakdown, test_clo3_docs (1 test) |
 | ├─ 13.6 Containerized end-to-end smoke verification suite (D151) | S4 | done | a9d6b48 | tools/smoke_container.py, ALB/localhost live container test against Docker stack, test_smoke_runner (1 test) |
 | └─ 13.7 Phase 13 & Backend Global Definition of Done closing gate | S4 | done | | Full 1,131 test suite green (0 warnings), OpenAPI freeze, check --deploy, container health proof, Global DoD signoff |
-| F Frontend phases | all | in_progress | | Frontend SPA development |
-| ├─ F0 Architecture blueprint | all | done | cbb71e8 | Complete frontend specifications: docs/frontend/ (1.project_flow, 2.ui_design_system, 3.api_contract_map, 4.state_management, 5.testing_security) |
-| └─ F1 Foundational scaffold & layouts | all | done | e820d02 | React 18, Vite, TypeScript strict, Tailwind, Axios client & silent refresh, AuthProvider, AccessibilityProvider (TTS & seniors preset), Select, FileDrop, Modal, features structure, router |
+| F Frontend phases | all | in_progress | | Frontend SPA development (Phases F1–F7) |
+| ├─ F1 Scaffolding, Design System & Core API Foundation | all | done | e820d02 | React 18, Vite, TS strict, Tailwind, Axios client & silent refresh, a11y, core components |
+| ├─ F2 Authentication, Role Guards & Access Management | S4 | todo | | Auth context, RequireRole, Login, Register, Staff Register, Pending Approval, Profile/Password |
+| ├─ F3 Citizen Threat Lookup & Scam Reporting Portal | S1 | todo | | Threat Lookup widget, Multi-step Report wizard, Access key view, Track & My Reports, Alert Subscriptions |
+| ├─ F4 Analyst Triage Workbench & Evidence Vault | S2 | todo | | Triage Queue, Split screen detail, Presigned S3 Evidence Vault, Verify/Reject, Trends, Advisories |
+| ├─ F5 Literacy Hub CMS & Educator Studio | S3 | todo | | Public Learning Hub, nh3 sanitized Markdown, Educator Studio CRUD, Asset Vault uploader |
+| ├─ F6 Interactive "Spot-the-Scam" Simulator & Quizzes | S3 | todo | | Scenario Studio, Hotspot bounding boxes, Anti-cheat session, Grading & Remediation link |
+| └─ F7 Admin Portal, Telemetry & Audit Log Viewer | S4 | todo | | User approvals & role management, Tamper-evident Audit logs, CSV export, CloudWatch telemetry |
 
 ## Decisions made (consolidated catalogue)
 
