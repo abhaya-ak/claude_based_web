@@ -89,7 +89,8 @@ DONE — Backend Build Complete & Production Ready (Phases 0–13 Complete)
 | ├─ 13.5 CLO3 High Availability & Cost Justification Evidence (D150) | S4 | done | ab471b2 | docs/CLO3_ARCHITECTURE_HA_COST.md, 2-AZ topology, failover mechanics, pricing breakdown, test_clo3_docs (1 test) |
 | ├─ 13.6 Containerized end-to-end smoke verification suite (D151) | S4 | done | a9d6b48 | tools/smoke_container.py, ALB/localhost live container test against Docker stack, test_smoke_runner (1 test) |
 | └─ 13.7 Phase 13 & Backend Global Definition of Done closing gate | S4 | done | | Full 1,131 test suite green (0 warnings), OpenAPI freeze, check --deploy, container health proof, Global DoD signoff |
-| F Frontend phases | all | blocked until frontend doc exists | | |
+| F Frontend phases | all | in_progress | | Frontend SPA development |
+| └─ F1 Foundational scaffold & layouts | all | done | | React 18, Vite, TypeScript strict, Tailwind, Axios client & silent refresh, AuthProvider, AccessibilityProvider (TTS & high contrast), router |
 
 ## Decisions made (consolidated catalogue)
 
