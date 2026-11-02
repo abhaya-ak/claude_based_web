@@ -25,6 +25,8 @@ PUBLIC_ALLOWLIST = {
     "/api/v1/alerts/subscriptions/unsubscribe/",
     "/api/v1/advisories/",
     "/api/v1/advisories/<uuid:pk>/",
+    "/api/v1/guides/",
+    "/api/v1/guides/<slug:slug>/",
 }
 
 MACHINE_HMAC_ALLOWLIST = {

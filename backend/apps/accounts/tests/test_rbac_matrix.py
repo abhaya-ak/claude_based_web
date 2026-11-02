@@ -668,3 +668,71 @@ class TestRBACMatrix:
             response = client.post(f"/api/v1/advisories/{advisory.id}/publish/")
             assert response.status_code == expected_status
             reset_clients()
+
+    # 26. GET /api/v1/studio/guides/ (EDUCATOR or ADMIN approved)
+    @pytest.mark.parametrize(
+        "user_attr,expected_status",
+        [
+            (None, 401),
+            ("citizen", 403),
+            ("analyst_pending", 403),
+            ("analyst_approved", 403),
+            ("educator_approved", 200),
+            ("admin_pending", 403),
+            ("admin_approved", 200),
+        ],
+    )
+    def test_studio_guides_list_access(self, user_attr, expected_status):
+        user = getattr(self, user_attr) if user_attr else None
+        client = self._client_for(user)
+        response = client.get("/api/v1/studio/guides/")
+        assert response.status_code == expected_status
+
+    # 27. POST /api/v1/studio/guides/ (EDUCATOR or ADMIN approved)
+    @pytest.mark.parametrize(
+        "user_attr,expected_status",
+        [
+            (None, 401),
+            ("citizen", 403),
+            ("analyst_pending", 403),
+            ("analyst_approved", 403),
+            ("educator_approved", 201),
+            ("admin_pending", 403),
+            ("admin_approved", 201),
+        ],
+    )
+    def test_studio_guides_create_access(self, user_attr, expected_status):
+        from apps.core.enums import AudienceGroup
+        from apps.literacy.models import Tactic
+
+        user = getattr(self, user_attr) if user_attr else None
+        client = self._client_for(user)
+        payload = {
+            "title": f"Test Guide RBAC {user_attr}",
+            "summary": "Summary",
+            "body": "Body content",
+            "audience_groups": [AudienceGroup.GENERAL.value],
+            "tactics": [Tactic.URGENCY.value],
+            "language": "en",
+        }
+        response = client.post("/api/v1/studio/guides/", payload, format="json")
+        assert response.status_code == expected_status
+
+    # 28. GET /api/v1/guides/ (Public Hub: AllowAny)
+    @pytest.mark.parametrize(
+        "user_attr,expected_status",
+        [
+            (None, 200),
+            ("citizen", 200),
+            ("analyst_pending", 200),
+            ("analyst_approved", 200),
+            ("educator_approved", 200),
+            ("admin_pending", 200),
+            ("admin_approved", 200),
+        ],
+    )
+    def test_public_guides_list_access(self, user_attr, expected_status):
+        user = getattr(self, user_attr) if user_attr else None
+        client = self._client_for(user)
+        response = client.get("/api/v1/guides/")
+        assert response.status_code == expected_status

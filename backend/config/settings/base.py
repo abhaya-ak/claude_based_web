@@ -131,6 +131,7 @@ SPECTACULAR_SETTINGS = {
         "IndicatorStatusEnum": "apps.intel.models.IndicatorStatus",
         "ReportStatusEnum": "apps.reports.models.ReportStatus",
         "PrimaryCategoryEnum": "apps.reports.models.ScamCategory",
+        "AudienceGroupEnum": "apps.core.enums.AudienceGroup",
     },
     "APPEND_COMPONENTS": {
         "schemas": {
@@ -249,6 +250,7 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 16 * 1024 * 1024  # 16 MB request cap
 
 # AWS S3 Evidence Bucket (D58, D60, D75)
 EVIDENCE_BUCKET = env("EVIDENCE_BUCKET", default="scamshield-evidence-dev")
+MEDIA_BUCKET = env("MEDIA_BUCKET", default="scamshield-media-dev")
 
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
