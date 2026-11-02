@@ -64,7 +64,7 @@ Phase 10 — Simulator, F3.2 (in progress)
 | ├─ 9.4 Public literacy hub API & seed command | S3 | done | | /guides/, /guides/{slug}/, GIN array filters (group, language, tactic), ui_hints, seed_guides (D116) |
 | └─ 9.5 Phase 9 closing gate | S3 | done | | Route-walk, RBAC matrix, query bounds (<=3), OpenAPI regeneration, CI deploy check |
 | 10 Simulator | S3 | in progress | | Phase 10 Spot the Scam Simulator (F3.2) |
-| ├─ 10.1 Scenario & hotspot studio CRUD service | S3 | todo | | /studio/scenarios/, image upload, hotspot coordinates, publish validation (D117, D118) |
+| ├─ 10.1 Scenario & hotspot studio CRUD service | S3 | done | | /studio/scenarios/, image upload, hotspot coordinates, publish validation (D117, D118) |
 | ├─ 10.2 Simulator attempt init & anti-cheat engine | S3 | todo | | POST /simulator/attempts/, server-side random sampling, anonymous session_key, masked cards (D119) |
 | ├─ 10.3 Simulation grading, completion & remediation engine | S3 | todo | | POST /attempts/{id}/answers/, POST /complete/, grading matrix, blind spots, Contract §3.8 guides (D120, D121) |
 | └─ 10.4 Phase 10 closing gate | S3 | todo | | Route-walk, RBAC matrix, query bounds (<=3), OpenAPI regeneration, CI deploy check |
