@@ -11,8 +11,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements/base.txt /build/requirements/base.txt
-RUN pip install --no-cache-dir --prefix=/install -r /build/requirements/base.txt
+COPY requirements/base.lock.txt /build/requirements/base.lock.txt
+RUN pip install --no-cache-dir --prefix=/install -r /build/requirements/base.lock.txt
 
 # Stage 2: Runtime image
 FROM python:3.13-slim
