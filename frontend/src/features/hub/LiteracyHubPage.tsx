@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { COPY } from '../../lib/copy';
 import { literacyApi } from '../../api/literacy';
 import type { LiteracyGuide } from '../../api/schema';
@@ -107,8 +108,10 @@ export const LiteracyHubPage: React.FC = () => {
                   </span>
                 </div>
 
-                <h2 className="text-lg font-bold text-slate-900 leading-snug hover:text-slate-700 cursor-pointer">
-                  {guide.title}
+                <h2 className="text-lg font-bold text-slate-900 leading-snug hover:text-slate-700">
+                  <Link to={`/literacy/${guide.slug}`}>
+                    {guide.title}
+                  </Link>
                 </h2>
                 <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed">
                   {guide.summary}
@@ -117,9 +120,12 @@ export const LiteracyHubPage: React.FC = () => {
 
               <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
                 <span>{formatDate(guide.published_at || guide.created_at)}</span>
-                <span className="font-semibold text-slate-900 hover:underline cursor-pointer">
+                <Link
+                  to={`/literacy/${guide.slug}`}
+                  className="font-semibold text-slate-900 hover:underline"
+                >
                   Read Article →
-                </span>
+                </Link>
               </div>
             </article>
           ))}

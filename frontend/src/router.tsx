@@ -15,6 +15,8 @@ import { ReportSuccessPage } from './features/report/ReportSuccessPage';
 import { TrackReportPage } from './features/report/TrackReportPage';
 import { MyReportsPage } from './features/report/MyReportsPage';
 import { LiteracyHubPage } from './features/hub/LiteracyHubPage';
+import { GuideDetailPage } from './features/hub/GuideDetailPage';
+import { EducatorStudioPage } from './features/hub/EducatorStudioPage';
 import { SimulatorGamePage } from './features/simulator/SimulatorGamePage';
 import { TriagePage } from './features/triage/TriagePage';
 import { TrendAnalyticsPage } from './features/triage/TrendAnalyticsPage';
@@ -48,6 +50,9 @@ export const router = createBrowserRouter([
         ),
       },
       { path: 'literacy', element: <LiteracyHubPage /> },
+      { path: 'literacy/:slug', element: <GuideDetailPage /> },
+      { path: 'guides', element: <LiteracyHubPage /> },
+      { path: 'guides/:slug', element: <GuideDetailPage /> },
       { path: 'simulator', element: <SimulatorGamePage /> },
       { path: 'login', element: <LoginPage /> },
       { path: 'register', element: <RegisterPage /> },
@@ -115,7 +120,15 @@ export const router = createBrowserRouter([
         path: 'studio',
         element: (
           <RequireRole allowedRoles={['EDUCATOR', 'ADMIN']}>
-            <LiteracyHubPage />
+            <EducatorStudioPage />
+          </RequireRole>
+        ),
+      },
+      {
+        path: 'studio/guides',
+        element: (
+          <RequireRole allowedRoles={['EDUCATOR', 'ADMIN']}>
+            <EducatorStudioPage />
           </RequireRole>
         ),
       },
