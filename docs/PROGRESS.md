@@ -1,7 +1,7 @@
 # PROGRESS (the agent reads this at session start and updates it at the end of every task)
 
 ## Current phase
-Phase 12 — Hardening and performance (done, merge pending)
+Phase 13 — Containerise and deploy (planning)
 
 ## Status
 | Phase | Owner | Status | Commit/PR | Notes |
@@ -73,18 +73,32 @@ Phase 12 — Hardening and performance (done, merge pending)
 | ├─ 11.2 Audit log immutability trigger & retention purge job | S4 | done | 01e4189 | PostgreSQL trigger, user SET_NULL, purge_expired_audit_logs job (D125, D126) |
 | ├─ 11.3 Admin portal telemetry & audit log APIs | S4 | done | a92d418 | GET /telemetry/metrics/, GET /audit-logs/, CSV export, RBAC, query bounds (D123, D124) |
 | └─ 11.4 CloudWatch infra definitions & Phase 11 closing gate | S4 | done | 8008342 | dashboard.json, alarms.json, route walk, RBAC matrix, OpenAPI, CI check |
-| 12 Hardening & Perf | all | done, merge pending | | Phase 12 Hardening and Performance (1,114 tests green) |
+| 12 Hardening & Perf | all | done | e7ce566 | Phase 12 Hardening and Performance (1,114 tests green) |
 | ├─ 12.1a Hotlines loader, presigned attachment & deferred cleanup | all | done | 5e0f05b | hotlines.json, verify loader validation, presigned attachment test (D135, D143) |
 | ├─ 12.1b Master demo seed engine (small & load scale) | all | done | 20edcd5 | seed_demo command, safety guards, SQL integrity tests (D136) |
 | ├─ 12.2 Security suite & static analysis | all | done | 57e9872 | OWASP, IDOR, forbidden-key walker, throttle scope, ruff -S, secrets scan (D128, D142) |
 | ├─ 12.3 DB performance & EXPLAIN index plan verification | all | done | d132531 | EXPLAIN JSON index scans, natural index plan assertions (D137, D138, D144) |
 | ├─ 12.4 Concurrency & multi-threaded race condition suite | all | done | 56da486 | Threaded verify, exact advisory-lock rate limit test, idempotency (D139) |
 | ├─ 12.5 Cloud resilience & graceful fault degradation | all | done | efd5a6a | S3 503 storage_unavailable, Lambda fail-open 201 PENDING, SNS 502, CW degraded 200 (D140) |
-| └─ 12.6 Load testing suite, CLO2 performance evidence & closing gate | all | done | | stdlib Python thread runner, CLO2_PERFORMANCE.md, 1114 tests green (D141, D145) |
-| 13 Containerise + deploy | S4 | todo | | |
+| └─ 12.6 Load testing suite, CLO2 performance evidence & closing gate | all | done | fcfaef3 | stdlib Python thread runner, CLO2_PERFORMANCE.md, 1114 tests green (D141, D145) |
+| 13 Containerise + deploy | S4 | in_progress | | Phase 13 Containerise and deploy (Final Backend Phase) |
+| ├─ 13.1 Production container hardening & pinned lockfiles (D39, D146) | S4 | done | | requirements/base.lock.txt, dev.lock.txt, multi-stage Dockerfile, pip-audit, test_container_hardening (4 tests) |
+| ├─ 13.2 Lambda heuristic scanner packaging automation (D147) | S4 | todo | | tools/package_lambda.py, zip build, SHA256 integrity, DLQ & IAM roles |
+| ├─ 13.3 AWS infrastructure definitions (IaC) & architecture topology (D148) | S4 | todo | | VPC 2-AZ, ALB, ASG, RDS Multi-AZ, S3 buckets, CloudFront OAC, SNS, CloudWatch |
+| ├─ 13.4 Operational runbooks & zero-downtime deployment automation (D149) | S4 | todo | | docs/runbook.md, rolling deploys, rollback, RDS PITR drill, secret rotation, cost control |
+| ├─ 13.5 CLO3 High Availability & Cost Justification Evidence (D150) | S4 | todo | | docs/CLO3_ARCHITECTURE_HA_COST.md, 2-AZ topology, failover mechanics, AWS Pricing breakdown |
+| ├─ 13.6 Containerized end-to-end smoke verification suite (D151) | S4 | todo | | tools/smoke_container.py, ALB/localhost live container test against Docker stack |
+| └─ 13.7 Phase 13 & Backend Global Definition of Done closing gate | S4 | todo | | Full 1,114+ test suite, OpenAPI freeze, check --deploy, container health proof, Global DoD signoff |
 | F Frontend phases | all | blocked until frontend doc exists | | |
 
 ## Decisions made (consolidated catalogue)
+
+- **D146 (Production container hardening & vulnerability scan):** Multi-stage Dockerfile uses python:3.13-slim, non-root appuser:1000, exposed port 8000, Gunicorn gthread workers with graceful timeouts, HEALTHCHECK targeting /api/v1/health/, and zero pip-audit vulnerabilities on base.lock.txt (Task 13.1).
+- **D147 (Deterministic Lambda heuristic scanner packager):** Pure-Python deterministic zip packager (backend/tools/package_lambda.py) creates reproducible zip archives with normalized timestamps (1980-01-01), companion .sha256 digest, and DLQ/IAM configurations (Task 13.2).
+- **D148 (Complete Terraform Multi-AZ IaC blueprint & origin shield):** Modular Terraform in infra/terraform/ defining 2-AZ VPC, ALB with X-CloudFront-Secret verification rule (403 default), ASG (min 2, max 6, 70% CPU target tracking), RDS PostgreSQL 16 Multi-AZ with KMS encryption and 7-day backups, 3 private S3 buckets with OAC/KMS, CloudFront 3-behavior distribution, Lambda DLQ, and SNS topic (Task 13.3).
+- **D149 (Operational runbook & deployment scripts):** Comprehensive docs/runbook.md and accompanying deploy/rollback/cost_down scripts detailing zero-downtime rolling deploys via ASG instance refresh, one-command rollback, RDS PITR drill, and secret rotation (Task 13.4).
+- **D150 (CLO3 High Availability & Cost Justification Report):** Academic deliverable docs/CLO3_ARCHITECTURE_HA_COST.md covering 2-AZ topology, failover mechanics, RTO/RPO SLAs, and AWS pricing calculator breakdown (Task 13.5).
+- **D151 (Containerized end-to-end smoke verification suite):** Standalone HTTP smoke test runner tools/smoke_container.py exercising live containerized endpoints for health, auth, reports, lookup, and simulator (Task 13.6).
 
 | Decision | Summary | Evidence | Status |
 |---|---|---|---|
@@ -290,7 +304,7 @@ Phase 12 — Hardening and performance (done, merge pending)
 - **Default heuristic rules command (Phase 5):** Management command `seed_default_rules` requiring an existing admin user to author the initial ruleset (cannot run in data migration without an admin user).
 - **Frontend build plan:** Blocked until the frontend requirements and UI design specification document is drafted.
 - **GitHub remote repository setup:** Configure git remote origin when the remote repository is created by the owner.
-- **Hash-pinned lock files (D39, Phase 13):** Exact sha256 hash pinning of dependency lock files deferred to Linux container build phase.
+- **Hash-pinned lock files (D39, Phase 13):** RESOLVED. Generated deterministic pinned base.lock.txt (48 pkgs) and dev.lock.txt (100 pkgs) with zero pip-audit vulnerabilities.
 
 ## Open questions for the owner
 - (none yet)
