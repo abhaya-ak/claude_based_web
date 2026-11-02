@@ -116,6 +116,7 @@ urlpatterns = [
     path("api/v1/lookups/", include("apps.reports.urls_lookup")),
     path("api/v1/alerts/", include("apps.alerts.urls")),
     path("api/v1/analytics/", include("apps.broadcasts.urls_analytics")),
+    path("api/v1/advisories/", include("apps.broadcasts.urls_advisories")),
     path("api/v1/internal/", include("apps.scanner.urls_internal")),
     path("api/v1/triage/", include("apps.intel.urls")),
 ]
