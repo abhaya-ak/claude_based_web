@@ -136,8 +136,10 @@ def custom_exception_handler(exc, context):
             detail = response.data.get("detail", "You do not have permission to perform this action.")
             message = str(detail)
         elif isinstance(exc, (drf_exceptions.NotFound, Http404)):
-            code = DualCode("not_found", "NOT_FOUND")
-            detail = response.data.get("detail", "Not found.")
+            detail_obj = getattr(exc, "detail", None)
+            exc_code = getattr(detail_obj, "code", None) or getattr(exc, "code", None) or getattr(exc, "default_code", None) or "not_found"
+            code = DualCode(str(exc_code), "not_found", "NOT_FOUND")
+            detail = response.data.get("detail", "Not found.") if isinstance(response.data, dict) else "Not found."
             message = str(detail)
         elif isinstance(exc, drf_exceptions.MethodNotAllowed):
             code = DualCode("method_not_allowed", "METHOD_NOT_ALLOWED")

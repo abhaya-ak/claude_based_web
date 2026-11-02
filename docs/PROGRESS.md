@@ -49,7 +49,7 @@ Phase 7 — Public lookup and alert subscriptions, F1.2 (in progress)
 | 7 Lookup + alerts | S1 | todo | | Phase 7 Public Lookup and Alert Subscriptions (F1.2) |
 | ├─ 7.1 Lookup input auto-detection & normalisation | S1 | done | | Detect candidate types, normalise phone/URL/domain/email/bank, pure lookup_detector (D101) |
 | ├─ 7.2 Verdict service, public API & rate limiting | S1 | done | | Red/Yellow/Green verdict, Contract §3.6 integration, no PII leak, 30/min throttle (D102, D103) |
-| ├─ 7.3 Alert subscriptions & SNS integration | S1 | todo | | POST /alerts/subscriptions/, confirm, unsubscribe, SNS filter policy, SMS flag (D104, D105) |
+| ├─ 7.3 Alert subscriptions & SNS integration | S1 | done | | POST /alerts/subscriptions/, confirm, unsubscribe, SNS filter policy, SMS flag (D104, D105) |
 | └─ 7.4 Phase 7 Closing Gate | S1 | todo | | Route-walk, RBAC matrix, query counts, OpenAPI regeneration, CI deploy check |
 | 8 Analytics + broadcast | S2 | todo | | |
 | 9 Literacy CMS | S3 | todo | | |
@@ -191,6 +191,8 @@ Phase 7 — Public lookup and alert subscriptions, F1.2 (in progress)
 
 ## Phase 7 Verification (Proven Items)
 - **TO BE PROVEN #13 (Domain Blacklist Inheritance):** PROVEN. Verifying a domain indicator (e.g. ad-actor-bank.com as ACTIVE VerifiedIndicator) causes lookups on deep URLs on that domain (https://bad-actor-bank.com/malicious/portal.html?token=abc) to inherit the RED verdict immediately via multi-type candidate detection without requiring explicit subpath verification (pps/reports/tests/test_lookup_service.py::TestLookupService::test_domain_blacklist_inheritance_returns_red).
+
+- **TO BE PROVEN #14 (Moto SNS Subscription & Filter Policy):** PROVEN. Subscribing via POST /api/v1/alerts/subscriptions/ under Moto creates a real SNS subscription on ALERTS_TOPIC_ARN with the expected FilterPolicy attributes (udience containing ALL and the target group, and category list when filtered, omitted when all), duplicate submission safely returns the existing record without token leak, confirmation updates status to ACTIVE, and unsubscription successfully calls sns.unsubscribe (pps/alerts/tests/test_subscriptions_api.py::TestAlertSubscriptionsAPI::test_moto_sns_subscription_creation_and_filter_policy).
 
 ## Standing rules for model tasks
 - Index names max 30 characters; check every name.
