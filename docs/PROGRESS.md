@@ -1,7 +1,7 @@
 # PROGRESS (the agent reads this at session start and updates it at the end of every task)
 
 ## Current phase
-Phase 13 — Containerise and deploy (planning)
+DONE — Backend Build Complete & Production Ready (Phases 0–13 Complete)
 
 ## Status
 | Phase | Owner | Status | Commit/PR | Notes |
@@ -81,14 +81,14 @@ Phase 13 — Containerise and deploy (planning)
 | ├─ 12.4 Concurrency & multi-threaded race condition suite | all | done | 56da486 | Threaded verify, exact advisory-lock rate limit test, idempotency (D139) |
 | ├─ 12.5 Cloud resilience & graceful fault degradation | all | done | efd5a6a | S3 503 storage_unavailable, Lambda fail-open 201 PENDING, SNS 502, CW degraded 200 (D140) |
 | └─ 12.6 Load testing suite, CLO2 performance evidence & closing gate | all | done | fcfaef3 | stdlib Python thread runner, CLO2_PERFORMANCE.md, 1114 tests green (D141, D145) |
-| 13 Containerise + deploy | S4 | in_progress | | Phase 13 Containerise and deploy (Final Backend Phase) |
-| ├─ 13.1 Production container hardening & pinned lockfiles (D39, D146) | S4 | done | | requirements/base.lock.txt, dev.lock.txt, multi-stage Dockerfile, pip-audit, test_container_hardening (4 tests) |
-| ├─ 13.2 Lambda heuristic scanner packaging automation (D147) | S4 | done | | tools/package_lambda.py, deterministic zip, SHA256 integrity, test_lambda_packaging (2 tests) |
-| ├─ 13.3 AWS infrastructure definitions (IaC) & architecture topology (D148) | S4 | done | | infra/terraform/ (9 modules), 2-AZ topology, origin shielding, test_iac_topology (7 tests) |
-| ├─ 13.4 Operational runbooks & zero-downtime deployment automation (D149) | S4 | done | | docs/runbook.md, deploy.sh, rollback.sh, cost_down.sh, test_runbook_scripts (2 tests) |
+| 13 Containerise + deploy | S4 | done | | Phase 13 Containerise and deploy (Final Backend Phase complete, 1,131 tests green) |
+| ├─ 13.1 Production container hardening & pinned lockfiles (D39, D146) | S4 | done | 4352557 | requirements/base.lock.txt, dev.lock.txt, multi-stage Dockerfile, pip-audit, test_container_hardening (4 tests) |
+| ├─ 13.2 Lambda heuristic scanner packaging automation (D147) | S4 | done | d971d5b | tools/package_lambda.py, deterministic zip, SHA256 integrity, test_lambda_packaging (2 tests) |
+| ├─ 13.3 AWS infrastructure definitions (IaC) & architecture topology (D148) | S4 | done | 1304475 | infra/terraform/ (9 modules), 2-AZ topology, origin shielding, test_iac_topology (7 tests) |
+| ├─ 13.4 Operational runbooks & zero-downtime deployment automation (D149) | S4 | done | 4874cf0 | docs/runbook.md, deploy.sh, rollback.sh, cost_down.sh, test_runbook_scripts (2 tests) |
 | ├─ 13.5 CLO3 High Availability & Cost Justification Evidence (D150) | S4 | done | ab471b2 | docs/CLO3_ARCHITECTURE_HA_COST.md, 2-AZ topology, failover mechanics, pricing breakdown, test_clo3_docs (1 test) |
-| ├─ 13.6 Containerized end-to-end smoke verification suite (D151) | S4 | done | | tools/smoke_container.py, ALB/localhost live container test against Docker stack, test_smoke_runner (1 test) |
-| └─ 13.7 Phase 13 & Backend Global Definition of Done closing gate | S4 | todo | | Full 1,114+ test suite, OpenAPI freeze, check --deploy, container health proof, Global DoD signoff |
+| ├─ 13.6 Containerized end-to-end smoke verification suite (D151) | S4 | done | a9d6b48 | tools/smoke_container.py, ALB/localhost live container test against Docker stack, test_smoke_runner (1 test) |
+| └─ 13.7 Phase 13 & Backend Global Definition of Done closing gate | S4 | done | | Full 1,131 test suite green (0 warnings), OpenAPI freeze, check --deploy, container health proof, Global DoD signoff |
 | F Frontend phases | all | blocked until frontend doc exists | | |
 
 ## Decisions made (consolidated catalogue)
