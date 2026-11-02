@@ -2,14 +2,29 @@ import logging
 from datetime import timedelta
 
 from django.conf import settings
+from django.db import connection, models, transaction
 from django.utils import timezone
 
 from apps.core.jobs.registry import register_job
-from apps.ops.models import AuditEventType, SystemAuditLog
+from apps.ops.models import AuditEventType, AuditSeverity, SystemAuditLog
 from apps.ops.services.cloudwatch_service import put_metrics
 from apps.reports.models import ScamReport
 
 logger = logging.getLogger(__name__)
+
+SECURITY_EVENT_TYPES = {
+    AuditEventType.RATE_LIMIT_BLOCK.value,
+    AuditEventType.LOGIN_FAILURE.value,
+    AuditEventType.STAFF_REGISTERED.value,
+    AuditEventType.ROLE_APPROVED.value,
+    AuditEventType.ROLE_REJECTED.value,
+    AuditEventType.ROLE_CHANGED.value,
+    AuditEventType.PASSWORD_CHANGED.value,
+    AuditEventType.REPORT_REJECTED.value,
+    AuditEventType.INDICATOR_REVOKED.value,
+    AuditEventType.SCAN_FAILED.value,
+    AuditEventType.REPORT_TRACK_FAILED.value,
+}
 
 
 @register_job("aggregate_ops_metrics")
@@ -68,3 +83,53 @@ def aggregate_ops_metrics() -> str:
     )
     logger.info(summary)
     return summary
+
+
+@register_job("purge_expired_audit_logs")
+def purge_expired_audit_logs() -> int:
+    """
+    Purges expired audit logs according to retention rules (03a §8, D125, D126):
+    - INFO severity non-security rows older than 90 days are deleted.
+    - WARN / ALERT and security event rows older than 365 days are deleted.
+    Enforces authorization via session setting 'scamshield.audit_purge_allowed = on'.
+    Runs under Postgres advisory lock. Returns count of purged rows.
+    """
+    now = timezone.now()
+    info_cutoff = now - timedelta(days=90)
+    security_cutoff = now - timedelta(days=365)
+
+    with transaction.atomic():
+        with connection.cursor() as cursor:
+            cursor.execute("SET LOCAL scamshield.audit_purge_allowed = 'on';")
+            cursor.execute("SET scamshield.audit_purge_allowed = 'on';")
+
+        try:
+            info_deleted, _ = (
+                SystemAuditLog.objects.filter(
+                    occurred_at__lt=info_cutoff,
+                    severity=AuditSeverity.INFO.value,
+                )
+                .exclude(event_type__in=SECURITY_EVENT_TYPES)
+                .delete()
+            )
+
+            sec_deleted, _ = (
+                SystemAuditLog.objects.filter(occurred_at__lt=security_cutoff)
+                .filter(
+                    models.Q(severity__in=[AuditSeverity.WARN.value, AuditSeverity.ALERT.value])
+                    | models.Q(event_type__in=SECURITY_EVENT_TYPES)
+                )
+                .delete()
+            )
+        finally:
+            with connection.cursor() as cursor:
+                cursor.execute("SET scamshield.audit_purge_allowed = 'off';")
+
+    total_purged = info_deleted + sec_deleted
+    logger.info(
+        "Purged %d expired audit logs (%d INFO >90d, %d security >365d)",
+        total_purged,
+        info_deleted,
+        sec_deleted,
+    )
+    return total_purged
