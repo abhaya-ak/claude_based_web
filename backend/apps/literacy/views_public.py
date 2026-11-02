@@ -19,6 +19,7 @@ class PublicGuideListView(generics.ListAPIView):
     """
 
     permission_classes = [AllowAny]
+    throttle_scope = "public_read"
     pagination_class = StandardPagination
     serializer_class = EducationalGuidePublicListSerializer
 
@@ -88,6 +89,7 @@ class PublicGuideDetailView(generics.RetrieveAPIView):
     """
 
     permission_classes = [AllowAny]
+    throttle_scope = "public_read"
     lookup_field = "slug"
     serializer_class = EducationalGuidePublicDetailSerializer
 

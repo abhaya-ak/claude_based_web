@@ -33,6 +33,7 @@ def _is_staff_user(user) -> bool:
 class AdvisoryListCreateView(generics.ListCreateAPIView):
     """Public list of published advisories; staff creation and workbench filtering per D109."""
 
+    throttle_scope = "public_read"
     pagination_class = StandardPagination
 
     def get_permissions(self):
@@ -108,6 +109,8 @@ class AdvisoryListCreateView(generics.ListCreateAPIView):
 
 class AdvisoryDetailView(APIView):
     """Public detail of published advisory; draft-only patch restricted to approved Analyst per D109."""
+
+    throttle_scope = "public_read"
 
     def get_permissions(self):
         if self.request.method in ["PATCH", "PUT"]:

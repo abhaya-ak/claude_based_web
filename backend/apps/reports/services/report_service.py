@@ -10,6 +10,7 @@ from django.db import IntegrityError, transaction
 from rest_framework import exceptions
 
 from apps.core import audit, metrics
+from apps.core.exceptions import StorageUnavailable
 from apps.ops.models import AuditEventType, AuditSeverity
 from apps.reports import evidence
 from apps.reports.constants import (
@@ -276,20 +277,25 @@ def create_report(
     # 4b. S3 upload before DB transaction per D59
     uploaded_records = []
     uploaded_keys = []
-    for ev in processed_evidence:
-        s3_key, sha256_hex, size_bytes = evidence.upload_evidence(
-            report_id=report_id,
-            file_bytes=ev["bytes"],
-            content_type=ev["content_type"],
-            ext=ev["ext"],
-        )
-        uploaded_keys.append(s3_key)
-        uploaded_records.append({
-            "s3_key": s3_key,
-            "content_type": ev["content_type"],
-            "size_bytes": size_bytes,
-            "sha256": sha256_hex,
-        })
+    try:
+        for ev in processed_evidence:
+            s3_key, sha256_hex, size_bytes = evidence.upload_evidence(
+                report_id=report_id,
+                file_bytes=ev["bytes"],
+                content_type=ev["content_type"],
+                ext=ev["ext"],
+            )
+            uploaded_keys.append(s3_key)
+            uploaded_records.append({
+                "s3_key": s3_key,
+                "content_type": ev["content_type"],
+                "size_bytes": size_bytes,
+                "sha256": sha256_hex,
+            })
+    except Exception as exc:
+        evidence.delete_evidence_keys(uploaded_keys)
+        logger.warning("Evidence storage upload failed: %s", exc)
+        raise StorageUnavailable("Storage service temporarily unavailable.") from exc
 
     # 5. Atomic DB write
     try:

@@ -24,6 +24,7 @@ class SubscriptionCreateView(APIView):
     """
 
     permission_classes = [permissions.AllowAny]
+    throttle_scope = "alerts"
 
     @extend_schema(
         request=SubscriptionCreateRequestSerializer,
@@ -65,6 +66,7 @@ class SubscriptionConfirmView(APIView):
     """
 
     permission_classes = [permissions.AllowAny]
+    throttle_scope = "alerts"
 
     @extend_schema(
         request=SubscriptionTokenRequestSerializer,
@@ -91,6 +93,7 @@ class SubscriptionUnsubscribeView(APIView):
     """
 
     permission_classes = [permissions.AllowAny]
+    throttle_scope = "alerts"
 
     @extend_schema(
         request=SubscriptionTokenRequestSerializer,

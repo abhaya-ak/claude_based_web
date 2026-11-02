@@ -31,6 +31,12 @@ class SystemAuditLogSerializer(serializers.ModelSerializer):
             return getattr(obj.actor, "role", None)
         return None
 
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        if ret.get("actor_ip_hash"):
+            ret["actor_ip_hash"] = ret["actor_ip_hash"][:16]
+        return ret
+
 
 class TelemetryQuerySerializer(serializers.Serializer):
     range = serializers.ChoiceField(

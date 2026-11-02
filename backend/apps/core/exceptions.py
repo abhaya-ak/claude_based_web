@@ -40,7 +40,7 @@ try:
     yaml.add_representer(DualCode, lambda dumper, data: dumper.represent_str(str(data)))
     yaml.representer.Representer.add_representer(DualCode, lambda dumper, data: dumper.represent_str(str(data)))
     yaml.representer.SafeRepresenter.add_representer(DualCode, lambda dumper, data: dumper.represent_str(str(data)))
-except Exception:
+except Exception:  # noqa: S110
     pass
 
 
@@ -60,6 +60,12 @@ class PayloadTooLarge(drf_exceptions.APIException):
     status_code = status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
     default_detail = "Request payload exceeds the maximum allowed size of 16 MB."
     default_code = "payload_too_large"
+
+
+class StorageUnavailable(drf_exceptions.APIException):
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    default_detail = "Storage service temporarily unavailable. Please try again later."
+    default_code = "storage_unavailable"
 
 
 def _extract_request_id(request) -> str:
@@ -160,6 +166,10 @@ def custom_exception_handler(exc, context):
         elif isinstance(exc, PayloadTooLarge) or status_code == status.HTTP_413_REQUEST_ENTITY_TOO_LARGE:
             code = DualCode("payload_too_large", "PAYLOAD_TOO_LARGE")
             detail = response.data.get("detail", "Request payload exceeds the maximum allowed size of 16 MB.") if isinstance(response.data, dict) else "Request payload exceeds the maximum allowed size of 16 MB."
+            message = str(detail)
+        elif isinstance(exc, StorageUnavailable) or status_code == status.HTTP_503_SERVICE_UNAVAILABLE:
+            code = DualCode("storage_unavailable", "STORAGE_UNAVAILABLE")
+            detail = response.data.get("detail", "Storage service temporarily unavailable.") if isinstance(response.data, dict) else "Storage service temporarily unavailable."
             message = str(detail)
         else:
             if isinstance(response.data, dict) and "detail" in response.data:

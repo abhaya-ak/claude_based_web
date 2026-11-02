@@ -22,7 +22,7 @@ def get_triage_queue_queryset():
     """
     return (
         ScamReport.objects.filter(status=ReportStatus.PENDING)
-        .annotate(cluster_size=RawSQL(CLUSTER_SIZE_SQL, ()))
+        .annotate(cluster_size=RawSQL(CLUSTER_SIZE_SQL, ()))  # noqa: S611
         .order_by(
             F("risk_score").desc(nulls_last=True),
             F("cluster_size").desc(),
@@ -39,7 +39,7 @@ def get_report_detail(report_id):
     """
     qs = (
         ScamReport.objects.filter(id=report_id)
-        .annotate(cluster_size=RawSQL(CLUSTER_SIZE_SQL, ()))
+        .annotate(cluster_size=RawSQL(CLUSTER_SIZE_SQL, ()))  # noqa: S611
         .select_related("scan_result", "reviewed_by")
         .prefetch_related("indicators", "evidence")
     )

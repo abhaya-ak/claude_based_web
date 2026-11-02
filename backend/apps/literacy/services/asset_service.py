@@ -5,6 +5,7 @@ from django.conf import settings
 from rest_framework.exceptions import ValidationError
 
 from apps.core import aws
+from apps.core.exceptions import StorageUnavailable
 from apps.literacy.models import AssetType, EducationalGuide, GuideAsset
 
 logger = logging.getLogger(__name__)
@@ -126,13 +127,17 @@ def upload_guide_asset(guide: EducationalGuide, file_obj, data: dict) -> GuideAs
     s3_key = f"guides/{guide.id}/{uuid.uuid4()}{ext}"
     bucket = getattr(settings, "MEDIA_BUCKET", "scamshield-media-dev")
     s3 = aws.client("s3")
-    s3.put_object(
-        Bucket=bucket,
-        Key=s3_key,
-        Body=file_bytes,
-        ContentType=content_type,
-        ServerSideEncryption="AES256",
-    )
+    try:
+        s3.put_object(
+            Bucket=bucket,
+            Key=s3_key,
+            Body=file_bytes,
+            ContentType=content_type,
+            ServerSideEncryption="AES256",
+        )
+    except Exception as exc:
+        logger.warning("Guide asset upload to S3 failed: %s", exc)
+        raise StorageUnavailable("Storage service temporarily unavailable.") from exc
 
     asset = GuideAsset.objects.create(
         guide=guide,

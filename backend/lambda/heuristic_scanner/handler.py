@@ -42,20 +42,20 @@ def lambda_handler(event: dict, context=None) -> dict:
         hashlib.sha256,
     ).hexdigest()
 
-    if callback_url:
+    if callback_url and callback_url.startswith(("http://", "https://")):
         headers = {
             "Content-Type": "application/json",
             "X-Timestamp": timestamp,
             "X-Signature": signature,
         }
-        req = urllib.request.Request(
+        req = urllib.request.Request(  # noqa: S310
             callback_url,
             data=body_bytes,
             headers=headers,
             method="POST",
         )
         try:
-            with urllib.request.urlopen(req, timeout=8) as resp:
+            with urllib.request.urlopen(req, timeout=8) as resp:  # noqa: S310
                 status_code = resp.getcode()
                 logger.info("Callback returned HTTP %s for report %s", status_code, result.get("report_id"))
         except Exception as exc:

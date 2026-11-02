@@ -45,6 +45,9 @@ INSTALLED_APPS = [
     "apps.ops.apps.OpsConfig",
 ]
 
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = "DENY"
+
 MIDDLEWARE = [
     "apps.core.middleware.HealthCheckMiddleware",
     "apps.core.middleware.CorrelationIdMiddleware",
@@ -112,6 +115,17 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "apps.core.pagination.StandardPagination",
     "PAGE_SIZE": 20,
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.ScopedRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon_auth": "60/minute",
+        "reports": "30/minute",
+        "lookups": "60/minute",
+        "alerts": "30/minute",
+        "public_read": "120/minute",
+        "simulator": "60/minute",
+    },
 }
 
 ENABLE_API_DOCS = True
