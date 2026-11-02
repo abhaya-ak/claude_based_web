@@ -1,4 +1,5 @@
 import logging
+import random
 import uuid
 
 from django.conf import settings
@@ -7,9 +8,11 @@ from rest_framework.exceptions import ValidationError
 from apps.core import aws
 from apps.core.exceptions import ConflictError
 from apps.literacy.models import (
+    AttemptStatus,
     ScenarioRedFlag,
     ScenarioStatus,
     ScenarioTactic,
+    SimulatorAttempt,
     SimulatorScenario,
 )
 
@@ -195,3 +198,36 @@ def add_red_flag(scenario: SimulatorScenario, data: dict) -> ScenarioRedFlag:
 def delete_red_flag(flag: ScenarioRedFlag) -> None:
     """Deletes red flag hotspot."""
     flag.delete()
+
+
+def start_attempt(user=None, session_key=None) -> tuple[SimulatorAttempt, list[SimulatorScenario]]:
+    """
+    Initializes a new simulator attempt by sampling 5 distinct published scenarios server-side.
+    If fewer than 5 published scenarios exist, raises ConflictError (code="insufficient_scenarios").
+    Assigns user or generates/preserves session_key for anonymous players.
+    """
+    published_qs = SimulatorScenario.objects.filter(status=ScenarioStatus.PUBLISHED)
+    published_ids = list(published_qs.values_list("id", flat=True))
+
+    if len(published_ids) < 5:
+        raise ConflictError(
+            "At least 5 published scenarios are required to start an attempt.",
+            code="insufficient_scenarios",
+        )
+
+    sampled_ids = random.sample(published_ids, 5)
+
+    if (not user or not user.is_authenticated) and not session_key:
+        session_key = uuid.uuid4()
+
+    attempt = SimulatorAttempt.objects.create(
+        user=user if (user and user.is_authenticated) else None,
+        session_key=session_key,
+        scenario_ids=sampled_ids,
+        status=AttemptStatus.IN_PROGRESS,
+    )
+
+    scenarios_by_id = {s.id: s for s in published_qs.filter(id__in=sampled_ids)}
+    ordered_scenarios = [scenarios_by_id[sid] for sid in sampled_ids if sid in scenarios_by_id]
+
+    return attempt, ordered_scenarios
