@@ -992,6 +992,252 @@ paths:
           description: Report not found
         '429':
           description: Too many failed tracking attempts
+  /api/v1/studio/guides/:
+    get:
+      operationId: studio_guides_list
+      description: |-
+        Studio endpoint for creating and listing educational guides.
+        EDUCATOR sees only their own guides; ADMIN sees all guides.
+        Supports filtering by ?status=DRAFT|PUBLISHED|ARCHIVED.
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      tags:
+      - studio
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedEducationalGuideStudioList'
+          description: ''
+    post:
+      operationId: studio_guides_create
+      description: |-
+        Studio endpoint for creating and listing educational guides.
+        EDUCATOR sees only their own guides; ADMIN sees all guides.
+        Supports filtering by ?status=DRAFT|PUBLISHED|ARCHIVED.
+      tags:
+      - studio
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EducationalGuideCreateUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EducationalGuideCreateUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EducationalGuideCreateUpdateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EducationalGuideCreateUpdate'
+          description: ''
+  /api/v1/studio/guides/{id}/:
+    get:
+      operationId: studio_guides_retrieve
+      description: |-
+        Studio endpoint to retrieve, update, or delete a guide.
+        EDUCATOR can only manage their own guides; ADMIN can manage any guide.
+        Deleting is strictly allowed on DRAFT status only; returns 409 Conflict otherwise.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - studio
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EducationalGuideStudio'
+          description: ''
+    put:
+      operationId: studio_guides_update
+      description: |-
+        Studio endpoint to retrieve, update, or delete a guide.
+        EDUCATOR can only manage their own guides; ADMIN can manage any guide.
+        Deleting is strictly allowed on DRAFT status only; returns 409 Conflict otherwise.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - studio
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EducationalGuideCreateUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EducationalGuideCreateUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EducationalGuideCreateUpdateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EducationalGuideCreateUpdate'
+          description: ''
+    patch:
+      operationId: studio_guides_partial_update
+      description: |-
+        Studio endpoint to retrieve, update, or delete a guide.
+        EDUCATOR can only manage their own guides; ADMIN can manage any guide.
+        Deleting is strictly allowed on DRAFT status only; returns 409 Conflict otherwise.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - studio
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEducationalGuideCreateUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedEducationalGuideCreateUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEducationalGuideCreateUpdateRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EducationalGuideCreateUpdate'
+          description: ''
+    delete:
+      operationId: studio_guides_destroy
+      description: |-
+        Studio endpoint to retrieve, update, or delete a guide.
+        EDUCATOR can only manage their own guides; ADMIN can manage any guide.
+        Deleting is strictly allowed on DRAFT status only; returns 409 Conflict otherwise.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - studio
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/studio/guides/{id}/archive/:
+    post:
+      operationId: studio_guides_archive_create
+      description: Transitions a guide to ARCHIVED status.
+      summary: Archive educational guide
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - studio
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EducationalGuideStudio'
+          description: ''
+  /api/v1/studio/guides/{id}/publish/:
+    post:
+      operationId: studio_guides_publish_create
+      description: Publishes a guide, ensuring audience_groups >= 1 and preserving
+        published_at.
+      summary: Publish educational guide
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - studio
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EducationalGuideStudio'
+          description: ''
+  /api/v1/studio/guides/{id}/unpublish/:
+    post:
+      operationId: studio_guides_unpublish_create
+      description: Reverts a guide back to DRAFT status.
+      summary: Unpublish educational guide
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - studio
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EducationalGuideStudio'
+          description: ''
   /api/v1/triage/indicators/:
     get:
       operationId: triage_indicators_list
@@ -1361,7 +1607,17 @@ components:
       - currency
       - report_count
       - total_loss
-    AudienceEnum:
+    AssetTypeEnum:
+      enum:
+      - PDF
+      - AUDIO
+      - IMAGE
+      type: string
+      description: |-
+        * `PDF` - PDF Document
+        * `AUDIO` - Audio
+        * `IMAGE` - Image
+    AudienceGroupEnum:
       enum:
       - GENERAL
       - ELDERLY
@@ -1470,6 +1726,157 @@ components:
       required:
       - count
       - date
+    EducationalGuideCreateUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 200
+        summary:
+          type: string
+          maxLength: 500
+        body:
+          type: string
+        audience_groups:
+          type: array
+          items:
+            $ref: '#/components/schemas/AudienceGroupEnum'
+        tactics:
+          type: array
+          items:
+            $ref: '#/components/schemas/TacticsEnum'
+        language:
+          allOf:
+          - $ref: '#/components/schemas/LanguageEnum'
+          default: en
+        readability_mode:
+          allOf:
+          - $ref: '#/components/schemas/ReadabilityModeEnum'
+          default: STANDARD
+      required:
+      - body
+      - summary
+      - title
+    EducationalGuideCreateUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        summary:
+          type: string
+          minLength: 1
+          maxLength: 500
+        body:
+          type: string
+          minLength: 1
+        audience_groups:
+          type: array
+          items:
+            $ref: '#/components/schemas/AudienceGroupEnum'
+        tactics:
+          type: array
+          items:
+            $ref: '#/components/schemas/TacticsEnum'
+        language:
+          allOf:
+          - $ref: '#/components/schemas/LanguageEnum'
+          default: en
+        readability_mode:
+          allOf:
+          - $ref: '#/components/schemas/ReadabilityModeEnum'
+          default: STANDARD
+      required:
+      - body
+      - summary
+      - title
+    EducationalGuideStudio:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        slug:
+          type: string
+          readOnly: true
+        title:
+          type: string
+          maxLength: 200
+        summary:
+          type: string
+          maxLength: 500
+        body:
+          type: string
+          readOnly: true
+        audience_groups:
+          type: array
+          items:
+            type: string
+            maxLength: 15
+        tactics:
+          type: array
+          items:
+            type: string
+            maxLength: 10
+        language:
+          $ref: '#/components/schemas/LanguageEnum'
+        readability_mode:
+          $ref: '#/components/schemas/ReadabilityModeEnum'
+        status:
+          allOf:
+          - $ref: '#/components/schemas/EducationalGuideStudioStatusEnum'
+          readOnly: true
+        author:
+          type: string
+          format: uuid
+          readOnly: true
+        author_email:
+          type: string
+          format: email
+          readOnly: true
+        published_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        assets:
+          type: array
+          items:
+            $ref: '#/components/schemas/GuideAsset'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - assets
+      - author
+      - author_email
+      - body
+      - created_at
+      - id
+      - published_at
+      - slug
+      - status
+      - summary
+      - title
+      - updated_at
+    EducationalGuideStudioStatusEnum:
+      enum:
+      - DRAFT
+      - PUBLISHED
+      - ARCHIVED
+      type: string
+      description: |-
+        * `DRAFT` - Draft
+        * `PUBLISHED` - Published
+        * `ARCHIVED` - Archived
     ErrorResponse:
       type: object
       properties:
@@ -1539,6 +1946,55 @@ components:
       - id
       - mime_type
       - size_bytes
+    GuideAsset:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        asset_type:
+          allOf:
+          - $ref: '#/components/schemas/AssetTypeEnum'
+          readOnly: true
+        url:
+          type: string
+          readOnly: true
+        content_type:
+          type: string
+          readOnly: true
+        size_bytes:
+          type: integer
+          readOnly: true
+        duration_seconds:
+          type: integer
+          readOnly: true
+          nullable: true
+        alt_text:
+          type: string
+          readOnly: true
+        transcript:
+          type: string
+          readOnly: true
+          nullable: true
+        sort_order:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - alt_text
+      - asset_type
+      - content_type
+      - created_at
+      - duration_seconds
+      - id
+      - size_bytes
+      - sort_order
+      - transcript
+      - url
     HeuristicRule:
       type: object
       properties:
@@ -1641,6 +2097,16 @@ components:
       description: |-
         * `ACTIVE` - Active
         * `REVOKED` - Revoked
+    LanguageEnum:
+      enum:
+      - en
+      - ne
+      - ms
+      type: string
+      description: |-
+        * `en` - English
+        * `ne` - Nepali
+        * `ms` - Malay
     LivenessResponse:
       type: object
       properties:
@@ -1758,6 +2224,29 @@ components:
     NullEnum:
       enum:
       - null
+    PaginatedEducationalGuideStudioList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/EducationalGuideStudio'
     PaginatedHeuristicRuleList:
       type: object
       required:
@@ -1894,6 +2383,36 @@ components:
           type: string
           default: ''
           maxLength: 500
+    PatchedEducationalGuideCreateUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        summary:
+          type: string
+          minLength: 1
+          maxLength: 500
+        body:
+          type: string
+          minLength: 1
+        audience_groups:
+          type: array
+          items:
+            $ref: '#/components/schemas/AudienceGroupEnum'
+        tactics:
+          type: array
+          items:
+            $ref: '#/components/schemas/TacticsEnum'
+        language:
+          allOf:
+          - $ref: '#/components/schemas/LanguageEnum'
+          default: en
+        readability_mode:
+          allOf:
+          - $ref: '#/components/schemas/ReadabilityModeEnum'
+          default: STANDARD
     PatchedHeuristicRuleRequest:
       type: object
       properties:
@@ -2104,6 +2623,14 @@ components:
       - risk_score
       - scan_status
       - status
+    ReadabilityModeEnum:
+      enum:
+      - STANDARD
+      - LARGE_HIGH_CONTRAST
+      type: string
+      description: |-
+        * `STANDARD` - Standard
+        * `LARGE_HIGH_CONTRAST` - Large & High Contrast
     ReadinessResponse:
       type: object
       properties:
@@ -2668,7 +3195,7 @@ components:
           minLength: 1
           maxLength: 254
         audience:
-          $ref: '#/components/schemas/AudienceEnum'
+          $ref: '#/components/schemas/AudienceGroupEnum'
         categories:
           type: array
           items:
@@ -2724,6 +3251,18 @@ components:
       required:
       - count
       - tactic
+    TacticsEnum:
+      enum:
+      - URGENCY
+      - AUTHORITY
+      - FEAR
+      - GREED
+      type: string
+      description: |-
+        * `URGENCY` - Urgency
+        * `AUTHORITY` - Authority
+        * `FEAR` - Fear
+        * `GREED` - Greed
     ThreatAdvisoryCreateRequest:
       type: object
       properties:

@@ -131,6 +131,7 @@ SPECTACULAR_SETTINGS = {
         "IndicatorStatusEnum": "apps.intel.models.IndicatorStatus",
         "ReportStatusEnum": "apps.reports.models.ReportStatus",
         "PrimaryCategoryEnum": "apps.reports.models.ScamCategory",
+        "AudienceGroupEnum": "apps.core.enums.AudienceGroup",
     },
     "APPEND_COMPONENTS": {
         "schemas": {
