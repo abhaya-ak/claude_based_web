@@ -85,7 +85,7 @@ Phase 13 — Containerise and deploy (planning)
 | ├─ 13.1 Production container hardening & pinned lockfiles (D39, D146) | S4 | done | | requirements/base.lock.txt, dev.lock.txt, multi-stage Dockerfile, pip-audit, test_container_hardening (4 tests) |
 | ├─ 13.2 Lambda heuristic scanner packaging automation (D147) | S4 | done | | tools/package_lambda.py, deterministic zip, SHA256 integrity, test_lambda_packaging (2 tests) |
 | ├─ 13.3 AWS infrastructure definitions (IaC) & architecture topology (D148) | S4 | done | | infra/terraform/ (9 modules), 2-AZ topology, origin shielding, test_iac_topology (7 tests) |
-| ├─ 13.4 Operational runbooks & zero-downtime deployment automation (D149) | S4 | todo | | docs/runbook.md, rolling deploys, rollback, RDS PITR drill, secret rotation, cost control |
+| ├─ 13.4 Operational runbooks & zero-downtime deployment automation (D149) | S4 | done | | docs/runbook.md, deploy.sh, rollback.sh, cost_down.sh, test_runbook_scripts (2 tests) |
 | ├─ 13.5 CLO3 High Availability & Cost Justification Evidence (D150) | S4 | todo | | docs/CLO3_ARCHITECTURE_HA_COST.md, 2-AZ topology, failover mechanics, AWS Pricing breakdown |
 | ├─ 13.6 Containerized end-to-end smoke verification suite (D151) | S4 | todo | | tools/smoke_container.py, ALB/localhost live container test against Docker stack |
 | └─ 13.7 Phase 13 & Backend Global Definition of Done closing gate | S4 | todo | | Full 1,114+ test suite, OpenAPI freeze, check --deploy, container health proof, Global DoD signoff |
