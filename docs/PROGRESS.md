@@ -60,7 +60,7 @@ Phase 9 — Literacy CMS, F3.1 (in progress)
 | 9 Literacy CMS | S3 | in progress | | Phase 9 Literacy CMS (F3.1) |
 | ├─ 9.1 Sanitizer, serializers & Contract §3.8 selector | S3 | done | | nh3 body sanitizer, Guide/Asset serializers, Contract §3.8 guides_for_tactics (D111, D113, D116) |
 | ├─ 9.2 Studio guide CRUD & lifecycle service | S3 | done | | /studio/guides/, unique slug, publish/unpublish/archive, educator ownership (D112, D114) |
-| ├─ 9.3 Guide asset vault & S3 media storage | S3 | todo | | /studio/guides/{id}/assets/, magic bytes (PDF/Audio/Image), S3 storage, /media/ CloudFront paths (D115) |
+| ├─ 9.3 Guide asset vault & S3 media storage | S3 | done | | /studio/guides/{id}/assets/, magic bytes (PDF/Audio/Image), S3 storage, /media/ CloudFront paths (D115) |
 | ├─ 9.4 Public literacy hub API & seed command | S3 | todo | | /guides/, /guides/{slug}/, GIN array filters (group, language, tactic), ui_hints, seed_guides (D116) |
 | └─ 9.5 Phase 9 closing gate | S3 | todo | | Route-walk, RBAC matrix, query bounds (<=3), OpenAPI regeneration, CI deploy check |
 | 10 Simulator | S3 | todo | | |
