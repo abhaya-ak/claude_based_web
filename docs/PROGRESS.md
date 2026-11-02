@@ -52,7 +52,7 @@ Phase 7 — Public lookup and alert subscriptions, F1.2 (in progress)
 | ├─ 7.3 Alert subscriptions & SNS integration | S1 | done | 13b9516 | POST /alerts/subscriptions/, confirm, unsubscribe, SNS filter policy, SMS flag (D104, D105) |
 | └─ 7.4 Phase 7 Closing Gate | S1 | done | e4708cd | Route-walk, RBAC matrix, query counts, OpenAPI regeneration, CI deploy check |
 | 8 Analytics + broadcast | S2 | todo | | Phase 8 Trend Analytics and Threat Broadcast (F2.2) |
-| ├─ 8.1 Analytics selectors & spike math | S2 | todo | | Pure ORM aggregations (volume, losses, tactics), spike algorithm (+300%, min 5) (D106, D107) |
+| ├─ 8.1 Analytics selectors & spike math | S2 | done | | Pure ORM aggregations (volume, losses, tactics), spike algorithm (+300%, min 5) (D106, D107) |
 | ├─ 8.2 Analytics API, date bounds & caching | S2 | todo | | GET /analytics/volume/, /losses/, /tactics/, /spikes/, 90d max range, 60s cache, RBAC (D108) |
 | ├─ 8.3 Threat advisory CRUD & draft-only edit | S2 | todo | | GET/POST /advisories/, GET/PATCH /advisories/{id}/, draft-only rules, public published list (D109) |
 | ├─ 8.4 Advisory publishing & SNS fan-out | S2 | todo | | POST /advisories/{id}/publish/, atomic status, SNS MessageAttributes, idempotency, TO BE PROVEN #15, #16 (D110) |
