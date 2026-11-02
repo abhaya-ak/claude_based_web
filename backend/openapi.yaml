@@ -764,6 +764,64 @@ paths:
       responses:
         '201':
           description: Staff registration submitted
+  /api/v1/guides/:
+    get:
+      operationId: guides_list
+      description: |-
+        Public hub endpoint listing published educational guides.
+        Supports filtering by audience group, language, and tactic.
+        Includes ui_hints tuned for target audience accessibility (e.g. ELDERLY).
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      tags:
+      - guides
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedEducationalGuidePublicListList'
+          description: ''
+  /api/v1/guides/{slug}/:
+    get:
+      operationId: guides_retrieve
+      description: |-
+        Public detail endpoint retrieving a published guide by unique slug.
+        Prefetches media assets and provides sanitized markdown body text.
+        Returns 404 for draft or archived guides.
+      summary: Retrieve published educational guide by slug
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - guides
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EducationalGuidePublicDetail'
+          description: ''
   /api/v1/health/:
     get:
       operationId: health_retrieve
@@ -1839,6 +1897,129 @@ components:
       - body
       - summary
       - title
+    EducationalGuidePublicDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        slug:
+          type: string
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        summary:
+          type: string
+          readOnly: true
+        body:
+          type: string
+          readOnly: true
+        audience_groups:
+          type: array
+          items:
+            type: string
+            maxLength: 15
+          readOnly: true
+        tactics:
+          type: array
+          items:
+            type: string
+            maxLength: 10
+          readOnly: true
+        language:
+          allOf:
+          - $ref: '#/components/schemas/LanguageEnum'
+          readOnly: true
+        readability_mode:
+          allOf:
+          - $ref: '#/components/schemas/ReadabilityModeEnum'
+          readOnly: true
+        published_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        assets:
+          type: array
+          items:
+            $ref: '#/components/schemas/GuideAsset'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - assets
+      - audience_groups
+      - body
+      - created_at
+      - id
+      - language
+      - published_at
+      - readability_mode
+      - slug
+      - summary
+      - tactics
+      - title
+    EducationalGuidePublicList:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        slug:
+          type: string
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        summary:
+          type: string
+          readOnly: true
+        audience_groups:
+          type: array
+          items:
+            type: string
+            maxLength: 15
+          readOnly: true
+        tactics:
+          type: array
+          items:
+            type: string
+            maxLength: 10
+          readOnly: true
+        language:
+          allOf:
+          - $ref: '#/components/schemas/LanguageEnum'
+          readOnly: true
+        readability_mode:
+          allOf:
+          - $ref: '#/components/schemas/ReadabilityModeEnum'
+          readOnly: true
+        published_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        assets:
+          type: array
+          items:
+            $ref: '#/components/schemas/GuideAsset'
+          readOnly: true
+      required:
+      - assets
+      - audience_groups
+      - id
+      - language
+      - published_at
+      - readability_mode
+      - slug
+      - summary
+      - tactics
+      - title
     EducationalGuideStudio:
       type: object
       properties:
@@ -2272,6 +2453,29 @@ components:
     NullEnum:
       enum:
       - null
+    PaginatedEducationalGuidePublicListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/EducationalGuidePublicList'
     PaginatedEducationalGuideStudioList:
       type: object
       required:
