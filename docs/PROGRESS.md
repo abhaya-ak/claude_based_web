@@ -86,8 +86,8 @@ Phase 13 — Containerise and deploy (planning)
 | ├─ 13.2 Lambda heuristic scanner packaging automation (D147) | S4 | done | | tools/package_lambda.py, deterministic zip, SHA256 integrity, test_lambda_packaging (2 tests) |
 | ├─ 13.3 AWS infrastructure definitions (IaC) & architecture topology (D148) | S4 | done | | infra/terraform/ (9 modules), 2-AZ topology, origin shielding, test_iac_topology (7 tests) |
 | ├─ 13.4 Operational runbooks & zero-downtime deployment automation (D149) | S4 | done | | docs/runbook.md, deploy.sh, rollback.sh, cost_down.sh, test_runbook_scripts (2 tests) |
-| ├─ 13.5 CLO3 High Availability & Cost Justification Evidence (D150) | S4 | done | | docs/CLO3_ARCHITECTURE_HA_COST.md, 2-AZ topology, failover mechanics, pricing breakdown, test_clo3_docs (1 test) |
-| ├─ 13.6 Containerized end-to-end smoke verification suite (D151) | S4 | todo | | tools/smoke_container.py, ALB/localhost live container test against Docker stack |
+| ├─ 13.5 CLO3 High Availability & Cost Justification Evidence (D150) | S4 | done | ab471b2 | docs/CLO3_ARCHITECTURE_HA_COST.md, 2-AZ topology, failover mechanics, pricing breakdown, test_clo3_docs (1 test) |
+| ├─ 13.6 Containerized end-to-end smoke verification suite (D151) | S4 | done | | tools/smoke_container.py, ALB/localhost live container test against Docker stack, test_smoke_runner (1 test) |
 | └─ 13.7 Phase 13 & Backend Global Definition of Done closing gate | S4 | todo | | Full 1,114+ test suite, OpenAPI freeze, check --deploy, container health proof, Global DoD signoff |
 | F Frontend phases | all | blocked until frontend doc exists | | |
 
