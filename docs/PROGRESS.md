@@ -69,7 +69,7 @@ Phase 10 — Simulator, F3.2 (done, merge pending)
 | ├─ 10.3 Simulation grading, completion & remediation engine | S3 | done | f19eb26 | POST /attempts/{id}/answers/, POST /complete/, grading matrix, blind spots, Contract §3.8 guides, TO BE PROVEN #21 (D120, D121) |
 | └─ 10.4 Phase 10 closing gate | S3 | done | 0836239 | Route-walk, RBAC matrix, query bounds, OpenAPI regeneration, CI deploy check |
 | 11 Ops/telemetry | S4 | todo | | Phase 11 Ops and Telemetry (F4.2) |
-| ├─ 11.1 CloudWatch service & fallback metrics aggregation | S4 | todo | | put_metrics, get_dashboard_series, 60s cache, fallback job (D122, D126) |
+| ├─ 11.1 CloudWatch service & fallback metrics aggregation | S4 | done | d264e49 | put_metrics, get_dashboard_series, 60s cache, fallback job (D122, D126) |
 | ├─ 11.2 Audit log immutability trigger & retention purge job | S4 | todo | | PostgreSQL trigger, user SET_NULL, purge_expired_audit_logs job (D125, D126) |
 | ├─ 11.3 Admin portal telemetry & audit log APIs | S4 | todo | | GET /telemetry/metrics/, GET /audit-logs/, CSV export, RBAC, query bounds (D123, D124) |
 | └─ 11.4 CloudWatch infra definitions & Phase 11 closing gate | S4 | todo | | dashboard.json, alarms.json, route walk, RBAC matrix, OpenAPI, CI check |
