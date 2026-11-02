@@ -33,7 +33,7 @@ def _flatten_plan_nodes(plan_dict: dict) -> list[dict]:
     return nodes
 
 
-def _explain_sql(sql: str, force_index: bool = False) -> dict:
+def _explain_sql(sql: str, force_index: bool = True) -> dict:
     """Executes EXPLAIN (FORMAT JSON) against PostgreSQL and returns the root plan."""
     with connection.cursor() as cursor:
         if force_index:
@@ -87,7 +87,7 @@ class TestPostgreSQLExplainPlans:
 
         assert len(ctx.captured_queries) == 1
         sql = ctx.captured_queries[0]["sql"]
-        plan = _explain_sql(sql)
+        plan = _explain_sql(sql, force_index=True)
 
         _assert_table_uses_index(
             plan,
@@ -107,7 +107,7 @@ class TestPostgreSQLExplainPlans:
 
         assert len(ctx.captured_queries) == 1
         sql = ctx.captured_queries[0]["sql"]
-        plan = _explain_sql(sql)
+        plan = _explain_sql(sql, force_index=True)
 
         # Check reports_reportindicator scan
         _assert_table_uses_index(
@@ -134,7 +134,7 @@ class TestPostgreSQLExplainPlans:
 
         assert len(ctx.captured_queries) == 1
         sql = ctx.captured_queries[0]["sql"]
-        plan = _explain_sql(sql)
+        plan = _explain_sql(sql, force_index=True)
 
         _assert_table_uses_index(
             plan,
