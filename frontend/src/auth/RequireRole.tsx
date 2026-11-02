@@ -33,6 +33,10 @@ export const RequireRole: React.FC<RequireRoleProps> = ({ allowedRoles, children
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  if (user.approval_status === 'PENDING') {
+    return <Navigate to="/pending-approval" replace />;
+  }
+
   if (allowedRoles && allowedRoles.length > 0 && (!role || !allowedRoles.includes(role))) {
     return <Navigate to="/unauthorized" replace />;
   }

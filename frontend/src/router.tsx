@@ -6,7 +6,9 @@ import { RequireRole } from './auth/RequireRole';
 // Feature Pages
 import { LoginPage } from './features/auth/LoginPage';
 import { RegisterPage } from './features/auth/RegisterPage';
+import { StaffRegisterPage } from './features/auth/StaffRegisterPage';
 import { PendingApprovalPage } from './features/auth/PendingApprovalPage';
+import { ProfilePage } from './features/auth/ProfilePage';
 import { LookupPage } from './features/lookup/LookupPage';
 import { ReportPage } from './features/report/ReportPage';
 import { TrackReportPage } from './features/report/TrackReportPage';
@@ -34,8 +36,16 @@ export const router = createBrowserRouter([
       { path: 'simulator', element: <SimulatorGamePage /> },
       { path: 'login', element: <LoginPage /> },
       { path: 'register', element: <RegisterPage /> },
-      { path: 'register/staff', element: <RegisterPage /> },
+      { path: 'register/staff', element: <StaffRegisterPage /> },
       { path: 'pending-approval', element: <PendingApprovalPage /> },
+      {
+        path: 'profile',
+        element: (
+          <RequireRole>
+            <ProfilePage />
+          </RequireRole>
+        ),
+      },
       { path: 'unauthorized', element: <UnauthorizedPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],
