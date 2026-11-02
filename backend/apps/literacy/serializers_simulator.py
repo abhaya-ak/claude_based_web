@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from apps.literacy.models import RedFlagCode, SimulatorAttempt, SimulatorScenario
@@ -97,6 +98,7 @@ class SimulatorAttemptDetailSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
 
+    @extend_schema_field(EducationalGuidePublicListSerializer(many=True))
     def get_remediation_guides(self, obj):
         if obj.status != "COMPLETED" or not obj.profile:
             return []

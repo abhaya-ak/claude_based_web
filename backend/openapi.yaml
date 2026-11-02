@@ -1050,6 +1050,134 @@ paths:
           description: Report not found
         '429':
           description: Too many failed tracking attempts
+  /api/v1/simulator/attempts/:
+    post:
+      operationId: simulator_attempts_create
+      description: |-
+        Public endpoint to initialize a 5-scenario simulation attempt.
+        Supports authenticated citizens and anonymous players (via X-Session-Key).
+        Returns masked scenario cards omitting answers (anti-cheat).
+      summary: Start simulator attempt
+      tags:
+      - simulator
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SimulatorAttemptInitResponseRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SimulatorAttemptInitResponseRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SimulatorAttemptInitResponseRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimulatorAttemptInitResponse'
+          description: ''
+  /api/v1/simulator/attempts/{id}/:
+    get:
+      operationId: simulator_attempts_retrieve
+      description: Retrieve attempt detail by ID.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - simulator
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimulatorAttemptDetail'
+          description: ''
+  /api/v1/simulator/attempts/{id}/answers/:
+    post:
+      operationId: simulator_attempts_answers_create
+      description: Submits and grades an answer for one scenario in the attempt.
+      summary: Submit answer for scenario
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - simulator
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SimulatorAnswerSubmissionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SimulatorAnswerSubmissionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SimulatorAnswerSubmissionRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimulatorAnswerFeedback'
+          description: ''
+  /api/v1/simulator/attempts/{id}/complete/:
+    post:
+      operationId: simulator_attempts_complete_create
+      description: Completes the attempt, calculates score, profile, blind spots,
+        and remediation guides.
+      summary: Complete simulator attempt
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - simulator
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SimulatorAttemptCompletionResponseRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SimulatorAttemptCompletionResponseRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SimulatorAttemptCompletionResponseRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimulatorAttemptCompletionResponse'
+          description: ''
   /api/v1/studio/guides/:
     get:
       operationId: studio_guides_list
@@ -1343,6 +1471,371 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EducationalGuideStudio'
+          description: ''
+  /api/v1/studio/scenarios/:
+    get:
+      operationId: studio_scenarios_list
+      description: |-
+        Studio scenario list & create endpoint.
+        EDUCATOR sees their own scenarios; ADMIN sees all scenarios.
+        Supports filtering by ?status=, ?difficulty=, ?channel=, ?is_scam=.
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      tags:
+      - studio
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedStudioScenarioList'
+          description: ''
+    post:
+      operationId: studio_scenarios_create
+      description: |-
+        Studio scenario list & create endpoint.
+        EDUCATOR sees their own scenarios; ADMIN sees all scenarios.
+        Supports filtering by ?status=, ?difficulty=, ?channel=, ?is_scam=.
+      tags:
+      - studio
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StudioScenarioCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StudioScenarioCreateRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudioScenarioCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudioScenarioCreate'
+          description: ''
+  /api/v1/studio/scenarios/{id}/:
+    get:
+      operationId: studio_scenarios_retrieve
+      description: |-
+        Studio scenario detail, update & delete endpoint.
+        EDUCATOR can only view/update/delete scenarios they authored.
+        ADMIN has unrestricted access across all scenarios.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - studio
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudioScenario'
+          description: ''
+    put:
+      operationId: studio_scenarios_update
+      description: |-
+        Studio scenario detail, update & delete endpoint.
+        EDUCATOR can only view/update/delete scenarios they authored.
+        ADMIN has unrestricted access across all scenarios.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - studio
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StudioScenarioRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StudioScenarioRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudioScenarioRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudioScenario'
+          description: ''
+    patch:
+      operationId: studio_scenarios_partial_update
+      description: |-
+        Studio scenario detail, update & delete endpoint.
+        EDUCATOR can only view/update/delete scenarios they authored.
+        ADMIN has unrestricted access across all scenarios.
+      summary: Update simulator scenario
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - studio
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedStudioScenarioUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedStudioScenarioUpdateRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedStudioScenarioUpdateRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudioScenario'
+          description: ''
+    delete:
+      operationId: studio_scenarios_destroy
+      description: |-
+        Studio scenario detail, update & delete endpoint.
+        EDUCATOR can only view/update/delete scenarios they authored.
+        ADMIN has unrestricted access across all scenarios.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - studio
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/studio/scenarios/{id}/archive/:
+    post:
+      operationId: studio_scenarios_archive_create
+      description: Transitions a scenario to ARCHIVED.
+      summary: Archive simulator scenario
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - studio
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudioScenarioRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StudioScenarioRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StudioScenarioRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudioScenario'
+          description: ''
+  /api/v1/studio/scenarios/{id}/flags/:
+    get:
+      operationId: studio_scenarios_flags_list
+      description: List and create red flag hotspots for a scenario.
+      summary: List red flags for scenario
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - studio
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ScenarioRedFlag'
+          description: ''
+    post:
+      operationId: studio_scenarios_flags_create
+      description: List and create red flag hotspots for a scenario.
+      summary: Add red flag hotspot to scenario
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - studio
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScenarioRedFlagCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ScenarioRedFlagCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ScenarioRedFlagCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScenarioRedFlag'
+          description: ''
+  /api/v1/studio/scenarios/{id}/flags/{flag_id}/:
+    delete:
+      operationId: studio_scenarios_flags_destroy
+      description: Delete a red flag hotspot from a scenario.
+      summary: Delete red flag hotspot from scenario
+      parameters:
+      - in: path
+        name: flag_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - studio
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/studio/scenarios/{id}/publish/:
+    post:
+      operationId: studio_scenarios_publish_create
+      description: Publishes a scenario enforcing red-flag rules.
+      summary: Publish simulator scenario
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - studio
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudioScenarioRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StudioScenarioRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StudioScenarioRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudioScenario'
+          description: ''
+  /api/v1/studio/scenarios/{id}/unpublish/:
+    post:
+      operationId: studio_scenarios_unpublish_create
+      description: Transitions a published scenario back to DRAFT.
+      summary: Unpublish simulator scenario
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - studio
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudioScenarioRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StudioScenarioRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StudioScenarioRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudioScenario'
           description: ''
   /api/v1/triage/indicators/:
     get:
@@ -1723,6 +2216,14 @@ components:
         * `PDF` - PDF Document
         * `AUDIO` - Audio
         * `IMAGE` - Image
+    AttemptStatusEnum:
+      enum:
+      - IN_PROGRESS
+      - COMPLETED
+      type: string
+      description: |-
+        * `IN_PROGRESS` - In Progress
+        * `COMPLETED` - Completed
     AudienceGroupEnum:
       enum:
       - GENERAL
@@ -1755,14 +2256,6 @@ components:
           $ref: '#/components/schemas/UserRoleEnum'
       required:
       - role
-    ChannelEnum:
-      enum:
-      - EMAIL
-      - SMS
-      type: string
-      description: |-
-        * `EMAIL` - Email
-        * `SMS` - SMS
     CitizenRegisterRequest:
       type: object
       properties:
@@ -2055,7 +2548,7 @@ components:
           $ref: '#/components/schemas/ReadabilityModeEnum'
         status:
           allOf:
-          - $ref: '#/components/schemas/EducationalGuideStudioStatusEnum'
+          - $ref: '#/components/schemas/ScenarioStatusEnum'
           readOnly: true
         author:
           type: string
@@ -2096,16 +2589,6 @@ components:
       - summary
       - title
       - updated_at
-    EducationalGuideStudioStatusEnum:
-      enum:
-      - DRAFT
-      - PUBLISHED
-      - ARCHIVED
-      type: string
-      description: |-
-        * `DRAFT` - Draft
-        * `PUBLISHED` - Published
-        * `ARCHIVED` - Archived
     ErrorResponse:
       type: object
       properties:
@@ -2568,6 +3051,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/QueueReport'
+    PaginatedStudioScenarioList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/StudioScenario'
     PaginatedThreatAdvisoryPublicList:
       type: object
       required:
@@ -2700,6 +3206,34 @@ components:
           type: integer
           maximum: 100
           minimum: 1
+    PatchedStudioScenarioUpdateRequest:
+      type: object
+      description: Validation serializer for updating scenario fields.
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 150
+        channel:
+          $ref: '#/components/schemas/ScenarioChannelEnum'
+        is_scam:
+          type: boolean
+        tactic:
+          $ref: '#/components/schemas/ScenarioTacticEnum'
+        difficulty:
+          type: integer
+          maximum: 3
+          minimum: 1
+        image_alt:
+          type: string
+          minLength: 1
+          maxLength: 300
+        explanation:
+          type: string
+          minLength: 1
+        image:
+          type: string
+          format: binary
     PatchedThreatAdvisoryUpdateRequest:
       type: object
       properties:
@@ -2893,6 +3427,28 @@ components:
       required:
       - database
       - status
+    RedFlagCodeEnum:
+      enum:
+      - MISMATCHED_DOMAIN
+      - ARTIFICIAL_URGENCY
+      - AUTHORITY_IMPERSONATION
+      - THREAT_OF_LOSS
+      - TOO_GOOD_TO_BE_TRUE
+      - REQUEST_FOR_SENSITIVE_DATA
+      - SUSPICIOUS_LINK
+      - POOR_GRAMMAR
+      - OTHER
+      type: string
+      description: |-
+        * `MISMATCHED_DOMAIN` - Mismatched Domain
+        * `ARTIFICIAL_URGENCY` - Artificial Urgency
+        * `AUTHORITY_IMPERSONATION` - Authority Impersonation
+        * `THREAT_OF_LOSS` - Threat of Loss
+        * `TOO_GOOD_TO_BE_TRUE` - Too Good to Be True
+        * `REQUEST_FOR_SENSITIVE_DATA` - Request for Sensitive Data
+        * `SUSPICIOUS_LINK` - Suspicious Link
+        * `POOR_GRAMMAR` - Poor Grammar
+        * `OTHER` - Other
     RejectReportRequestRequest:
       type: object
       properties:
@@ -3322,6 +3878,151 @@ components:
       - id
       - ruleset_version
       - updated_at
+    ScenarioChannelEnum:
+      enum:
+      - SMS
+      - EMAIL
+      - WHATSAPP
+      - WEBSITE
+      - SOCIAL
+      type: string
+      description: |-
+        * `SMS` - SMS
+        * `EMAIL` - Email
+        * `WHATSAPP` - WhatsApp
+        * `WEBSITE` - Website
+        * `SOCIAL` - Social Media
+    ScenarioRedFlag:
+      type: object
+      description: Serializer for scenario red flag hotspot details.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        scenario_id:
+          type: string
+          format: uuid
+          readOnly: true
+        flag_code:
+          $ref: '#/components/schemas/RedFlagCodeEnum'
+        x_pct:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        y_pct:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        w_pct:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        h_pct:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        explanation:
+          type: string
+          maxLength: 300
+      required:
+      - explanation
+      - flag_code
+      - h_pct
+      - id
+      - scenario_id
+      - w_pct
+      - x_pct
+      - y_pct
+    ScenarioRedFlagCreateRequest:
+      type: object
+      description: Validation serializer for creating a red flag hotspot.
+      properties:
+        flag_code:
+          $ref: '#/components/schemas/RedFlagCodeEnum'
+        x_pct:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        y_pct:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        w_pct:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        h_pct:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        explanation:
+          type: string
+          minLength: 1
+          maxLength: 300
+      required:
+      - explanation
+      - flag_code
+      - h_pct
+      - w_pct
+      - x_pct
+      - y_pct
+    ScenarioRedFlagRequest:
+      type: object
+      description: Serializer for scenario red flag hotspot details.
+      properties:
+        flag_code:
+          $ref: '#/components/schemas/RedFlagCodeEnum'
+        x_pct:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        y_pct:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        w_pct:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        h_pct:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        explanation:
+          type: string
+          minLength: 1
+          maxLength: 300
+      required:
+      - explanation
+      - flag_code
+      - h_pct
+      - w_pct
+      - x_pct
+      - y_pct
+    ScenarioStatusEnum:
+      enum:
+      - DRAFT
+      - PUBLISHED
+      - ARCHIVED
+      type: string
+      description: |-
+        * `DRAFT` - Draft
+        * `PUBLISHED` - Published
+        * `ARCHIVED` - Archived
+    ScenarioTacticEnum:
+      enum:
+      - URGENCY
+      - AUTHORITY
+      - FEAR
+      - GREED
+      - NONE
+      type: string
+      description: |-
+        * `URGENCY` - Urgency
+        * `AUTHORITY` - Authority
+        * `FEAR` - Fear
+        * `GREED` - Greed
+        * `NONE` - None
     SeriesVolume:
       type: object
       properties:
@@ -3348,6 +4049,204 @@ components:
         * `INFO` - Info
         * `WARNING` - Warning
         * `CRITICAL` - Critical
+    SimulatorAnswerFeedback:
+      type: object
+      description: Immediate feedback after answering a single scenario.
+      properties:
+        scenario_id:
+          type: string
+          format: uuid
+        is_correct:
+          type: boolean
+        explanation:
+          type: string
+        red_flags:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScenarioRedFlag'
+      required:
+      - explanation
+      - is_correct
+      - red_flags
+      - scenario_id
+    SimulatorAnswerSubmissionRequest:
+      type: object
+      description: Payload for submitting an answer to a scenario in an attempt.
+      properties:
+        scenario_id:
+          type: string
+          format: uuid
+        answered_is_scam:
+          type: boolean
+        selected_flag_code:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/RedFlagCodeEnum'
+          - $ref: '#/components/schemas/NullEnum'
+      required:
+      - answered_is_scam
+      - scenario_id
+    SimulatorAttemptCompletionResponse:
+      type: object
+      description: Response payload for completed simulator attempt.
+      properties:
+        attempt_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+        score_pct:
+          type: integer
+        completed_at:
+          type: string
+          format: date-time
+        profile: {}
+        remediation_guides:
+          type: array
+          items:
+            $ref: '#/components/schemas/EducationalGuidePublicList'
+      required:
+      - attempt_id
+      - completed_at
+      - profile
+      - remediation_guides
+      - score_pct
+      - status
+    SimulatorAttemptCompletionResponseRequest:
+      type: object
+      description: Response payload for completed simulator attempt.
+      properties:
+        attempt_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          minLength: 1
+        score_pct:
+          type: integer
+        completed_at:
+          type: string
+          format: date-time
+        profile: {}
+      required:
+      - attempt_id
+      - completed_at
+      - profile
+      - score_pct
+      - status
+    SimulatorAttemptDetail:
+      type: object
+      description: Detail view for a simulator attempt.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/AttemptStatusEnum'
+          readOnly: true
+        score_pct:
+          type: integer
+          readOnly: true
+          nullable: true
+        profile:
+          readOnly: true
+          nullable: true
+        started_at:
+          type: string
+          format: date-time
+          readOnly: true
+        completed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        remediation_guides:
+          type: array
+          items:
+            $ref: '#/components/schemas/EducationalGuidePublicList'
+          readOnly: true
+      required:
+      - completed_at
+      - id
+      - profile
+      - remediation_guides
+      - score_pct
+      - started_at
+      - status
+    SimulatorAttemptInitResponse:
+      type: object
+      description: Response payload for simulator attempt initialization.
+      properties:
+        attempt_id:
+          type: string
+          format: uuid
+        session_key:
+          type: string
+          format: uuid
+          nullable: true
+        scenario_count:
+          type: integer
+          default: 5
+        scenarios:
+          type: array
+          items:
+            $ref: '#/components/schemas/SimulatorScenarioCard'
+      required:
+      - attempt_id
+      - scenarios
+      - session_key
+    SimulatorAttemptInitResponseRequest:
+      type: object
+      description: Response payload for simulator attempt initialization.
+      properties:
+        attempt_id:
+          type: string
+          format: uuid
+        session_key:
+          type: string
+          format: uuid
+          nullable: true
+        scenario_count:
+          type: integer
+          default: 5
+      required:
+      - attempt_id
+      - session_key
+    SimulatorScenarioCard:
+      type: object
+      description: |-
+        Anti-cheat masked scenario card.
+        Strictly omits is_scam, tactic, explanation, and red_flags.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        channel:
+          allOf:
+          - $ref: '#/components/schemas/ScenarioChannelEnum'
+          readOnly: true
+        difficulty:
+          type: integer
+          readOnly: true
+        image_url:
+          type: string
+          readOnly: true
+        image_alt:
+          type: string
+          readOnly: true
+      required:
+      - channel
+      - difficulty
+      - id
+      - image_alt
+      - image_url
+      - title
     SpikeDetail:
       type: object
       properties:
@@ -3427,6 +4326,184 @@ components:
       required:
       - detail
       - title
+    StudioScenario:
+      type: object
+      description: Detailed serializer for educators & admins viewing studio scenarios.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          maxLength: 150
+        channel:
+          $ref: '#/components/schemas/ScenarioChannelEnum'
+        is_scam:
+          type: boolean
+        tactic:
+          $ref: '#/components/schemas/ScenarioTacticEnum'
+        difficulty:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+        image_s3_key:
+          type: string
+          readOnly: true
+        image_url:
+          type: string
+          readOnly: true
+        image_alt:
+          type: string
+          maxLength: 300
+        explanation:
+          type: string
+        status:
+          allOf:
+          - $ref: '#/components/schemas/ScenarioStatusEnum'
+          readOnly: true
+        author_id:
+          type: string
+          format: uuid
+          readOnly: true
+        author_email:
+          type: string
+          format: email
+          readOnly: true
+        red_flags:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScenarioRedFlag'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - author_email
+      - author_id
+      - channel
+      - created_at
+      - difficulty
+      - explanation
+      - id
+      - image_alt
+      - image_s3_key
+      - image_url
+      - is_scam
+      - red_flags
+      - status
+      - tactic
+      - title
+      - updated_at
+    StudioScenarioCreate:
+      type: object
+      description: Validation serializer for scenario creation (multipart form).
+      properties:
+        title:
+          type: string
+          maxLength: 150
+        channel:
+          $ref: '#/components/schemas/ScenarioChannelEnum'
+        is_scam:
+          type: boolean
+        tactic:
+          $ref: '#/components/schemas/ScenarioTacticEnum'
+        difficulty:
+          type: integer
+          maximum: 3
+          minimum: 1
+        image_alt:
+          type: string
+          maxLength: 300
+        explanation:
+          type: string
+        image:
+          type: string
+          format: uri
+      required:
+      - channel
+      - difficulty
+      - explanation
+      - image
+      - image_alt
+      - is_scam
+      - tactic
+      - title
+    StudioScenarioCreateRequest:
+      type: object
+      description: Validation serializer for scenario creation (multipart form).
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 150
+        channel:
+          $ref: '#/components/schemas/ScenarioChannelEnum'
+        is_scam:
+          type: boolean
+        tactic:
+          $ref: '#/components/schemas/ScenarioTacticEnum'
+        difficulty:
+          type: integer
+          maximum: 3
+          minimum: 1
+        image_alt:
+          type: string
+          minLength: 1
+          maxLength: 300
+        explanation:
+          type: string
+          minLength: 1
+        image:
+          type: string
+          format: binary
+      required:
+      - channel
+      - difficulty
+      - explanation
+      - image
+      - image_alt
+      - is_scam
+      - tactic
+      - title
+    StudioScenarioRequest:
+      type: object
+      description: Detailed serializer for educators & admins viewing studio scenarios.
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 150
+        channel:
+          $ref: '#/components/schemas/ScenarioChannelEnum'
+        is_scam:
+          type: boolean
+        tactic:
+          $ref: '#/components/schemas/ScenarioTacticEnum'
+        difficulty:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+        image_alt:
+          type: string
+          minLength: 1
+          maxLength: 300
+        explanation:
+          type: string
+          minLength: 1
+      required:
+      - channel
+      - difficulty
+      - explanation
+      - image_alt
+      - is_scam
+      - tactic
+      - title
     SubscriptionActionResponse:
       type: object
       properties:
@@ -3437,11 +4514,19 @@ components:
       required:
       - message
       - status
+    SubscriptionCreateRequestChannelEnum:
+      enum:
+      - EMAIL
+      - SMS
+      type: string
+      description: |-
+        * `EMAIL` - Email
+        * `SMS` - SMS
     SubscriptionCreateRequestRequest:
       type: object
       properties:
         channel:
-          $ref: '#/components/schemas/ChannelEnum'
+          $ref: '#/components/schemas/SubscriptionCreateRequestChannelEnum'
         endpoint:
           type: string
           minLength: 1

@@ -123,6 +123,7 @@ class StudioScenarioPublishView(APIView):
     """Publishes a scenario enforcing red-flag rules."""
 
     permission_classes = [IsScenarioAuthorOrAdmin]
+    serializer_class = StudioScenarioSerializer
 
     @extend_schema(
         summary="Publish simulator scenario",
@@ -143,6 +144,7 @@ class StudioScenarioUnpublishView(APIView):
     """Transitions a published scenario back to DRAFT."""
 
     permission_classes = [IsScenarioAuthorOrAdmin]
+    serializer_class = StudioScenarioSerializer
 
     @extend_schema(
         summary="Unpublish simulator scenario",
@@ -163,6 +165,7 @@ class StudioScenarioArchiveView(APIView):
     """Transitions a scenario to ARCHIVED."""
 
     permission_classes = [IsScenarioAuthorOrAdmin]
+    serializer_class = StudioScenarioSerializer
 
     @extend_schema(
         summary="Archive simulator scenario",

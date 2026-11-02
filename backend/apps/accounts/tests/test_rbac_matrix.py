@@ -736,3 +736,114 @@ class TestRBACMatrix:
         client = self._client_for(user)
         response = client.get("/api/v1/guides/")
         assert response.status_code == expected_status
+
+    # 29. GET /api/v1/studio/scenarios/ (EDUCATOR or ADMIN approved)
+    @pytest.mark.parametrize(
+        "user_attr,expected_status",
+        [
+            (None, 401),
+            ("citizen", 403),
+            ("analyst_pending", 403),
+            ("analyst_approved", 403),
+            ("educator_approved", 200),
+            ("admin_pending", 403),
+            ("admin_approved", 200),
+        ],
+    )
+    def test_studio_scenarios_list_access(self, user_attr, expected_status):
+        user = getattr(self, user_attr) if user_attr else None
+        client = self._client_for(user)
+        response = client.get("/api/v1/studio/scenarios/")
+        assert response.status_code == expected_status
+
+    # 30. POST /api/v1/studio/scenarios/ (EDUCATOR or ADMIN approved)
+    @pytest.mark.parametrize(
+        "user_attr,expected_status",
+        [
+            (None, 401),
+            ("citizen", 403),
+            ("analyst_pending", 403),
+            ("analyst_approved", 403),
+            ("educator_approved", 201),
+            ("admin_pending", 403),
+            ("admin_approved", 201),
+        ],
+    )
+    def test_studio_scenarios_create_access(self, user_attr, expected_status):
+        import io
+
+        import boto3
+        from moto import mock_aws
+
+        from apps.core.aws import reset_clients
+        from apps.literacy.models import ScenarioChannel, ScenarioTactic
+
+        user = getattr(self, user_attr) if user_attr else None
+        client = self._client_for(user)
+
+        valid_png = (
+            b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15c4"
+            b"\x00\x00\x00\nIDATx\x9cc`\x00\x00\x00\x02\x00\x01H\xaf\xa4q\x00\x00\x00\x00IEND\xaeB`\x82"
+        )
+        img = io.BytesIO(valid_png)
+        img.name = "test.png"
+
+        payload = {
+            "title": f"Test Scenario RBAC {user_attr}",
+            "channel": ScenarioChannel.SMS.value,
+            "is_scam": True,
+            "tactic": ScenarioTactic.URGENCY.value,
+            "difficulty": 1,
+            "image_alt": "Alt text",
+            "explanation": "Explanation",
+            "image": img,
+        }
+
+        with mock_aws():
+            reset_clients()
+            s3 = boto3.client("s3", region_name="ap-southeast-1")
+            s3.create_bucket(
+                Bucket="scamshield-media-test",
+                CreateBucketConfiguration={"LocationConstraint": "ap-southeast-1"},
+            )
+            response = client.post("/api/v1/studio/scenarios/", payload, format="multipart")
+            reset_clients()
+
+        assert response.status_code == expected_status
+
+    # 31. POST /api/v1/simulator/attempts/ (Public simulator attempt init: AllowAny)
+    @pytest.mark.parametrize(
+        "user_attr,expected_status",
+        [
+            (None, 201),
+            ("citizen", 201),
+            ("analyst_pending", 201),
+            ("analyst_approved", 201),
+            ("educator_approved", 201),
+            ("admin_pending", 201),
+            ("admin_approved", 201),
+        ],
+    )
+    def test_simulator_attempt_init_access(self, user_attr, expected_status):
+        from apps.literacy.models import ScenarioChannel, ScenarioStatus, ScenarioTactic, SimulatorScenario
+
+        if SimulatorScenario.objects.filter(status=ScenarioStatus.PUBLISHED).count() < 5:
+            for i in range(5):
+                SimulatorScenario.objects.create(
+                    title=f"RBAC Sim Scenario {i}",
+                    channel=ScenarioChannel.EMAIL.value,
+                    is_scam=False,
+                    tactic=ScenarioTactic.NONE.value,
+                    difficulty=1,
+                    image_s3_key=f"scenarios/rbac_{i}.png",
+                    image_alt="Alt",
+                    explanation="Exp",
+                    status=ScenarioStatus.PUBLISHED,
+                    author=self.admin_approved,
+                )
+
+        user = getattr(self, user_attr) if user_attr else None
+        client = self._client_for(user)
+        response = client.post("/api/v1/simulator/attempts/", {}, format="json")
+        assert response.status_code == expected_status
+

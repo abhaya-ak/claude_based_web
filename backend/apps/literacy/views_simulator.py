@@ -1,6 +1,7 @@
 import uuid
 
 from django.core.exceptions import PermissionDenied
+from django.db.models import Exists, OuterRef
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
@@ -9,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.models import Role
-from apps.literacy.models import SimulatorAttempt
+from apps.literacy.models import AttemptAnswer, SimulatorAttempt
 from apps.literacy.serializers import EducationalGuidePublicListSerializer
 from apps.literacy.serializers_scenario import ScenarioRedFlagSerializer
 from apps.literacy.serializers_simulator import (
@@ -63,6 +64,7 @@ class SimulatorAttemptInitView(APIView):
     """
 
     permission_classes = [AllowAny]
+    serializer_class = SimulatorAttemptInitResponseSerializer
 
     @extend_schema(
         summary="Start simulator attempt",
@@ -92,6 +94,7 @@ class SimulatorAttemptAnswerView(APIView):
     """Submits and grades an answer for one scenario in the attempt."""
 
     permission_classes = [AllowAny]
+    serializer_class = SimulatorAnswerFeedbackSerializer
 
     @extend_schema(
         summary="Submit answer for scenario",
@@ -99,20 +102,27 @@ class SimulatorAttemptAnswerView(APIView):
         responses={201: SimulatorAnswerFeedbackSerializer},
     )
     def post(self, request, pk, *args, **kwargs):
-        attempt = get_object_or_404(SimulatorAttempt, pk=pk)
-        _check_attempt_access(attempt, request)
-
         serializer = SimulatorAnswerSubmissionSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        scenario_id = serializer.validated_data["scenario_id"]
 
-        answer, scenario = simulator_service.submit_answer(
+        has_answered = Exists(
+            AttemptAnswer.objects.filter(attempt=OuterRef("pk"), scenario_id=scenario_id)
+        )
+        attempt = get_object_or_404(
+            SimulatorAttempt.objects.annotate(has_answered=has_answered),
+            pk=pk,
+        )
+        _check_attempt_access(attempt, request)
+
+        answer, scenario, flags = simulator_service.submit_answer(
             attempt=attempt,
-            scenario_id=serializer.validated_data["scenario_id"],
+            scenario_id=scenario_id,
             answered_is_scam=serializer.validated_data["answered_is_scam"],
             selected_flag_code=serializer.validated_data.get("selected_flag_code"),
         )
 
-        red_flags_data = ScenarioRedFlagSerializer(scenario.red_flags.all(), many=True).data
+        red_flags_data = ScenarioRedFlagSerializer(flags, many=True).data
         response_data = {
             "scenario_id": scenario.id,
             "is_correct": answer.is_correct,
@@ -126,6 +136,7 @@ class SimulatorAttemptCompleteView(APIView):
     """Completes the attempt, calculates score, profile, blind spots, and remediation guides."""
 
     permission_classes = [AllowAny]
+    serializer_class = SimulatorAttemptCompletionResponseSerializer
 
     @extend_schema(
         summary="Complete simulator attempt",

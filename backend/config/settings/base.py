@@ -132,6 +132,11 @@ SPECTACULAR_SETTINGS = {
         "ReportStatusEnum": "apps.reports.models.ReportStatus",
         "PrimaryCategoryEnum": "apps.reports.models.ScamCategory",
         "AudienceGroupEnum": "apps.core.enums.AudienceGroup",
+        "ScenarioChannelEnum": "apps.literacy.models.ScenarioChannel",
+        "ScenarioStatusEnum": "apps.literacy.models.ScenarioStatus",
+        "ScenarioTacticEnum": "apps.literacy.models.ScenarioTactic",
+        "RedFlagCodeEnum": "apps.literacy.models.RedFlagCode",
+        "AttemptStatusEnum": "apps.literacy.models.AttemptStatus",
     },
     "APPEND_COMPONENTS": {
         "schemas": {

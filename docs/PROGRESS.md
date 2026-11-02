@@ -1,7 +1,7 @@
 # PROGRESS (the agent reads this at session start and updates it at the end of every task)
 
 ## Current phase
-Phase 10 — Simulator, F3.2 (in progress)
+Phase 10 — Simulator, F3.2 (done, merge pending)
 
 ## Status
 | Phase | Owner | Status | Commit/PR | Notes |
@@ -63,11 +63,11 @@ Phase 10 — Simulator, F3.2 (in progress)
 | ├─ 9.3 Guide asset vault & S3 media storage | S3 | done | | /studio/guides/{id}/assets/, magic bytes (PDF/Audio/Image), S3 storage, /media/ CloudFront paths (D115) |
 | ├─ 9.4 Public literacy hub API & seed command | S3 | done | | /guides/, /guides/{slug}/, GIN array filters (group, language, tactic), ui_hints, seed_guides (D116) |
 | └─ 9.5 Phase 9 closing gate | S3 | done | | Route-walk, RBAC matrix, query bounds (<=3), OpenAPI regeneration, CI deploy check |
-| 10 Simulator | S3 | in progress | | Phase 10 Spot the Scam Simulator (F3.2) |
-| ├─ 10.1 Scenario & hotspot studio CRUD service | S3 | done | | /studio/scenarios/, image upload, hotspot coordinates, publish validation (D117, D118) |
-| ├─ 10.2 Simulator attempt init & anti-cheat engine | S3 | done | | POST /simulator/attempts/, server-side random sampling, anonymous session_key, masked cards (D119) |
-| ├─ 10.3 Simulation grading, completion & remediation engine | S3 | done | | POST /attempts/{id}/answers/, POST /complete/, grading matrix, blind spots, Contract §3.8 guides (D120, D121) |
-| └─ 10.4 Phase 10 closing gate | S3 | todo | | Route-walk, RBAC matrix, query bounds (<=3), OpenAPI regeneration, CI deploy check |
+| 10 Simulator | S3 | done, merge pending | | Phase 10 Spot the Scam Simulator (F3.2, 1005 tests green) |
+| ├─ 10.1 Scenario & hotspot studio CRUD service | S3 | done | e7bef70 | /studio/scenarios/, image upload, hotspot coordinates, publish validation (D117, D118) |
+| ├─ 10.2 Simulator attempt init & anti-cheat engine | S3 | done | 40fb5c2 | POST /simulator/attempts/, server-side random sampling, anonymous session_key, masked cards, TO BE PROVEN #20 (D119) |
+| ├─ 10.3 Simulation grading, completion & remediation engine | S3 | done | f19eb26 | POST /attempts/{id}/answers/, POST /complete/, grading matrix, blind spots, Contract §3.8 guides, TO BE PROVEN #21 (D120, D121) |
+| └─ 10.4 Phase 10 closing gate | S3 | done | 0836239 | Route-walk, RBAC matrix, query bounds, OpenAPI regeneration, CI deploy check |
 | 11 Ops/telemetry | S4 | todo | | |
 | 12 Hardening | all | todo | | |
 | 13 Containerise + deploy | S4 | todo | | |
@@ -231,6 +231,10 @@ Phase 10 — Simulator, F3.2 (in progress)
 - **TO BE PROVEN #17 (Markdown output sanitization via `nh3`):** PROVEN. Guide body markdown is stored verbatim in the database at write time. On serialization for output (both public and studio serializers), `nh3.clean` strips dangerous script tags, `onerror` event handlers, `javascript:` pseudo-protocols, and inline CSS styles while preserving legitimate markdown formatting (`apps/literacy/tests/test_sanitizer.py`).
 - **TO BE PROVEN #18 (Guide media asset vault & S3 media storage):** PROVEN. Guide media asset uploads enforce magic-byte sniffing (rejecting spoofed file types), strict size limits (PDF <=10MB, Audio <=20MB, Image <=5MB), mandatory `alt_text` for images, positive audio durations, S3 private object storage with SSE-S3 AES256, and format URLs exclusively as CloudFront relative paths (`/media/{s3_key}`) (`apps/literacy/tests/test_guide_assets_api.py`).
 - **TO BE PROVEN #19 (Educator ownership & Studio guide lifecycle):** PROVEN. Educators can only view, update, delete, or transition guides they authored; accessing another educator's guide returns 403 `permission_denied`. Only DRAFT guides can be deleted (deleting PUBLISHED/ARCHIVED returns 409 `guide_not_draft`). Publishing sets `published_at` strictly once, which remains invariant across subsequent unpublish/republish cycles (`apps/literacy/tests/test_studio_guides_api.py`, `apps/literacy/tests/test_guide_lifecycle.py`).
+
+## Phase 10 Verification (Proven Items)
+- **TO BE PROVEN #20 (Anti-cheat card masking):** PROVEN. Initializing a simulation attempt (`POST /api/v1/simulator/attempts/`) samples exactly 5 distinct published scenarios server-side and masks each scenario card to strictly omit `is_scam`, `tactic`, `explanation`, and `red_flags` (`apps/literacy/tests/test_anti_cheat_schema.py`).
+- **TO BE PROVEN #21 (Simulator completion, blind spots & remediation linkage):** PROVEN. Completing a simulation attempt (`POST /api/v1/simulator/attempts/{id}/complete/`) enforces all 5 answers, calculates `score_pct`, computes per-tactic miss counts, flags a tactic as a blind spot if and only if misses >= 2 (1 miss is not a blind spot), and links published remediation educational guides via Contract §3.8 selector `guides_for_tactics()` (`apps/literacy/tests/test_simulator_completion.py`).
 
 ## Standing rules for model tasks
 - Index names max 30 characters; check every name.

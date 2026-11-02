@@ -3,7 +3,6 @@ import random
 import uuid
 
 from django.conf import settings
-from django.db import transaction
 from django.db.models import QuerySet
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
@@ -242,11 +241,11 @@ def submit_answer(
     scenario_id: uuid.UUID,
     answered_is_scam: bool,
     selected_flag_code: str | None = None,
-) -> tuple[AttemptAnswer, SimulatorScenario]:
+) -> tuple[AttemptAnswer, SimulatorScenario, list[ScenarioRedFlag]]:
     """
     Submits and grades a player's answer for one scenario in an active attempt.
     Enforces attempt active status, scenario presence in attempt, and no-duplicate answer rule.
-    Returns (answer, scenario).
+    Returns (answer, scenario, red_flags).
     """
     if attempt.status == AttemptStatus.COMPLETED:
         raise ConflictError(
@@ -262,24 +261,38 @@ def submit_answer(
             code="scenario_not_in_attempt",
         )
 
-    if AttemptAnswer.objects.filter(attempt=attempt, scenario_id=scenario_uuid).exists():
+    # Check already answered (from annotation if present, else query)
+    if getattr(attempt, "has_answered", None) is True:
         raise ConflictError(
             "Scenario has already been answered in this attempt.",
             code="already_answered",
         )
+    if not hasattr(attempt, "has_answered"):
+        if AttemptAnswer.objects.filter(attempt=attempt, scenario_id=scenario_uuid).exists():
+            raise ConflictError(
+                "Scenario has already been answered in this attempt.",
+                code="already_answered",
+            )
 
-    try:
-        scenario = SimulatorScenario.objects.prefetch_related("red_flags").get(pk=scenario_uuid)
-    except SimulatorScenario.DoesNotExist as exc:
-        raise ValidationError(
-            {"scenario_id": ["Scenario not found."]},
-            code="scenario_not_found",
-        ) from exc
+    # Fetch scenario and its red flags in 1 query for scam scenarios via select_related
+    flags = list(ScenarioRedFlag.objects.filter(scenario_id=scenario_uuid).select_related("scenario"))
+    if flags:
+        scenario = flags[0].scenario
+        scenario._prefetched_objects_cache = {"red_flags": flags}
+    else:
+        try:
+            scenario = SimulatorScenario.objects.get(pk=scenario_uuid)
+            scenario._prefetched_objects_cache = {"red_flags": []}
+        except SimulatorScenario.DoesNotExist as exc:
+            raise ValidationError(
+                {"scenario_id": ["Scenario not found."]},
+                code="scenario_not_found",
+            ) from exc
 
     # Server-side grading matrix per D120
     if scenario.is_scam:
         if answered_is_scam:
-            valid_flag_codes = set(scenario.red_flags.values_list("flag_code", flat=True))
+            valid_flag_codes = {rf.flag_code for rf in flags}
             is_correct = bool(selected_flag_code and selected_flag_code in valid_flag_codes)
         else:
             is_correct = False
@@ -293,16 +306,15 @@ def submit_answer(
     if not answered_is_scam:
         selected_flag_code = None
 
-    with transaction.atomic():
-        answer = AttemptAnswer.objects.create(
-            attempt=attempt,
-            scenario=scenario,
-            answered_is_scam=answered_is_scam,
-            selected_flag_code=selected_flag_code,
-            is_correct=is_correct,
-        )
+    answer = AttemptAnswer.objects.create(
+        attempt=attempt,
+        scenario=scenario,
+        answered_is_scam=answered_is_scam,
+        selected_flag_code=selected_flag_code,
+        is_correct=is_correct,
+    )
 
-    return answer, scenario
+    return answer, scenario, flags
 
 
 def complete_attempt(
@@ -320,14 +332,13 @@ def complete_attempt(
             code="attempt_already_completed",
         )
 
-    answer_count = attempt.answers.count()
-    if answer_count < 5:
+    answers = list(attempt.answers.select_related("scenario"))
+    if len(answers) < 5:
         raise ValidationError(
-            {"attempt": [f"Attempt is incomplete: requires 5 answered scenarios before completion (has {answer_count})."]},
+            {"attempt": [f"Attempt is incomplete: requires 5 answered scenarios before completion (has {len(answers)})."]},
             code="incomplete_attempt",
         )
 
-    answers = list(attempt.answers.select_related("scenario"))
     correct_count = sum(1 for a in answers if a.is_correct)
     score_pct = round((correct_count / 5.0) * 100)
 
@@ -360,11 +371,10 @@ def complete_attempt(
 
     guides = guides_for_tactics(tactics=blind_spots, language=language)
 
-    with transaction.atomic():
-        attempt.status = AttemptStatus.COMPLETED
-        attempt.completed_at = timezone.now()
-        attempt.score_pct = score_pct
-        attempt.profile = profile
-        attempt.save(update_fields=["status", "completed_at", "score_pct", "profile"])
+    attempt.status = AttemptStatus.COMPLETED
+    attempt.completed_at = timezone.now()
+    attempt.score_pct = score_pct
+    attempt.profile = profile
+    attempt.save(update_fields=["status", "completed_at", "score_pct", "profile"])
 
     return attempt, guides
