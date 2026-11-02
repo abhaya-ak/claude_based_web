@@ -83,7 +83,7 @@ Phase 13 — Containerise and deploy (planning)
 | └─ 12.6 Load testing suite, CLO2 performance evidence & closing gate | all | done | fcfaef3 | stdlib Python thread runner, CLO2_PERFORMANCE.md, 1114 tests green (D141, D145) |
 | 13 Containerise + deploy | S4 | in_progress | | Phase 13 Containerise and deploy (Final Backend Phase) |
 | ├─ 13.1 Production container hardening & pinned lockfiles (D39, D146) | S4 | done | | requirements/base.lock.txt, dev.lock.txt, multi-stage Dockerfile, pip-audit, test_container_hardening (4 tests) |
-| ├─ 13.2 Lambda heuristic scanner packaging automation (D147) | S4 | todo | | tools/package_lambda.py, zip build, SHA256 integrity, DLQ & IAM roles |
+| ├─ 13.2 Lambda heuristic scanner packaging automation (D147) | S4 | done | | tools/package_lambda.py, deterministic zip, SHA256 integrity, test_lambda_packaging (2 tests) |
 | ├─ 13.3 AWS infrastructure definitions (IaC) & architecture topology (D148) | S4 | todo | | VPC 2-AZ, ALB, ASG, RDS Multi-AZ, S3 buckets, CloudFront OAC, SNS, CloudWatch |
 | ├─ 13.4 Operational runbooks & zero-downtime deployment automation (D149) | S4 | todo | | docs/runbook.md, rolling deploys, rollback, RDS PITR drill, secret rotation, cost control |
 | ├─ 13.5 CLO3 High Availability & Cost Justification Evidence (D150) | S4 | todo | | docs/CLO3_ARCHITECTURE_HA_COST.md, 2-AZ topology, failover mechanics, AWS Pricing breakdown |
