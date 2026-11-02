@@ -35,8 +35,22 @@ class TestSeedPlaybooksCommand:
     def test_hotlines_merging_when_file_present(self, tmp_path, monkeypatch):
         # Create dummy hotlines.json
         hotlines_data = {
-            "MY": [{"name": "NSRC", "number": "997"}],
-            "default": [{"name": "Local Police", "number": "999"}],
+            "MY": [
+                {
+                    "name": "NSRC",
+                    "number": "997",
+                    "source_url": "https://www.bnm.gov.my/nsrc",
+                    "verified_on": "2026-10-01",
+                }
+            ],
+            "default": [
+                {
+                    "name": "Local Police",
+                    "number": "999",
+                    "source_url": "https://example.com/police",
+                    "verified_on": "2026-10-01",
+                }
+            ],
         }
         hotlines_file = tmp_path / "hotlines.json"
         hotlines_file.write_text(json.dumps(hotlines_data), encoding="utf-8")
@@ -81,7 +95,14 @@ class TestSeedPlaybooksCommand:
 
         my_playbook = RecoveryPlaybook.objects.filter(country_code="MY").first()
         assert my_playbook is not None
-        assert my_playbook.hotlines == [{"name": "NSRC", "number": "997"}]
+        assert my_playbook.hotlines == [
+            {
+                "name": "NSRC",
+                "number": "997",
+                "source_url": "https://www.bnm.gov.my/nsrc",
+                "verified_on": "2026-10-01",
+            }
+        ]
 
         # Re-running normal seed without hotlines leaves hotlines empty
         call_command("seed_playbooks")

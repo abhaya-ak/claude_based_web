@@ -11,18 +11,69 @@ logger = logging.getLogger(__name__)
 
 def load_hotlines_data(data_dir: Path) -> dict:
     """
-    Loads apps/reports/data/hotlines.json if present per D77.
-    Returns mapping of country_code to hotline list, or empty dict.
+    Loads apps/reports/data/hotlines.json if present per D77 and D135.
+    Validates each entry to require name, number, source_url, verified_on.
+    Refuses and logs warning for any entry lacking source_url or verified_on.
+    Returns mapping of country_code to validated hotline list.
     """
     hotlines_path = data_dir / "hotlines.json"
     if not hotlines_path.exists():
         return {}
     try:
         with open(hotlines_path, encoding="utf-8") as f:
-            return json.load(f)
+            raw_data = json.load(f)
     except Exception as exc:
         logger.warning("Failed to load hotlines.json: %s", exc)
         return {}
+
+    if not isinstance(raw_data, dict):
+        logger.warning("hotlines.json root must be a dict mapping country codes")
+        return {}
+
+    validated = {}
+    for country, entries in raw_data.items():
+        if not isinstance(entries, list):
+            logger.warning("hotlines entries for %s must be a list", country)
+            continue
+        valid_entries = []
+        for item in entries:
+            if not isinstance(item, dict):
+                logger.warning("Refusing non-dict hotline entry for %s: %s", country, item)
+                continue
+            name = item.get("name")
+            number = item.get("number")
+            source_url = item.get("source_url")
+            verified_on = item.get("verified_on")
+
+            if not (source_url and str(source_url).strip()) or not (
+                verified_on and str(verified_on).strip()
+            ):
+                logger.warning(
+                    "Refusing hotline entry for %s lacking source_url or verified_on: %s",
+                    country,
+                    item,
+                )
+                continue
+
+            if not (name and str(name).strip()) or not (number and str(number).strip()):
+                logger.warning(
+                    "Refusing hotline entry for %s lacking name or number: %s",
+                    country,
+                    item,
+                )
+                continue
+
+            valid_entries.append(
+                {
+                    "name": str(name).strip(),
+                    "number": str(number).strip(),
+                    "source_url": str(source_url).strip(),
+                    "verified_on": str(verified_on).strip(),
+                }
+            )
+        validated[country] = valid_entries
+
+    return validated
 
 
 class Command(BaseCommand):
