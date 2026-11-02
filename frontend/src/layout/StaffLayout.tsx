@@ -11,6 +11,9 @@ import {
   LogOut,
   ArrowLeft,
   UserCheck,
+  TrendingUp,
+  ShieldCheck,
+  Radio,
 } from 'lucide-react';
 
 export const StaffLayout: React.FC = () => {
@@ -23,8 +26,23 @@ export const StaffLayout: React.FC = () => {
     if (role === 'ANALYST' || role === 'ADMIN') {
       items.push({
         to: '/triage',
-        label: COPY.nav.triage,
+        label: 'Triage Queue',
         icon: <ClipboardList className="w-4 h-4" />,
+      });
+      items.push({
+        to: '/analyst/trends',
+        label: 'Threat Trends',
+        icon: <TrendingUp className="w-4 h-4" />,
+      });
+      items.push({
+        to: '/analyst/indicators',
+        label: 'Threat Vault',
+        icon: <ShieldCheck className="w-4 h-4" />,
+      });
+      items.push({
+        to: '/analyst/advisories',
+        label: 'Advisories',
+        icon: <Radio className="w-4 h-4" />,
       });
     }
 
@@ -82,7 +100,7 @@ export const StaffLayout: React.FC = () => {
             {/* Role Navigation */}
             <nav className="hidden md:flex items-center space-x-1" aria-label="Staff Navigation">
               {navItems.map((item) => {
-                const isActive = location.pathname.startsWith(item.to);
+                const isActive = location.pathname === item.to || (item.to !== '/' && location.pathname.startsWith(item.to));
                 return (
                   <Link
                     key={item.to}

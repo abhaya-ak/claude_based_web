@@ -17,6 +17,9 @@ import { MyReportsPage } from './features/report/MyReportsPage';
 import { LiteracyHubPage } from './features/hub/LiteracyHubPage';
 import { SimulatorGamePage } from './features/simulator/SimulatorGamePage';
 import { TriagePage } from './features/triage/TriagePage';
+import { TrendAnalyticsPage } from './features/triage/TrendAnalyticsPage';
+import { IndicatorManagementPage } from './features/triage/IndicatorManagementPage';
+import { AdvisoryStudioPage } from './features/triage/AdvisoryStudioPage';
 import { AdminDashboardPage } from './features/admin/AdminDashboardPage';
 
 // Simple Landing Home & Error Handlers
@@ -73,6 +76,38 @@ export const router = createBrowserRouter([
         element: (
           <RequireRole allowedRoles={['ANALYST', 'ADMIN']}>
             <TriagePage />
+          </RequireRole>
+        ),
+      },
+      {
+        path: 'analyst/queue',
+        element: (
+          <RequireRole allowedRoles={['ANALYST', 'ADMIN']}>
+            <TriagePage />
+          </RequireRole>
+        ),
+      },
+      {
+        path: 'analyst/trends',
+        element: (
+          <RequireRole allowedRoles={['ANALYST', 'ADMIN']}>
+            <TrendAnalyticsPage />
+          </RequireRole>
+        ),
+      },
+      {
+        path: 'analyst/indicators',
+        element: (
+          <RequireRole allowedRoles={['ANALYST', 'ADMIN']}>
+            <IndicatorManagementPage />
+          </RequireRole>
+        ),
+      },
+      {
+        path: 'analyst/advisories',
+        element: (
+          <RequireRole allowedRoles={['ANALYST', 'ADMIN']}>
+            <AdvisoryStudioPage />
           </RequireRole>
         ),
       },
