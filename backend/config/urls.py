@@ -112,6 +112,7 @@ urlpatterns = [
     path("api/v1/auth/", include("apps.accounts.urls")),
     path("api/v1/admin-portal/users/", include("apps.accounts.urls_admin")),
     path("api/v1/admin-portal/", include("apps.scanner.urls_admin")),
+    path("api/v1/admin-portal/", include("apps.ops.urls")),
     path("api/v1/reports/", include("apps.reports.urls")),
     path("api/v1/lookups/", include("apps.reports.urls_lookup")),
     path("api/v1/alerts/", include("apps.alerts.urls")),

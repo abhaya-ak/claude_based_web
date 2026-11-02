@@ -1,0 +1,210 @@
+{
+  "widgets": [
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 0,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "view": "timeSeries",
+        "stacked": false,
+        "metrics": [
+          [ "AWS/EC2", "CPUUtilization", "AutoScalingGroupName", "scamshield-asg", { "stat": "Average" } ]
+        ],
+        "region": "ap-southeast-1",
+        "title": "EC2 CPU Utilization (%)",
+        "period": 300,
+        "yAxis": {
+          "left": {
+            "min": 0,
+            "max": 100
+          }
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12,
+      "y": 0,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "view": "timeSeries",
+        "stacked": false,
+        "metrics": [
+          [ "AWS/EC2", "NetworkIn", "AutoScalingGroupName", "scamshield-asg", { "stat": "Average" } ],
+          [ ".", "NetworkOut", ".", ".", { "stat": "Average" } ]
+        ],
+        "region": "ap-southeast-1",
+        "title": "EC2 Network Traffic (Bytes)",
+        "period": 300
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 6,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "view": "timeSeries",
+        "stacked": false,
+        "metrics": [
+          [ "AWS/ApplicationELB", "HTTPCode_Target_5XX_Count", "LoadBalancer", "app/scamshield-alb/scamshield-alb-id", { "stat": "Sum" } ]
+        ],
+        "region": "ap-southeast-1",
+        "title": "ALB Target 5XX Count",
+        "period": 300
+      }
+    },
+    {
+      "type": "metric",
+      "x": 8,
+      "y": 6,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "view": "timeSeries",
+        "stacked": false,
+        "metrics": [
+          [ "AWS/ApplicationELB", "TargetResponseTime", "LoadBalancer", "app/scamshield-alb/scamshield-alb-id", { "stat": "p95" } ]
+        ],
+        "region": "ap-southeast-1",
+        "title": "ALB Target Response Time (p95, sec)",
+        "period": 300
+      }
+    },
+    {
+      "type": "metric",
+      "x": 16,
+      "y": 6,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "view": "timeSeries",
+        "stacked": false,
+        "metrics": [
+          [ "AWS/ApplicationELB", "HealthyHostCount", "TargetGroup", "targetgroup/scamshield-tg/scamshield-tg-id", "LoadBalancer", "app/scamshield-alb/scamshield-alb-id", { "stat": "Minimum" } ]
+        ],
+        "region": "ap-southeast-1",
+        "title": "ALB Healthy Host Count",
+        "period": 300
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 12,
+      "width": 6,
+      "height": 6,
+      "properties": {
+        "view": "timeSeries",
+        "stacked": false,
+        "metrics": [
+          [ "AWS/RDS", "CPUUtilization", "DBInstanceIdentifier", "scamshield-postgres", { "stat": "Average" } ]
+        ],
+        "region": "ap-southeast-1",
+        "title": "RDS CPU Utilization (%)",
+        "period": 300,
+        "yAxis": {
+          "left": {
+            "min": 0,
+            "max": 100
+          }
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 6,
+      "y": 12,
+      "width": 6,
+      "height": 6,
+      "properties": {
+        "view": "timeSeries",
+        "stacked": false,
+        "metrics": [
+          [ "AWS/RDS", "DatabaseConnections", "DBInstanceIdentifier", "scamshield-postgres", { "stat": "Average" } ]
+        ],
+        "region": "ap-southeast-1",
+        "title": "RDS Database Connections",
+        "period": 300
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12,
+      "y": 12,
+      "width": 6,
+      "height": 6,
+      "properties": {
+        "view": "timeSeries",
+        "stacked": false,
+        "metrics": [
+          [ "AWS/RDS", "FreeStorageSpace", "DBInstanceIdentifier", "scamshield-postgres", { "stat": "Average" } ]
+        ],
+        "region": "ap-southeast-1",
+        "title": "RDS Free Storage Space (Bytes)",
+        "period": 300
+      }
+    },
+    {
+      "type": "metric",
+      "x": 18,
+      "y": 12,
+      "width": 6,
+      "height": 6,
+      "properties": {
+        "view": "timeSeries",
+        "stacked": false,
+        "metrics": [
+          [ "AWS/RDS", "FreeableMemory", "DBInstanceIdentifier", "scamshield-postgres", { "stat": "Average" } ]
+        ],
+        "region": "ap-southeast-1",
+        "title": "RDS Freeable Memory (Bytes)",
+        "period": 300
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 18,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "view": "timeSeries",
+        "stacked": false,
+        "metrics": [
+          [ "AWS/RDS", "ReadLatency", "DBInstanceIdentifier", "scamshield-postgres", { "stat": "Average" } ],
+          [ ".", "WriteLatency", ".", ".", { "stat": "Average" } ]
+        ],
+        "region": "ap-southeast-1",
+        "title": "RDS Read / Write Latency (sec)",
+        "period": 300
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12,
+      "y": 18,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "view": "timeSeries",
+        "stacked": false,
+        "metrics": [
+          [ "ScamShield/Operations", "ReportsSubmitted", "Environment", "production", { "stat": "Sum" } ],
+          [ ".", "ReportsHighPriority", ".", ".", { "stat": "Sum" } ],
+          [ ".", "AlertsPublished", ".", ".", { "stat": "Sum" } ],
+          [ ".", "RateLimitBlocks", ".", ".", { "stat": "Sum" } ],
+          [ ".", "ScanFailures", ".", ".", { "stat": "Sum" } ],
+          [ ".", "LoginFailures", ".", ".", { "stat": "Sum" } ]
+        ],
+        "region": "ap-southeast-1",
+        "title": "ScamShield Business & Security Operations",
+        "period": 300
+      }
+    }
+  ]
+}

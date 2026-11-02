@@ -104,7 +104,14 @@ class TestReportSubmissionThrottling:
                 ip_hash=ip_hash,
                 metadata={"category": "PHISHING", "file_count": 0},
             )
-            SystemAuditLog.objects.filter(id=log.id).update(occurred_at=two_hours_ago)
+            from django.db import connection
+
+            with connection.cursor() as cursor:
+                cursor.execute("SET scamshield.audit_purge_allowed = 'on';")
+                try:
+                    SystemAuditLog.objects.filter(id=log.id).update(occurred_at=two_hours_ago)
+                finally:
+                    cursor.execute("SET scamshield.audit_purge_allowed = 'off';")
 
         # Should pass because all events are expired
         check_report_submission_throttle(ip_hash=ip_hash, user=None)

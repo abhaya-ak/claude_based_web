@@ -137,6 +137,16 @@ SPECTACULAR_SETTINGS = {
         "ScenarioTacticEnum": "apps.literacy.models.ScenarioTactic",
         "RedFlagCodeEnum": "apps.literacy.models.RedFlagCode",
         "AttemptStatusEnum": "apps.literacy.models.AttemptStatus",
+        "AuditSeverityEnum": [
+            ("INFO", "Info"),
+            ("WARN", "Warning"),
+            ("ALERT", "Alert"),
+        ],
+        "AdvisorySeverityEnum": [
+            ("INFO", "Info"),
+            ("WARNING", "Warning"),
+            ("CRITICAL", "Critical"),
+        ],
     },
     "APPEND_COMPONENTS": {
         "schemas": {

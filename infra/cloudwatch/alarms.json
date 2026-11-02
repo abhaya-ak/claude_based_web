@@ -1,0 +1,166 @@
+[
+  {
+    "AlarmName": "scamshield-ec2-high-cpu",
+    "AlarmDescription": "EC2 ASG CPU utilization exceeds 80% for 10 minutes",
+    "Namespace": "AWS/EC2",
+    "MetricName": "CPUUtilization",
+    "Dimensions": [
+      {
+        "Name": "AutoScalingGroupName",
+        "Value": "scamshield-asg"
+      }
+    ],
+    "Statistic": "Average",
+    "Period": 300,
+    "EvaluationPeriods": 2,
+    "Threshold": 80.0,
+    "ComparisonOperator": "GreaterThanThreshold",
+    "AlarmActions": [
+      "arn:aws:sns:ap-southeast-1:123456789012:scamshield-ops-alerts"
+    ]
+  },
+  {
+    "AlarmName": "scamshield-alb-target-5xx-rate",
+    "AlarmDescription": "ALB Target 5XX error rate exceeds threshold for 5 minutes",
+    "Namespace": "AWS/ApplicationELB",
+    "MetricName": "HTTPCode_Target_5XX_Count",
+    "Dimensions": [
+      {
+        "Name": "LoadBalancer",
+        "Value": "app/scamshield-alb/scamshield-alb-id"
+      }
+    ],
+    "Statistic": "Sum",
+    "Period": 300,
+    "EvaluationPeriods": 1,
+    "Threshold": 10.0,
+    "ComparisonOperator": "GreaterThanThreshold",
+    "AlarmActions": [
+      "arn:aws:sns:ap-southeast-1:123456789012:scamshield-ops-alerts"
+    ]
+  },
+  {
+    "AlarmName": "scamshield-alb-p95-latency",
+    "AlarmDescription": "ALB p95 target response time exceeds 1 second",
+    "Namespace": "AWS/ApplicationELB",
+    "MetricName": "TargetResponseTime",
+    "Dimensions": [
+      {
+        "Name": "LoadBalancer",
+        "Value": "app/scamshield-alb/scamshield-alb-id"
+      }
+    ],
+    "ExtendedStatistic": "p95",
+    "Period": 300,
+    "EvaluationPeriods": 2,
+    "Threshold": 1.0,
+    "ComparisonOperator": "GreaterThanThreshold",
+    "AlarmActions": [
+      "arn:aws:sns:ap-southeast-1:123456789012:scamshield-ops-alerts"
+    ]
+  },
+  {
+    "AlarmName": "scamshield-alb-low-healthy-hosts",
+    "AlarmDescription": "ALB HealthyHostCount drops below 2 minimum redundant instances",
+    "Namespace": "AWS/ApplicationELB",
+    "MetricName": "HealthyHostCount",
+    "Dimensions": [
+      {
+        "Name": "TargetGroup",
+        "Value": "targetgroup/scamshield-tg/scamshield-tg-id"
+      },
+      {
+        "Name": "LoadBalancer",
+        "Value": "app/scamshield-alb/scamshield-alb-id"
+      }
+    ],
+    "Statistic": "Minimum",
+    "Period": 60,
+    "EvaluationPeriods": 2,
+    "Threshold": 2.0,
+    "ComparisonOperator": "LessThanThreshold",
+    "AlarmActions": [
+      "arn:aws:sns:ap-southeast-1:123456789012:scamshield-ops-alerts"
+    ]
+  },
+  {
+    "AlarmName": "scamshield-rds-high-connections",
+    "AlarmDescription": "RDS PostgreSQL connection pool usage exceeds 80% capacity",
+    "Namespace": "AWS/RDS",
+    "MetricName": "DatabaseConnections",
+    "Dimensions": [
+      {
+        "Name": "DBInstanceIdentifier",
+        "Value": "scamshield-postgres"
+      }
+    ],
+    "Statistic": "Average",
+    "Period": 300,
+    "EvaluationPeriods": 2,
+    "Threshold": 80.0,
+    "ComparisonOperator": "GreaterThanThreshold",
+    "AlarmActions": [
+      "arn:aws:sns:ap-southeast-1:123456789012:scamshield-ops-alerts"
+    ]
+  },
+  {
+    "AlarmName": "scamshield-rds-low-free-storage",
+    "AlarmDescription": "RDS PostgreSQL free storage space falls below 20GB (20% reserve)",
+    "Namespace": "AWS/RDS",
+    "MetricName": "FreeStorageSpace",
+    "Dimensions": [
+      {
+        "Name": "DBInstanceIdentifier",
+        "Value": "scamshield-postgres"
+      }
+    ],
+    "Statistic": "Average",
+    "Period": 300,
+    "EvaluationPeriods": 2,
+    "Threshold": 21474836480.0,
+    "ComparisonOperator": "LessThanThreshold",
+    "AlarmActions": [
+      "arn:aws:sns:ap-southeast-1:123456789012:scamshield-ops-alerts"
+    ]
+  },
+  {
+    "AlarmName": "scamshield-ops-heuristic-scan-failures",
+    "AlarmDescription": "Lambda heuristic scan failures detected in ScamShield operations",
+    "Namespace": "ScamShield/Operations",
+    "MetricName": "ScanFailures",
+    "Dimensions": [
+      {
+        "Name": "Environment",
+        "Value": "production"
+      }
+    ],
+    "Statistic": "Sum",
+    "Period": 300,
+    "EvaluationPeriods": 1,
+    "Threshold": 0.0,
+    "ComparisonOperator": "GreaterThanThreshold",
+    "AlarmActions": [
+      "arn:aws:sns:ap-southeast-1:123456789012:scamshield-ops-alerts"
+    ]
+  },
+  {
+    "AlarmName": "scamshield-billing-threshold",
+    "AlarmDescription": "Estimated AWS monthly charges exceed coursework budget threshold",
+    "Namespace": "AWS/Billing",
+    "MetricName": "EstimatedCharges",
+    "Dimensions": [
+      {
+        "Name": "Currency",
+        "Value": "USD"
+      }
+    ],
+    "Statistic": "Maximum",
+    "Period": 21600,
+    "EvaluationPeriods": 1,
+    "Threshold": 15.0,
+    "ComparisonOperator": "GreaterThanThreshold",
+    "AlarmActions": [
+      "arn:aws:sns:ap-southeast-1:123456789012:scamshield-ops-alerts"
+    ]
+  }
+]

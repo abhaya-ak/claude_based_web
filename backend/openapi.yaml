@@ -4,6 +4,55 @@ info:
   version: 1.0.0
   description: Scam reporting, lookup, and literacy platform REST API.
 paths:
+  /api/v1/admin-portal/audit-logs/:
+    get:
+      operationId: admin_portal_audit_logs_list
+      description: |-
+        Paginated audit log viewer with filtering.
+        Restricted strictly to approved ADMIN.
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      tags:
+      - admin-portal
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSystemAuditLogList'
+          description: ''
+  /api/v1/admin-portal/audit-logs/export/:
+    get:
+      operationId: admin_portal_audit_logs_export_retrieve
+      description: |-
+        Streams CSV export of system audit logs with active filters.
+        Restricted strictly to approved ADMIN. Capped at 5,000 rows.
+      summary: Export system audit logs as CSV
+      tags:
+      - admin-portal
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: string
+                format: binary
+          description: ''
   /api/v1/admin-portal/rules/:
     get:
       operationId: admin_portal_rules_list
@@ -189,6 +238,41 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ScannerConfig'
+          description: ''
+  /api/v1/admin-portal/telemetry/metrics/:
+    get:
+      operationId: admin_portal_telemetry_metrics_retrieve
+      description: |-
+        Returns chart-ready CloudWatch metric series for infrastructure and operational health.
+        Restricted strictly to approved ADMIN. Caches responses for 60 seconds.
+      summary: Get telemetry metrics series
+      parameters:
+      - in: query
+        name: range
+        schema:
+          enum:
+          - 1h
+          - 6h
+          - 24h
+          - 7d
+          type: string
+          default: 24h
+          minLength: 1
+        description: |-
+          * `1h` - 1h
+          * `6h` - 6h
+          * `24h` - 24h
+          * `7d` - 7d
+      tags:
+      - admin-portal
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TelemetryResponse'
           description: ''
   /api/v1/admin-portal/users/:
     get:
@@ -2176,6 +2260,16 @@ components:
       - organization
       - rejection_reason
       - role
+    AdvisorySeverityEnum:
+      enum:
+      - INFO
+      - WARNING
+      - CRITICAL
+      type: string
+      description: |-
+        * `INFO` - Info
+        * `WARNING` - Warning
+        * `CRITICAL` - Critical
     ApprovalStatusEnum:
       enum:
       - APPROVED
@@ -2236,6 +2330,16 @@ components:
         * `ELDERLY` - Seniors & family
         * `TEENAGER` - Teenagers & Students
         * `NON_TECH` - Non-Technical Users
+    AuditSeverityEnum:
+      enum:
+      - INFO
+      - WARN
+      - ALERT
+      type: string
+      description: |-
+        * `INFO` - Info
+        * `WARN` - Warning
+        * `ALERT` - Alert
     BlankEnum:
       enum:
       - ''
@@ -2610,6 +2714,48 @@ components:
           - request_id
       required:
       - error
+    EventTypeEnum:
+      enum:
+      - REPORT_SUBMITTED
+      - RATE_LIMIT_BLOCK
+      - LOGIN_FAILURE
+      - LOGIN_SUCCESS
+      - USER_REGISTERED
+      - STAFF_REGISTERED
+      - ROLE_APPROVED
+      - ROLE_REJECTED
+      - ROLE_CHANGED
+      - PASSWORD_CHANGED
+      - EVIDENCE_URL_ISSUED
+      - INDICATOR_VERIFIED
+      - REPORT_REJECTED
+      - INDICATOR_REVOKED
+      - ADVISORY_PUBLISHED
+      - RULE_CHANGED
+      - CONFIG_CHANGED
+      - SCAN_FAILED
+      - REPORT_TRACK_FAILED
+      type: string
+      description: |-
+        * `REPORT_SUBMITTED` - Report Submitted
+        * `RATE_LIMIT_BLOCK` - Rate Limit Block
+        * `LOGIN_FAILURE` - Login Failure
+        * `LOGIN_SUCCESS` - Login Success
+        * `USER_REGISTERED` - User Registered
+        * `STAFF_REGISTERED` - Staff Registered
+        * `ROLE_APPROVED` - Role Approved
+        * `ROLE_REJECTED` - Role Rejected
+        * `ROLE_CHANGED` - Role Changed
+        * `PASSWORD_CHANGED` - Password Changed
+        * `EVIDENCE_URL_ISSUED` - Evidence URL Issued
+        * `INDICATOR_VERIFIED` - Indicator Verified
+        * `REPORT_REJECTED` - Report Rejected
+        * `INDICATOR_REVOKED` - Indicator Revoked
+        * `ADVISORY_PUBLISHED` - Advisory Published
+        * `RULE_CHANGED` - Rule Changed
+        * `CONFIG_CHANGED` - Config Changed
+        * `SCAN_FAILED` - Scan Failed
+        * `REPORT_TRACK_FAILED` - Report Track Failed
     EvidenceMetadata:
       type: object
       properties:
@@ -3074,6 +3220,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/StudioScenario'
+    PaginatedSystemAuditLogList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SystemAuditLog'
     PaginatedThreatAdvisoryPublicList:
       type: object
       required:
@@ -3250,7 +3419,7 @@ components:
           nullable: true
           maxLength: 140
         severity:
-          $ref: '#/components/schemas/SeverityEnum'
+          $ref: '#/components/schemas/AdvisorySeverityEnum'
         target_audience:
           type: string
           minLength: 1
@@ -4039,16 +4208,6 @@ components:
       - count
       - date
       - platform
-    SeverityEnum:
-      enum:
-      - INFO
-      - WARNING
-      - CRITICAL
-      type: string
-      description: |-
-        * `INFO` - Info
-        * `WARNING` - Warning
-        * `CRITICAL` - Critical
     SimulatorAnswerFeedback:
       type: object
       description: Immediate feedback after answering a single scenario.
@@ -4578,6 +4737,63 @@ components:
           maxLength: 256
       required:
       - token
+    SystemAuditLog:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        occurred_at:
+          type: string
+          format: date-time
+          readOnly: true
+        event_type:
+          allOf:
+          - $ref: '#/components/schemas/EventTypeEnum'
+          readOnly: true
+        severity:
+          allOf:
+          - $ref: '#/components/schemas/AuditSeverityEnum'
+          readOnly: true
+        actor_id:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        actor_role:
+          type: string
+          nullable: true
+          readOnly: true
+        actor_ip_hash:
+          type: string
+          readOnly: true
+          nullable: true
+        target_type:
+          type: string
+          readOnly: true
+          nullable: true
+        target_id:
+          type: string
+          readOnly: true
+          nullable: true
+        metadata:
+          readOnly: true
+        request_id:
+          type: string
+          readOnly: true
+          nullable: true
+      required:
+      - actor_id
+      - actor_ip_hash
+      - actor_role
+      - event_type
+      - id
+      - metadata
+      - occurred_at
+      - request_id
+      - severity
+      - target_id
+      - target_type
     TacticCount:
       type: object
       properties:
@@ -4600,6 +4816,30 @@ components:
         * `AUTHORITY` - Authority
         * `FEAR` - Fear
         * `GREED` - Greed
+    TelemetryResponse:
+      type: object
+      properties:
+        time_range:
+          type: string
+        period:
+          type: integer
+        generated_at:
+          type: string
+        degraded:
+          type: boolean
+        infrastructure:
+          type: object
+          additionalProperties: {}
+        operations:
+          type: object
+          additionalProperties: {}
+      required:
+      - degraded
+      - generated_at
+      - infrastructure
+      - operations
+      - period
+      - time_range
     ThreatAdvisoryCreateRequest:
       type: object
       properties:
@@ -4616,7 +4856,7 @@ components:
           nullable: true
           maxLength: 140
         severity:
-          $ref: '#/components/schemas/SeverityEnum'
+          $ref: '#/components/schemas/AdvisorySeverityEnum'
         target_audience:
           type: string
           minLength: 1
@@ -4654,7 +4894,7 @@ components:
           nullable: true
         severity:
           allOf:
-          - $ref: '#/components/schemas/SeverityEnum'
+          - $ref: '#/components/schemas/AdvisorySeverityEnum'
           readOnly: true
         target_audience:
           type: string
@@ -4701,7 +4941,7 @@ components:
           nullable: true
           maxLength: 140
         severity:
-          $ref: '#/components/schemas/SeverityEnum'
+          $ref: '#/components/schemas/AdvisorySeverityEnum'
         target_audience:
           type: string
           maxLength: 15

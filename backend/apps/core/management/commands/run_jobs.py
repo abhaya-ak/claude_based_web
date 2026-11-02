@@ -22,6 +22,10 @@ def _discover_jobs():
         import apps.scanner.jobs  # noqa: F401
     except ImportError as e:
         logger.warning("Could not import scanner jobs: %s", e)
+    try:
+        import apps.ops.jobs  # noqa: F401
+    except ImportError as e:
+        logger.warning("Could not import ops jobs: %s", e)
 
 
 class Command(BaseCommand):
