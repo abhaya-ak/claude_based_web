@@ -55,7 +55,7 @@ Phase 7 — Public lookup and alert subscriptions, F1.2 (in progress)
 | ├─ 8.1 Analytics selectors & spike math | S2 | done | | Pure ORM aggregations (volume, losses, tactics), spike algorithm (+300%, min 5) (D106, D107) |
 | ├─ 8.2 Analytics API, date bounds & caching | S2 | done | | GET /analytics/volume/, /losses/, /tactics/, /spikes/, 90d max range, 60s cache, RBAC (D108) |
 | ├─ 8.3 Threat advisory CRUD & draft-only edit | S2 | done | | GET/POST /advisories/, GET/PATCH /advisories/{id}/, draft-only rules, public published list (D109) |
-| ├─ 8.4 Advisory publishing & SNS fan-out | S2 | todo | | POST /advisories/{id}/publish/, atomic status, SNS MessageAttributes, idempotency, TO BE PROVEN #15, #16 (D110) |
+| ├─ 8.4 Advisory publishing & SNS fan-out | S2 | done | | POST /advisories/{id}/publish/, atomic status, SNS MessageAttributes, idempotency, TO BE PROVEN #15, #16 (D110) |
 | └─ 8.5 Phase 8 closing gate | S2 | todo | | Route-walk, RBAC matrix, query counts, OpenAPI regeneration, CI deploy check |
 | 9 Literacy CMS | S3 | todo | | |
 | 10 Simulator | S3 | todo | | |
@@ -203,6 +203,10 @@ Phase 7 — Public lookup and alert subscriptions, F1.2 (in progress)
 - **TO BE PROVEN #13 (Domain Blacklist Inheritance):** PROVEN. Verifying a domain indicator (e.g. ad-actor-bank.com as ACTIVE VerifiedIndicator) causes lookups on deep URLs on that domain (https://bad-actor-bank.com/malicious/portal.html?token=abc) to inherit the RED verdict immediately via multi-type candidate detection without requiring explicit subpath verification (pps/reports/tests/test_lookup_service.py::TestLookupService::test_domain_blacklist_inheritance_returns_red).
 
 - **TO BE PROVEN #14 (Moto SNS Subscription & Filter Policy):** PROVEN. Subscribing via POST /api/v1/alerts/subscriptions/ under Moto creates a real SNS subscription on ALERTS_TOPIC_ARN with the expected FilterPolicy attributes (udience containing ALL and the target group, and category list when filtered, omitted when all), duplicate submission safely returns the existing record without token leak, confirmation updates status to ACTIVE, and unsubscription successfully calls sns.unsubscribe (pps/alerts/tests/test_subscriptions_api.py::TestAlertSubscriptionsAPI::test_moto_sns_subscription_creation_and_filter_policy).
+
+## Phase 8 Verification (Proven Items)
+- **TO BE PROVEN #15 (Advisory Broadcast End-to-End Fan-out & Filter Policy Match):** PROVEN. Publishing a threat advisory with target audience GENERAL and category IMPERSONATION publishes to AWS SNS topic ALERTS_TOPIC_ARN with typed MessageAttributes matching confirmed subscribers whose FilterPolicy specifies audience containing ALL and the target group, and matching category (apps/broadcasts/tests/test_advisory_publish_api.py::TestAdvisoryPublishAPI::test_to_be_proven_15_advisory_broadcast_reaches_filtered_subscriber).
+- **TO BE PROVEN #16 (Advisory Double-Click Idempotency & SNS Single-Publish Guarantee):** PROVEN. A second concurrent or sequential request to POST /api/v1/advisories/{id}/publish/ encounters row-level lock select_for_update(), detects status == "PUBLISHED", and raises 409 conflict (advisory_already_published) without issuing duplicate SNS messages (apps/broadcasts/tests/test_advisory_publish_api.py::TestAdvisoryPublishAPI::test_to_be_proven_16_double_click_publish_idempotency).
 
 ## Standing rules for model tasks
 - Index names max 30 characters; check every name.

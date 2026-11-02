@@ -16,6 +16,7 @@ from apps.broadcasts.serializers import (
     ThreatAdvisoryStaffSerializer,
     ThreatAdvisoryUpdateSerializer,
 )
+from apps.broadcasts.services.broadcast_service import publish_advisory
 from apps.core.exceptions import ConflictError
 from apps.core.pagination import StandardPagination
 
@@ -152,3 +153,19 @@ class AdvisoryDetailView(APIView):
             advisory.save()
 
             return Response(ThreatAdvisoryStaffSerializer(advisory).data, status=status.HTTP_200_OK)
+
+
+
+class AdvisoryPublishView(APIView):
+    """Publishes a threat advisory to the SNS alerts topic (Analyst only) per D110."""
+
+    permission_classes = [IsAuthenticated, HasRole(Role.ANALYST)]
+
+    @extend_schema(
+        request=None,
+        responses={200: ThreatAdvisoryStaffSerializer},
+        description="Publish a threat advisory to the SNS alerts topic (Analyst only).",
+    )
+    def post(self, request, pk, *args, **kwargs):
+        advisory = publish_advisory(pk, request.user)
+        return Response(ThreatAdvisoryStaffSerializer(advisory).data, status=status.HTTP_200_OK)
