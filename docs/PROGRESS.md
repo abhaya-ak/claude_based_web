@@ -91,7 +91,7 @@ DONE — Backend Build Complete & Production Ready (Phases 0–13 Complete)
 | └─ 13.7 Phase 13 & Backend Global Definition of Done closing gate | S4 | done | | Full 1,131 test suite green (0 warnings), OpenAPI freeze, check --deploy, container health proof, Global DoD signoff |
 | F Frontend phases | all | in_progress | | Frontend SPA development (Phases F1–F7) |
 | ├─ F1 Scaffolding, Design System & Core API Foundation | all | done | e820d02 | React 18, Vite, TS strict, Tailwind, Axios client & silent refresh, a11y, core components |
-| ├─ F2 Authentication, Role Guards & Access Management | S4 | done | | Auth context, RequireRole, Login, Register, Staff Register, Pending Approval, Profile/Password, Vitest suite (9 tests) |
+| ├─ F2 Authentication, Role Guards & Access Management | S4 | done | 0d761b6 | Auth context, RequireRole, Login, Register, Staff Register, Pending Approval, Profile/Password, Vitest suite (9 tests) |
 | ├─ F3 Citizen Threat Lookup & Scam Reporting Portal | S1 | todo | | Threat Lookup widget, Multi-step Report wizard, Access key view, Track & My Reports, Alert Subscriptions |
 | ├─ F4 Analyst Triage Workbench & Evidence Vault | S2 | todo | | Triage Queue, Split screen detail, Presigned S3 Evidence Vault, Verify/Reject, Trends, Advisories |
 | ├─ F5 Literacy Hub CMS & Educator Studio | S3 | todo | | Public Learning Hub, nh3 sanitized Markdown, Educator Studio CRUD, Asset Vault uploader |
