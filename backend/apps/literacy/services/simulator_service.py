@@ -3,11 +3,15 @@ import random
 import uuid
 
 from django.conf import settings
+from django.db import transaction
+from django.db.models import QuerySet
+from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from apps.core import aws
 from apps.core.exceptions import ConflictError
 from apps.literacy.models import (
+    AttemptAnswer,
     AttemptStatus,
     ScenarioRedFlag,
     ScenarioStatus,
@@ -231,3 +235,136 @@ def start_attempt(user=None, session_key=None) -> tuple[SimulatorAttempt, list[S
     ordered_scenarios = [scenarios_by_id[sid] for sid in sampled_ids if sid in scenarios_by_id]
 
     return attempt, ordered_scenarios
+
+
+def submit_answer(
+    attempt: SimulatorAttempt,
+    scenario_id: uuid.UUID,
+    answered_is_scam: bool,
+    selected_flag_code: str | None = None,
+) -> tuple[AttemptAnswer, SimulatorScenario]:
+    """
+    Submits and grades a player's answer for one scenario in an active attempt.
+    Enforces attempt active status, scenario presence in attempt, and no-duplicate answer rule.
+    Returns (answer, scenario).
+    """
+    if attempt.status == AttemptStatus.COMPLETED:
+        raise ConflictError(
+            "Attempt is already completed and immutable.",
+            code="attempt_already_completed",
+        )
+
+    scenario_uuid = uuid.UUID(str(scenario_id))
+    attempt_uuids = [uuid.UUID(str(sid)) for sid in attempt.scenario_ids]
+    if scenario_uuid not in attempt_uuids:
+        raise ValidationError(
+            {"scenario_id": ["Scenario does not belong to this simulation attempt."]},
+            code="scenario_not_in_attempt",
+        )
+
+    if AttemptAnswer.objects.filter(attempt=attempt, scenario_id=scenario_uuid).exists():
+        raise ConflictError(
+            "Scenario has already been answered in this attempt.",
+            code="already_answered",
+        )
+
+    try:
+        scenario = SimulatorScenario.objects.prefetch_related("red_flags").get(pk=scenario_uuid)
+    except SimulatorScenario.DoesNotExist as exc:
+        raise ValidationError(
+            {"scenario_id": ["Scenario not found."]},
+            code="scenario_not_found",
+        ) from exc
+
+    # Server-side grading matrix per D120
+    if scenario.is_scam:
+        if answered_is_scam:
+            valid_flag_codes = set(scenario.red_flags.values_list("flag_code", flat=True))
+            is_correct = bool(selected_flag_code and selected_flag_code in valid_flag_codes)
+        else:
+            is_correct = False
+    else:
+        if not answered_is_scam:
+            is_correct = True
+        else:
+            is_correct = False
+
+    # Enforce db constraint: flag only if answered_is_scam
+    if not answered_is_scam:
+        selected_flag_code = None
+
+    with transaction.atomic():
+        answer = AttemptAnswer.objects.create(
+            attempt=attempt,
+            scenario=scenario,
+            answered_is_scam=answered_is_scam,
+            selected_flag_code=selected_flag_code,
+            is_correct=is_correct,
+        )
+
+    return answer, scenario
+
+
+def complete_attempt(
+    attempt: SimulatorAttempt,
+    language: str = "en",
+) -> tuple[SimulatorAttempt, QuerySet]:
+    """
+    Completes simulation attempt, validates 5 answers, calculates score,
+    detects blind spots (tactics with >=2 misses per TO BE PROVEN #21),
+    and attaches remediation guides per Contract §3.8.
+    """
+    if attempt.status == AttemptStatus.COMPLETED:
+        raise ConflictError(
+            "Attempt is already completed and immutable.",
+            code="attempt_already_completed",
+        )
+
+    answer_count = attempt.answers.count()
+    if answer_count < 5:
+        raise ValidationError(
+            {"attempt": [f"Attempt is incomplete: requires 5 answered scenarios before completion (has {answer_count})."]},
+            code="incomplete_attempt",
+        )
+
+    answers = list(attempt.answers.select_related("scenario"))
+    correct_count = sum(1 for a in answers if a.is_correct)
+    score_pct = round((correct_count / 5.0) * 100)
+
+    # Per-tactic profile and blind spots (tactics with >= 2 misses)
+    tactics_stat = {}
+    for ans in answers:
+        sc = ans.scenario
+        if not sc.is_scam or sc.tactic == ScenarioTactic.NONE.value:
+            continue
+        tac = sc.tactic
+        if tac not in tactics_stat:
+            tactics_stat[tac] = {"total": 0, "missed": 0, "is_blind_spot": False}
+        tactics_stat[tac]["total"] += 1
+        if not ans.is_correct:
+            tactics_stat[tac]["missed"] += 1
+
+    blind_spots = []
+    for tac, stat in tactics_stat.items():
+        if stat["missed"] >= 2:
+            stat["is_blind_spot"] = True
+            blind_spots.append(tac)
+
+    profile = {
+        "tactics": tactics_stat,
+        "blind_spots": blind_spots,
+    }
+
+    # Contract §3.8 remediation guides
+    from apps.literacy.selectors.guide_selectors import guides_for_tactics
+
+    guides = guides_for_tactics(tactics=blind_spots, language=language)
+
+    with transaction.atomic():
+        attempt.status = AttemptStatus.COMPLETED
+        attempt.completed_at = timezone.now()
+        attempt.score_pct = score_pct
+        attempt.profile = profile
+        attempt.save(update_fields=["status", "completed_at", "score_pct", "profile"])
+
+    return attempt, guides
