@@ -75,7 +75,7 @@ Phase 12 — Hardening and performance (planning)
 | └─ 11.4 CloudWatch infra definitions & Phase 11 closing gate | S4 | done | 8008342 | dashboard.json, alarms.json, route walk, RBAC matrix, OpenAPI, CI check |
 | 12 Hardening & Perf | all | todo | | Phase 12 Hardening and Performance (S4 leads) |
 | ├─ 12.1a Hotlines loader, presigned attachment & deferred cleanup | all | done | 323d25c | hotlines.json, verify loader validation, presigned attachment test (D135, D143) |
-| ├─ 12.1b Master demo seed engine (small & load scale) | all | todo | | seed_demo command, safety guards, SQL integrity tests (D136) |
+| ├─ 12.1b Master demo seed engine (small & load scale) | all | done | 9f50861 | seed_demo command, safety guards, SQL integrity tests (D136) |
 | ├─ 12.2 Security suite & static analysis | all | todo | | OWASP, IDOR, forbidden-key walker, throttle scope, ruff -S, secrets scan (D128, D142) |
 | ├─ 12.3 DB performance & EXPLAIN index plan verification | all | todo | | EXPLAIN JSON index scans, django_assert_max_num_queries (D137, D138, D144) |
 | ├─ 12.4 Concurrency & multi-threaded race condition suite | all | todo | | Threaded verify, exact advisory-lock rate limit test (D139) |
