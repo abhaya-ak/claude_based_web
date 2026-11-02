@@ -164,7 +164,12 @@ def custom_exception_handler(exc, context):
         else:
             if isinstance(response.data, dict) and "detail" in response.data:
                 message = str(response.data["detail"])
-            code = DualCode(f"HTTP_{status_code}", f"http_{status_code}")
+            detail_obj = getattr(exc, "detail", None)
+            exc_code = getattr(detail_obj, "code", None) or getattr(exc, "code", None) or getattr(exc, "default_code", None)
+            if exc_code:
+                code = DualCode(str(exc_code), str(exc_code).lower(), str(exc_code).upper())
+            else:
+                code = DualCode(f"HTTP_{status_code}", f"http_{status_code}")
 
         response.data = {
             "error": {

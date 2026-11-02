@@ -559,3 +559,112 @@ class TestRBACMatrix:
         )
         assert response.status_code == expected_status
 
+    # 22. GET /api/v1/analytics/volume/ (ANALYST and ADMIN only)
+    @pytest.mark.parametrize(
+        "user_attr,expected_status",
+        [
+            (None, 401),
+            ("citizen", 403),
+            ("analyst_pending", 403),
+            ("analyst_approved", 200),
+            ("educator_approved", 403),
+            ("admin_pending", 403),
+            ("admin_approved", 200),
+        ],
+    )
+    def test_analytics_volume_access(self, user_attr, expected_status):
+        user = getattr(self, user_attr) if user_attr else None
+        client = self._client_for(user)
+        response = client.get("/api/v1/analytics/volume/")
+        assert response.status_code == expected_status
+
+    # 23. GET /api/v1/advisories/ (Public endpoint, accessible to all)
+    @pytest.mark.parametrize(
+        "user_attr,expected_status",
+        [
+            (None, 200),
+            ("citizen", 200),
+            ("analyst_pending", 200),
+            ("analyst_approved", 200),
+            ("educator_approved", 200),
+            ("admin_pending", 200),
+            ("admin_approved", 200),
+        ],
+    )
+    def test_advisories_list_access_all_roles(self, user_attr, expected_status):
+        user = getattr(self, user_attr) if user_attr else None
+        client = self._client_for(user)
+        response = client.get("/api/v1/advisories/")
+        assert response.status_code == expected_status
+
+    # 24. POST /api/v1/advisories/ (ANALYST only)
+    @pytest.mark.parametrize(
+        "user_attr,expected_status",
+        [
+            (None, 401),
+            ("citizen", 403),
+            ("analyst_pending", 403),
+            ("analyst_approved", 201),
+            ("educator_approved", 403),
+            ("admin_pending", 403),
+            ("admin_approved", 403),
+        ],
+    )
+    def test_advisories_create_access(self, user_attr, expected_status):
+        user = getattr(self, user_attr) if user_attr else None
+        client = self._client_for(user)
+        response = client.post(
+            "/api/v1/advisories/",
+            data={
+                "title": f"Advisory from {user_attr}",
+                "body": "Detailed warning text for the public.",
+                "sms_text": "Short warning.",
+                "severity": "WARNING",
+                "target_audience": "GENERAL",
+                "category": "PHISHING",
+            },
+            format="json",
+        )
+        assert response.status_code == expected_status
+
+    # 25. POST /api/v1/advisories/{id}/publish/ (ANALYST only)
+    @pytest.mark.parametrize(
+        "user_attr,expected_status",
+        [
+            (None, 401),
+            ("citizen", 403),
+            ("analyst_pending", 403),
+            ("analyst_approved", 200),
+            ("educator_approved", 403),
+            ("admin_pending", 403),
+            ("admin_approved", 403),
+        ],
+    )
+    def test_advisories_publish_access(self, user_attr, expected_status, settings):
+        import boto3
+        from moto import mock_aws
+
+        from apps.broadcasts.models import AdvisorySeverity, AdvisoryStatus, ThreatAdvisory
+        from apps.core.aws import reset_clients
+
+        with mock_aws():
+            reset_clients()
+            sns = boto3.client("sns", region_name="ap-southeast-1")
+            topic = sns.create_topic(Name="scamshield-alerts")
+            settings.ALERTS_TOPIC_ARN = topic["TopicArn"]
+
+            advisory = ThreatAdvisory.objects.create(
+                title=f"Advisory to publish {user_attr}",
+                body="Body text",
+                sms_text="SMS text",
+                severity=AdvisorySeverity.WARNING,
+                target_audience="GENERAL",
+                status=AdvisoryStatus.DRAFT,
+                created_by=self.analyst_approved,
+            )
+
+            user = getattr(self, user_attr) if user_attr else None
+            client = self._client_for(user)
+            response = client.post(f"/api/v1/advisories/{advisory.id}/publish/")
+            assert response.status_code == expected_status
+            reset_clients()

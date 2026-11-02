@@ -23,6 +23,8 @@ PUBLIC_ALLOWLIST = {
     "/api/v1/alerts/subscriptions/",
     "/api/v1/alerts/subscriptions/confirm/",
     "/api/v1/alerts/subscriptions/unsubscribe/",
+    "/api/v1/advisories/",
+    "/api/v1/advisories/<uuid:pk>/",
 }
 
 MACHINE_HMAC_ALLOWLIST = {
@@ -104,10 +106,14 @@ class TestRouteWalkAndPublicAllowlist:
                     f"did not return 401 when accessed anonymously. Statuses: GET={response_get.status_code}, POST={response_post.status_code}"
                 )
             else:
-                codes = {response_get.status_code, response_post.status_code}
-                assert 401 not in codes, (
-                    f"Allowlisted route {raw_path} unexpectedly returned 401 Unauthorized"
-                )
+                if raw_path == "/api/v1/advisories/":
+                    assert response_get.status_code != 401
+                    assert response_post.status_code == 401
+                else:
+                    codes = {response_get.status_code, response_post.status_code}
+                    assert 401 not in codes, (
+                        f"Allowlisted route {raw_path} unexpectedly returned 401 Unauthorized"
+                    )
 
     def test_allowlist_matches_known_public_routes_strictly(self):
         """Verify that every route in PUBLIC_ALLOWLIST exists in the URL patterns."""

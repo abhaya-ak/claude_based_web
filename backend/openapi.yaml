@@ -297,6 +297,160 @@ paths:
               schema:
                 $ref: '#/components/schemas/AdminUser'
           description: ''
+  /api/v1/advisories/:
+    get:
+      operationId: advisories_list
+      description: Public list of published threat advisories; workbench filtering
+        for approved staff.
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: string
+        description: Filter by scam category
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - in: query
+        name: severity
+        schema:
+          type: string
+        description: Filter by severity
+      - in: query
+        name: status
+        schema:
+          type: string
+        description: Filter by status (Staff only)
+      - in: query
+        name: target_audience
+        schema:
+          type: string
+        description: Filter by target audience
+      tags:
+      - advisories
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedThreatAdvisoryPublicList'
+          description: ''
+    post:
+      operationId: advisories_create
+      description: Create a new threat advisory in DRAFT status (Analyst only).
+      tags:
+      - advisories
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ThreatAdvisoryCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ThreatAdvisoryCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ThreatAdvisoryCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ThreatAdvisoryStaff'
+          description: ''
+  /api/v1/advisories/{id}/:
+    get:
+      operationId: advisories_retrieve
+      description: Get threat advisory detail (public if published, staff for any
+        status).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - advisories
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ThreatAdvisoryPublic'
+          description: ''
+    patch:
+      operationId: advisories_partial_update
+      description: Update a threat advisory in DRAFT status only (Analyst only).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - advisories
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedThreatAdvisoryUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedThreatAdvisoryUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedThreatAdvisoryUpdateRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ThreatAdvisoryStaff'
+          description: ''
+  /api/v1/advisories/{id}/publish/:
+    post:
+      operationId: advisories_publish_create
+      description: Publish a threat advisory to the SNS alerts topic (Analyst only).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - advisories
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ThreatAdvisoryStaff'
+          description: ''
   /api/v1/alerts/subscriptions/:
     post:
       operationId: alerts_subscriptions_create
@@ -386,6 +540,106 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SubscriptionActionResponse'
+          description: ''
+  /api/v1/analytics/losses/:
+    get:
+      operationId: analytics_losses_retrieve
+      description: Aggregate financial losses and report counts by country and admin
+        area.
+      parameters:
+      - in: query
+        name: end_date
+        schema:
+          type: string
+        description: End date (YYYY-MM-DD)
+      - in: query
+        name: start_date
+        schema:
+          type: string
+        description: Start date (YYYY-MM-DD)
+      tags:
+      - analytics
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LossesAnalyticsResponse'
+          description: ''
+  /api/v1/analytics/spikes/:
+    get:
+      operationId: analytics_spikes_list
+      description: Trend spikes exceeding +300% growth with minimum 5 report threshold
+        in last 24h.
+      tags:
+      - analytics
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SpikeDetail'
+          description: ''
+  /api/v1/analytics/tactics/:
+    get:
+      operationId: analytics_tactics_list
+      description: Aggregate social engineering tactic frequencies (URGENCY, AUTHORITY,
+        FEAR, GREED).
+      parameters:
+      - in: query
+        name: end_date
+        schema:
+          type: string
+        description: End date (YYYY-MM-DD)
+      - in: query
+        name: start_date
+        schema:
+          type: string
+        description: Start date (YYYY-MM-DD)
+      tags:
+      - analytics
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TacticCount'
+          description: ''
+  /api/v1/analytics/volume/:
+    get:
+      operationId: analytics_volume_retrieve
+      description: Aggregate scam report volume breakdown by day, platform, and category.
+      parameters:
+      - in: query
+        name: end_date
+        schema:
+          type: string
+        description: End date (YYYY-MM-DD)
+      - in: query
+        name: start_date
+        schema:
+          type: string
+        description: Start date (YYYY-MM-DD)
+      tags:
+      - analytics
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VolumeAnalyticsResponse'
           description: ''
   /api/v1/auth/login/:
     post:
@@ -1087,6 +1341,26 @@ components:
         * `APPROVED` - Approved
         * `PENDING` - Pending
         * `REJECTED` - Rejected
+    AreaLosses:
+      type: object
+      properties:
+        country:
+          type: string
+        admin_area:
+          type: string
+          nullable: true
+        currency:
+          type: string
+        total_loss:
+          type: string
+        report_count:
+          type: integer
+      required:
+      - admin_area
+      - country
+      - currency
+      - report_count
+      - total_loss
     AudienceEnum:
       enum:
       - GENERAL
@@ -1099,6 +1373,19 @@ components:
         * `ELDERLY` - Seniors & family
         * `TEENAGER` - Teenagers & Students
         * `NON_TECH` - Non-Technical Users
+    BlankEnum:
+      enum:
+      - ''
+    CategoryVolume:
+      type: object
+      properties:
+        category:
+          type: string
+        count:
+          type: integer
+      required:
+      - category
+      - count
     ChangeRoleRequest:
       type: object
       properties:
@@ -1147,6 +1434,22 @@ components:
         * `MY` - MY
         * `NP` - NP
         * `ZZ` - ZZ
+    CountryLosses:
+      type: object
+      properties:
+        country:
+          type: string
+        currency:
+          type: string
+        total_loss:
+          type: string
+        report_count:
+          type: integer
+      required:
+      - country
+      - currency
+      - report_count
+      - total_loss
     CurrencyEnum:
       enum:
       - MYR
@@ -1157,6 +1460,16 @@ components:
         * `MYR` - MYR
         * `NPR` - NPR
         * `USD` - USD
+    DailyVolume:
+      type: object
+      properties:
+        date:
+          type: string
+        count:
+          type: integer
+      required:
+      - count
+      - date
     ErrorResponse:
       type: object
       properties:
@@ -1388,6 +1701,31 @@ components:
       - message
       - report_count
       - verdict
+    LossesAnalyticsResponse:
+      type: object
+      properties:
+        start_date:
+          type: string
+        end_date:
+          type: string
+        by_country:
+          type: array
+          items:
+            $ref: '#/components/schemas/CountryLosses'
+        by_area:
+          type: array
+          items:
+            $ref: '#/components/schemas/AreaLosses'
+        breakdown:
+          type: array
+          items:
+            $ref: '#/components/schemas/AreaLosses'
+      required:
+      - breakdown
+      - by_area
+      - by_country
+      - end_date
+      - start_date
     MyReportItem:
       type: object
       properties:
@@ -1417,6 +1755,9 @@ components:
       - currency
       - platform
       - reference_code
+    NullEnum:
+      enum:
+      - null
     PaginatedHeuristicRuleList:
       type: object
       required:
@@ -1486,6 +1827,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/QueueReport'
+    PaginatedThreatAdvisoryPublicList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ThreatAdvisoryPublic'
     PaginatedVerifiedIndicatorList:
       type: object
       required:
@@ -1565,6 +1929,36 @@ components:
           type: integer
           maximum: 100
           minimum: 1
+    PatchedThreatAdvisoryUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 150
+        body:
+          type: string
+          minLength: 1
+          maxLength: 1500
+        sms_text:
+          type: string
+          nullable: true
+          maxLength: 140
+        severity:
+          $ref: '#/components/schemas/SeverityEnum'
+        target_audience:
+          type: string
+          minLength: 1
+          maxLength: 15
+        category:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/PrimaryCategoryEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        related_indicator_id:
+          type: string
+          format: uuid
+          nullable: true
     PaymentMethodEnum:
       enum:
       - NONE
@@ -1601,6 +1995,16 @@ components:
         * `SMS` - SMS
         * `WEBSITE` - Website
         * `OTHER` - Other
+    PlatformVolume:
+      type: object
+      properties:
+        platform:
+          type: string
+        count:
+          type: integer
+      required:
+      - count
+      - platform
     Playbook:
       type: object
       properties:
@@ -2139,6 +2543,57 @@ components:
       - id
       - ruleset_version
       - updated_at
+    SeriesVolume:
+      type: object
+      properties:
+        date:
+          type: string
+        platform:
+          type: string
+        category:
+          type: string
+        count:
+          type: integer
+      required:
+      - category
+      - count
+      - date
+      - platform
+    SeverityEnum:
+      enum:
+      - INFO
+      - WARNING
+      - CRITICAL
+      type: string
+      description: |-
+        * `INFO` - Info
+        * `WARNING` - Warning
+        * `CRITICAL` - Critical
+    SpikeDetail:
+      type: object
+      properties:
+        platform:
+          type: string
+        category:
+          type: string
+        last_24h_count:
+          type: integer
+        trailing_7d_daily_avg:
+          type: number
+          format: double
+        growth_pct:
+          type: number
+          format: double
+          nullable: true
+        is_spike:
+          type: boolean
+      required:
+      - category
+      - growth_pct
+      - is_spike
+      - last_24h_count
+      - platform
+      - trailing_7d_daily_avg
     StaffRegisterRequest:
       type: object
       properties:
@@ -2259,6 +2714,195 @@ components:
           maxLength: 256
       required:
       - token
+    TacticCount:
+      type: object
+      properties:
+        tactic:
+          type: string
+        count:
+          type: integer
+      required:
+      - count
+      - tactic
+    ThreatAdvisoryCreateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 150
+        body:
+          type: string
+          minLength: 1
+          maxLength: 1500
+        sms_text:
+          type: string
+          nullable: true
+          maxLength: 140
+        severity:
+          $ref: '#/components/schemas/SeverityEnum'
+        target_audience:
+          type: string
+          minLength: 1
+          maxLength: 15
+        category:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/PrimaryCategoryEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        related_indicator_id:
+          type: string
+          format: uuid
+          nullable: true
+      required:
+      - body
+      - severity
+      - target_audience
+      - title
+    ThreatAdvisoryPublic:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        body:
+          type: string
+          readOnly: true
+        sms_text:
+          type: string
+          readOnly: true
+          nullable: true
+        severity:
+          allOf:
+          - $ref: '#/components/schemas/SeverityEnum'
+          readOnly: true
+        target_audience:
+          type: string
+          readOnly: true
+        category:
+          readOnly: true
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/PrimaryCategoryEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        published_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - body
+      - category
+      - created_at
+      - id
+      - published_at
+      - severity
+      - sms_text
+      - target_audience
+      - title
+    ThreatAdvisoryStaff:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          maxLength: 150
+        body:
+          type: string
+        sms_text:
+          type: string
+          nullable: true
+          maxLength: 140
+        severity:
+          $ref: '#/components/schemas/SeverityEnum'
+        target_audience:
+          type: string
+          maxLength: 15
+        category:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/PrimaryCategoryEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        related_indicator:
+          type: string
+          format: uuid
+          nullable: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/ThreatAdvisoryStaffStatusEnum'
+          readOnly: true
+        sns_message_id:
+          type: string
+          readOnly: true
+          nullable: true
+        created_by:
+          type: string
+          format: uuid
+          readOnly: true
+        created_by_email:
+          type: string
+          format: email
+          readOnly: true
+        published_by:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        published_by_email:
+          type: string
+          format: email
+          readOnly: true
+          nullable: true
+        published_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - body
+      - created_at
+      - created_by
+      - created_by_email
+      - id
+      - published_at
+      - published_by
+      - published_by_email
+      - severity
+      - sns_message_id
+      - status
+      - target_audience
+      - title
+      - updated_at
+    ThreatAdvisoryStaffStatusEnum:
+      enum:
+      - DRAFT
+      - PUBLISHED
+      - FAILED
+      type: string
+      description: |-
+        * `DRAFT` - Draft
+        * `PUBLISHED` - Published
+        * `FAILED` - Failed
     ThreatLevelEnum:
       enum:
       - MEDIUM
@@ -2502,6 +3146,39 @@ components:
       - resolved_report_ids
       - threat_level
       - verified_indicator
+    VolumeAnalyticsResponse:
+      type: object
+      properties:
+        total_reports:
+          type: integer
+        start_date:
+          type: string
+        end_date:
+          type: string
+        by_day:
+          type: array
+          items:
+            $ref: '#/components/schemas/DailyVolume'
+        by_platform:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlatformVolume'
+        by_category:
+          type: array
+          items:
+            $ref: '#/components/schemas/CategoryVolume'
+        series:
+          type: array
+          items:
+            $ref: '#/components/schemas/SeriesVolume'
+      required:
+      - by_category
+      - by_day
+      - by_platform
+      - end_date
+      - series
+      - start_date
+      - total_reports
   securitySchemes:
     jwtAuth:
       type: http
