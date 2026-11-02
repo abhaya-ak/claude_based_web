@@ -90,7 +90,8 @@ DONE — Backend Build Complete & Production Ready (Phases 0–13 Complete)
 | ├─ 13.6 Containerized end-to-end smoke verification suite (D151) | S4 | done | a9d6b48 | tools/smoke_container.py, ALB/localhost live container test against Docker stack, test_smoke_runner (1 test) |
 | └─ 13.7 Phase 13 & Backend Global Definition of Done closing gate | S4 | done | | Full 1,131 test suite green (0 warnings), OpenAPI freeze, check --deploy, container health proof, Global DoD signoff |
 | F Frontend phases | all | in_progress | | Frontend SPA development |
-| └─ F1 Foundational scaffold & layouts | all | done | f80ee21 | React 18, Vite, TypeScript strict, Tailwind, Axios client & silent refresh, AuthProvider, AccessibilityProvider (TTS & high contrast), router |
+| ├─ F0 Architecture blueprint | all | done | | Complete frontend specifications: docs/frontend/ (1.project_flow, 2.ui_design_system, 3.api_contract_map, 4.state_management, 5.testing_security) |
+| └─ F1 Foundational scaffold & layouts | all | done | f80ee21 | React 18, Vite, TypeScript strict, Tailwind, Axios client & silent refresh, AuthProvider, AccessibilityProvider (TTS & high contrast), Modal, router |
 
 ## Decisions made (consolidated catalogue)
 
