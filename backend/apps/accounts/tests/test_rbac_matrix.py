@@ -847,3 +847,60 @@ class TestRBACMatrix:
         response = client.post("/api/v1/simulator/attempts/", {}, format="json")
         assert response.status_code == expected_status
 
+
+    # 32. GET /api/v1/admin-portal/telemetry/metrics/ (Admin portal telemetry: Admin only)
+    @pytest.mark.parametrize(
+        "user_attr,expected_status",
+        [
+            (None, 401),
+            ("citizen", 403),
+            ("analyst_pending", 403),
+            ("analyst_approved", 403),
+            ("educator_approved", 403),
+            ("admin_pending", 403),
+            ("admin_approved", 200),
+        ],
+    )
+    def test_telemetry_metrics_access(self, user_attr, expected_status):
+        user = getattr(self, user_attr) if user_attr else None
+        client = self._client_for(user)
+        response = client.get("/api/v1/admin-portal/telemetry/metrics/?range=24h")
+        assert response.status_code == expected_status
+
+    # 33. GET /api/v1/admin-portal/audit-logs/ (Admin portal audit logs: Admin only)
+    @pytest.mark.parametrize(
+        "user_attr,expected_status",
+        [
+            (None, 401),
+            ("citizen", 403),
+            ("analyst_pending", 403),
+            ("analyst_approved", 403),
+            ("educator_approved", 403),
+            ("admin_pending", 403),
+            ("admin_approved", 200),
+        ],
+    )
+    def test_audit_logs_access(self, user_attr, expected_status):
+        user = getattr(self, user_attr) if user_attr else None
+        client = self._client_for(user)
+        response = client.get("/api/v1/admin-portal/audit-logs/")
+        assert response.status_code == expected_status
+
+    # 34. GET /api/v1/admin-portal/audit-logs/export/ (Admin portal audit logs CSV export: Admin only)
+    @pytest.mark.parametrize(
+        "user_attr,expected_status",
+        [
+            (None, 401),
+            ("citizen", 403),
+            ("analyst_pending", 403),
+            ("analyst_approved", 403),
+            ("educator_approved", 403),
+            ("admin_pending", 403),
+            ("admin_approved", 200),
+        ],
+    )
+    def test_audit_logs_export_access(self, user_attr, expected_status):
+        user = getattr(self, user_attr) if user_attr else None
+        client = self._client_for(user)
+        response = client.get("/api/v1/admin-portal/audit-logs/export/")
+        assert response.status_code == expected_status
