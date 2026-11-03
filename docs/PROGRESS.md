@@ -89,7 +89,14 @@ DONE — Backend Build Complete & Production Ready (Phases 0–13 Complete)
 | ├─ 13.5 CLO3 High Availability & Cost Justification Evidence (D150) | S4 | done | ab471b2 | docs/CLO3_ARCHITECTURE_HA_COST.md, 2-AZ topology, failover mechanics, pricing breakdown, test_clo3_docs (1 test) |
 | ├─ 13.6 Containerized end-to-end smoke verification suite (D151) | S4 | done | a9d6b48 | tools/smoke_container.py, ALB/localhost live container test against Docker stack, test_smoke_runner (1 test) |
 | └─ 13.7 Phase 13 & Backend Global Definition of Done closing gate | S4 | done | | Full 1,131 test suite green (0 warnings), OpenAPI freeze, check --deploy, container health proof, Global DoD signoff |
-| F Frontend phases | all | blocked until frontend doc exists | | |
+| F Frontend phases | all | done | | Frontend SPA complete (Phases F1–F7 all passing, 24 unit tests, zero build errors) |
+| ├─ F1 Scaffolding, Design System & Core API Foundation | all | done | e820d02 | React 18, Vite, TS strict, Tailwind, Axios client & silent refresh, a11y, core components |
+| ├─ F2 Authentication, Role Guards & Access Management | S4 | done | 0d761b6 | Auth context, RequireRole, Login, Register, Staff Register, Pending Approval, Profile/Password, Vitest suite (9 tests) |
+| ├─ F3 Citizen Threat Lookup & Scam Reporting Portal | S1 | done | 90dbb42 | Threat Lookup widget, Multi-step Report wizard, Access key receipt, Track & My Reports, Alert Subscriptions, Vitest suite (11 tests) |
+| ├─ F4 Analyst Triage Workbench & Evidence Vault | S2 | done | 58b8ee8 | Triage Queue, Split screen detail, Presigned S3 Evidence Vault (15-min TTL), Verify/Reject Modals, Trend Analytics, Advisory Studio, Threat Vault (15 tests) |
+| ├─ F5 Literacy Hub CMS & Educator Studio | S3 | done | c93e5d5 | Public Learning Hub, Safe MarkdownViewer, Guide Detail with TTS read aloud, Educator Studio CRUD & Asset Vault (18 tests) |
+| ├─ F6 Interactive "Spot-the-Scam" Simulator & Quizzes | S3 | done | 6211681 | Anti-cheat card masking, Simulation round flow, immediate feedback, blind spots & remediation guides, Scenario Studio (20 tests) |
+| ├─ F7 Admin Portal, Telemetry & Audit Log Viewer | S4 | done | 716ee08 | Staff approvals & role management, Tamper-evident Audit ledger, CSV export, CloudWatch telemetry & Heuristic rules (24 tests) |
 
 ## Decisions made (consolidated catalogue)
 

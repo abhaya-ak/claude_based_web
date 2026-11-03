@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --a11y-font-xs: 0.75rem;
+  --a11y-font-sm: 0.875rem;
+  --a11y-font-base: 1rem;
+  --a11y-font-lg: 1.125rem;
+  --a11y-font-xl: 1.25rem;
+  --a11y-font-2xl: 1.5rem;
+  --a11y-font-3xl: 1.875rem;
+}
+
+/* Accessible Font Scaling */
+html.font-scale-large {
+  --a11y-font-xs: 0.875rem;
+  --a11y-font-sm: 1rem;
+  --a11y-font-base: 1.125rem;
+  --a11y-font-lg: 1.25rem;
+  --a11y-font-xl: 1.5rem;
+  --a11y-font-2xl: 1.75rem;
+  --a11y-font-3xl: 2.125rem;
+}
+
+html.font-scale-xlarge {
+  --a11y-font-xs: 1rem;
+  --a11y-font-sm: 1.125rem;
+  --a11y-font-base: 1.25rem;
+  --a11y-font-lg: 1.5rem;
+  --a11y-font-xl: 1.75rem;
+  --a11y-font-2xl: 2rem;
+  --a11y-font-3xl: 2.5rem;
+}
+
+/* High Contrast Mode Extensions */
+html.high-contrast {
+  color-scheme: dark;
+}
+
+html.high-contrast body {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+html.high-contrast a {
+  color: #00ffff !important;
+  text-decoration: underline !important;
+}
+
+html.high-contrast button {
+  border: 2px solid #ffffff !important;
+}
+
+html.high-contrast input,
+html.high-contrast select,
+html.high-contrast textarea {
+  background-color: #121212 !important;
+  color: #ffffff !important;
+  border: 2px solid #ffffff !important;
+}
+
+/* Focus indicator conforming to WCAG 2.1 AA */
+:focus-visible {
+  outline: 3px solid #f39c12;
+  outline-offset: 2px;
+}
