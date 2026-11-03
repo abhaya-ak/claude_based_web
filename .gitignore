@@ -38,3 +38,9 @@ build/
 *.swo
 .DS_Store
 Thumbs.db
+
+AGENTS.md
+docker-compose.yml
+VIVE-CODING-PAYBOOK.md
+.pre-commit-config.yaml
+
