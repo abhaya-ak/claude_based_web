@@ -96,7 +96,7 @@ DONE — Backend Build Complete & Production Ready (Phases 0–13 Complete)
 | ├─ F4 Analyst Triage Workbench & Evidence Vault | S2 | done | 58b8ee8 | Triage Queue, Split screen detail, Presigned S3 Evidence Vault (15-min TTL), Verify/Reject Modals, Trend Analytics, Advisory Studio, Threat Vault (15 tests) |
 | ├─ F5 Literacy Hub CMS & Educator Studio | S3 | done | c93e5d5 | Public Learning Hub, Safe MarkdownViewer, Guide Detail with TTS read aloud, Educator Studio CRUD & Asset Vault (18 tests) |
 | ├─ F6 Interactive "Spot-the-Scam" Simulator & Quizzes | S3 | done | 6211681 | Anti-cheat card masking, Simulation round flow, immediate feedback, blind spots & remediation guides, Scenario Studio (20 tests) |
-| ├─ F7 Admin Portal, Telemetry & Audit Log Viewer | S4 | done | | Staff approvals & role management, Tamper-evident Audit ledger, CSV export, CloudWatch telemetry & Heuristic rules (24 tests) |
+| ├─ F7 Admin Portal, Telemetry & Audit Log Viewer | S4 | done | 716ee08 | Staff approvals & role management, Tamper-evident Audit ledger, CSV export, CloudWatch telemetry & Heuristic rules (24 tests) |
 
 ## Decisions made (consolidated catalogue)
 
